@@ -1,0 +1,759 @@
+1. THE VENTURE MINDSET 
+How to Make Smarter Bets and Achieve Extraordinary Growth
+        Ilya Strebulaev
+        Alex Dang
+
+Оригинальный английский текст: 
+
+
+INTRODUCTION
+What is Saasbee and why does it matter?
+
+It was November 2012, and three venture capitalists, Sachin Deshpande, Patrick Eggen, and Nagraj Kashyap, were facing a decision: Should they invest $500K in a small startup called Saasbee?Earlier in the year, through the prolific Silicon Valley angel investor Bill Tai, Kashyap was introduced to the founder of Saasbee, who was promising
+to revolutionize the way people did videoconferencing in the post-PC era.
+The name Saasbee came from SaaS, which stands for “software as a
+service,” plus the hardworking insect. Kashyap led Qualcomm Ventures, the
+investment arm of a large semiconductor manufacturer, charged with
+putting money into promising startups. At Qualcomm’s headquarters in San
+Diego, Kashyap and his team invested in more than 300 startups all over the
+world. One day the team would evaluate nanotechnology in Korea; the next,
+they might be trying to make sense of a Brazilian software startup. Kashyap
+was accustomed to hearing extraordinary claims of guaranteed success from
+every single entrepreneur he met. Was this time different?
+In 2012, the competition in video communications was already tough.
+WebEx, a unit of Cisco, a telecommunications giant, was a mighty
+incumbent with millions of registered users. Skype had been purchased by
+Microsoft the previous year. Google was working to improve the Hangout feature of Google Plus. The web-hosted service GoToMeeting had recently
+expanded to accommodate larger audiences. And there were recent startups
+such as the well-funded BlueJeans Network and Fuzebox to contend with.
+Saasbee’s founder argued that his small startup would successfully outdo
+them all, even WebEx. But as of November 2012, Saasbee did not have a
+single paying customer. Besides, it was 2012 and people preferred in-person
+meetings or simply picking up a phone.
+The founder of Saasbee, a Chinese-born engineer with imperfect
+English, had moved to Silicon Valley a dozen years earlier. After his arrival
+in the United States, WebEx recruited him, and he stayed on when Cisco
+acquired the company in 2007. But he left Cisco after management turned
+down his pitch to develop a smartphone-friendly videoconferencing tool. 
+Was Saasbee as good as the founder claimed it was? To learn more,
+Kashyap turned to his colleague Sachin Deshpande. “Could you look into
+this?” he said. “You’re our video guy. Have a good look.” Deshpande had
+cofounded a TikTok-style video startup that Qualcomm acquired in 2010,
+and he had devoted a lot of time and energy to understanding the
+burgeoning video space, which he was very passionate about.
+“I was in love after the first call with the founder,” Deshpande told us in
+an interview. He flew to the San Francisco Bay Area to meet the founder
+two days after the call. With his experience in the video space, Deshpande
+could see how Saasbee differed from the competition. Video was the single
+hardest application to get working over a mobile interface, and yet as he
+clicked the button, the video stream was clear and without any interruption
+or delays. Deshpande then switched to his phone and voilà—the picture was
+smaller but it was of the same quality as the one on his laptop. The product
+worked wonderfully. Awed by the founder’s inside-out knowledge of the
+videoconferencing market, Deshpande flew back to San Diego. “This is
+beyond special,” he told Kashyap. “We have to put $5 million into
+Saasbee.”
+Deshpande was joined in this meeting by his colleague Patrick Eggen. A
+liberal arts major with no knowledge of finance, Eggen underwent a
+baptism by fire working 100 hours a week in a large investment bank in London. Afterward, he went back to school for an MBA. Most of his job
+interviews were with hedge funds and classic investment management
+companies. Then he was invited to become a junior team member at
+Qualcomm Ventures, where he became, as Deshpande called him to us, “a
+creative seed financing whiz.”
+Qualcomm was based in San Diego, but in 2010 Eggen moved to Silicon
+Valley, where he quickly became a deal junkie, sourcing startups for his
+colleagues’ due diligence. Eggen was impressed by the Saasbee founder’s
+obsession with building a superior product. After their second meeting at a
+Philz Coffee shop in downtown San Francisco’s SoMa district, Eggen
+thought the Saasbee founder was a pretty good salesman too. “What a
+technical virtuoso with natural sales chops,” Eggen exclaimed to us years
+later.
+In early October 2012, Kashyap and the team flew in from San Diego to
+Qualcomm’s Silicon Valley office to meet with six startups in one day,
+Saasbee among them. According to some participants, as the demo was
+about to begin, the connectivity failed. The founder said, “Hey, I’m just
+down the road.” So they all went to Saasbee’s small office, where a
+seamless demo across many devices made Kashyap realize immediately
+that the total addressable market could be huge.
+Now all three were pushing for Qualcomm Ventures to become the lead
+investor in Saasbee, with a sizable commitment of at least $3 million.
+Within a week, Deshpande and Kashyap presented the opportunity to the
+rest of the ventures team, its investment committee. There were no other
+takers. Every other team member felt uncomfortable investing in Saasbee.
+Kashyap, Deshpande, and Eggen were disappointed but not entirely
+surprised by their colleagues’ doubts. They saw too much uncertainty and
+too many red flags. Not only was the videoconferencing space already
+crowded, but Saasbee was trying to target small businesses, a tough market
+to break into. The technical differentiation from other players was not clear-
+cut. The founder’s imperfect command of English was a distraction. And
+the proposed valuation of $20 million seemed very high for a startup with
+one founder, a team of China-based engineers, and not one single customer.The skepticism was buttressed by the uncomfortable fact that at least eight
+other VC firms had passed on funding Saasbee. Why? They all had
+expensive Cisco TelePresence rooms with high-speed internet in their
+offices. If you have a private driver, it’s easy to underestimate the potential
+of Uber.
+The rejection would have been the end of the story—if not for one
+distinctive feature of Qualcomm Ventures’ operation: there was a side
+pathway for unconventional deals of this kind. In 2010, an early-stage fund
+was created for smaller and often riskier investments. “Of course, it was not
+legally a real fund per se,” Kashyap recollected to us years later, “but
+conceptually it was.” The underlying idea was to invest small amounts of
+money at high velocity without much bureaucracy. Eggen was leading this
+early-stage fund and was therefore authorized to make investments of up to
+$500,000 from the preapproved capital pool, all by himself. Of course, this
+freedom came with greater responsibility should his selected investment
+fail.
+Thus, the three of them had a backdoor way to pursue an unorthodox
+deal. They could put $500K of Qualcomm’s money into Saasbee despite the
+opposition from the rest of the team. But was the risk worth it?
+Kashyap and Eggen ended up making the bet, supported by Deshpande.
+It has turned out to be by far the best investment, dollar for dollar, in the
+history of Qualcomm Ventures, and it helped to transform the daily routines
+of hundreds of millions of people worldwide. You’re probably one of those
+people.
+
+
+Русский 
+
+МЫШЛЕНИЕ ВЕНЧУРНОГО КАПИТАЛИСТА
+
+Как принимать точные решения и добиваться взрывного роста
+Илья Стребулаев
+Алекс Данг
+ВВЕДЕНИЕ
+Что такое Saasbee и почему это важно?
+В ноябре 2012 года три венчурных инвестора — Сачин Дешпанде, Патрик Эгген и Наградж Кашьяп — оказались перед непростым выбором: стоит ли вкладывать 500 тысяч долларов в крошечный стартап под названием Saasbee? Ранее в том же году Кашьяпа познакомили с основателем этого проекта. Посредником выступил Билл Тай, один из самых активных «ангелов» Кремниевой долины. Основатель Saasbee обещал совершить революцию в сфере видеоконференций в наступившую эпоху мобильных устройств. Название компании произошло от аббревиатуры SaaS (software as a service — «программное обеспечение как услуга») и английского слова bee — трудолюбивого насекомого. Кашьяп возглавлял Qualcomm Ventures — инвестиционное подразделение крупного производителя полупроводников, задачей которого был поиск перспективных стартапов. Из штаб-квартиры в Сан-Диего Кашьяп и его команда управляли инвестициями в более чем 300 проектов по всему миру. Сегодня они могли оценивать рынок нанотехнологий в Корее, а завтра — пытаться разобраться в перспективах бразильского разработчика софта. Каждый предприниматель, с которым встречался Кашьяп, обещал ему гарантированный и феноменальный успех. Был ли этот случай особенным?
+Рынок видеосвязи в 2012 году уже отличался жесткой конкуренцией. Мощным игроком был сервис WebEx — подразделение телекоммуникационного гиганта Cisco, имевшее миллионы пользователей. За год до этого Microsoft приобрела Skype. Google активно дорабатывал функцию Hangouts в своей соцсети Google Plus. Облачный сервис GoToMeeting как раз расширил возможности для проведения массовых конференций. Кроме того, на пятки наступали молодые, но хорошо финансируемые стартапы, такие как BlueJeans Network и Fuzebox.
+Основатель Saasbee уверял, что его небольшая команда сумеет обойти всех конкурентов, включая WebEx. Однако к ноябрю 2012 года у компании не было ни одного платного клиента. К тому же в то время люди все еще предпочитали личные встречи или обычные телефонные звонки.
+Основатель компании, инженер родом из Китая, чей английский был далек от совершенства, переехал в Кремниевую долину за двенадцать лет до этих событий. Сразу по прибытии в США его наняли в WebEx, и он остался там после того, как в 2007 году компанию поглотила Cisco. Но в итоге инженер уволился: руководство отвергло его идею по созданию инструмента для видеосвязи, оптимизированного под смартфоны.
+Действительно ли проект был так хорош, как утверждал его создатель? Чтобы разобраться, Кашьяп обратился к своему коллеге Сачину Дешпанде. «Можешь изучить этот вопрос? Ты у нас спец по видео. Посмотри повнимательнее», — попросил он. Дешпанде в свое время был сооснователем видеосервиса в стиле TikTok, который Qualcomm выкупила в 2010 году. Он горел своим делом и потратил немало сил на изучение бурно развивающегося рынка видеотехнологий.
+«Я влюбился в проект после первого же звонка основателю», — признался нам Дешпанде в интервью. Спустя два дня после этого разговора он вылетел в район залива Сан-Франциско на встречу. Опыт в индустрии позволил Сачину сразу увидеть отличия Saasbee от конкурентов. Заставить видео корректно работать на мобильных устройствах было сложнейшей технической задачей, но стоило ему нажать на кнопку, как трансляция пошла четко, без задержек и помех. Затем Дешпанде переключился на телефон и — вуаля! — картинка стала меньше, но качество осталось таким же высоким, как на ноутбуке. Продукт работал безупречно. Пораженный глубочайшими познаниями основателя в рынке видеосвязи, Дешпанде вернулся в Сан-Диего. «Это не просто талант, это нечто большее, — заявил он Кашьяпу. — Мы должны вложить в Saasbee пять миллионов долларов».
+На той встрече присутствовал и их коллега Патрик Эгген. Выпускник гуманитарного факультета, поначалу ничего не смысливший в финансах, Эгген прошел «боевое крещение» в крупном лондонском инвестбанке, работая по 100 часов в неделю. Позже он получил степень MBA. Почти все его собеседования проходили в хедж-фондах и традиционных компаниях по управлению активами, пока его не пригласили на младшую должность в Qualcomm Ventures. Там он со временем стал тем, кого Дешпанде называет «гением креативного посевного финансирования».
+Хотя штаб-квартира Qualcomm находилась в Сан-Диего, в 2010 году Эгген перебрался в Кремниевую долину и быстро вошел во вкус, неустанно разыскивая стартапы для последующей проверки коллегами. Патрика впечатлило то, с какой одержимостью основатель Saasbee стремился создать совершенный продукт. После второй встречи в кофейне Philz Coffee в районе СоМа в центре Сан-Франциско Эгген пришел к выводу, что тот еще и отличный продавец. «Технический виртуоз с врожденной предпринимательской жилкой!» — восторженно вспоминал Патрик годы спустя в беседе с нами.
+В начале октября 2012 года Кашьяп со своей командой прилетел из Сан-Диего в офис Qualcomm в Кремниевой долине. За один день им предстояло оценить шесть стартапов, среди которых был и Saasbee. Как вспоминают участники встречи, прямо перед началом презентации в офисе пропал интернет. Основатель не растерялся: «Тут совсем рядом мой офис, пойдемте туда». В маленьком помещении Saasbee он показал бесперебойную работу сервиса на множестве разных устройств. В тот момент Кашьяп осознал: потенциальный объем этого рынка может быть колоссальным.
+Теперь все трое настаивали на том, чтобы Qualcomm Ventures выступила ведущим инвестором Saasbee, вложив крупную сумму — не менее трех миллионов долларов. Спустя неделю Дешпанде и Кашьяп представили проект инвестиционному комитету фонда. Желающих поддержать их не нашлось. Все остальные члены команды отнеслись к идее вложений в Saasbee крайне настороженно.
+Кашьяп, Дешпанде и Эгген были разочарованы, хотя сомнения коллег их не удивили. Слишком много было факторов риска и неопределенности. Сектор видеосвязи и так был переполнен, а Saasbee к тому же нацелился на малый бизнес — сегмент, в который трудно пробиться. Технологические преимущества перед конкурентами не казались очевидными. Плохой английский основателя мешал восприятию. Да и оценка компании в 20 миллионов долларов выглядела завышенной для стартапа с одним фаундером, штатом инженеров в Китае и отсутствием выручки. Скепсис подогревался и тем неудобным фактом, что как минимум восемь других венчурных фондов уже отказали Saasbee в финансировании. Почему? В офисе у каждого из них стояли дорогущие системы Cisco TelePresence с высокоскоростным интернетом. Когда у тебя есть личный водитель, легко недооценить потенциал Uber.
+На отказе комитета история могла бы и закончиться, если бы не одна особенность работы Qualcomm Ventures: там существовал обходной путь для подобных нестандартных сделок. В 2010 году компания создала фонд ранних стадий для небольших и более рискованных инвестиций. «Юридически это не был отдельный фонд в полном смысле слова, — вспоминал Кашьяп годы спустя, — но концептуально он работал именно так». Идея заключалась в том, чтобы быстро и без лишней бюрократии вкладывать небольшие суммы. Эгген руководил этим направлением и имел полномочия самостоятельно инвестировать до 500 тысяч долларов из заранее утвержденного пула капитала. Разумеется, эта свобода подразумевала и повышенную ответственность в случае провала.
+Так у троих коллег появилась «лазейка» для проведения сомнительной, с точки зрения остальных, сделки. Они могли направить 500 тысяч долларов из средств Qualcomm в Saasbee вопреки мнению всей команды. Но стоил ли риск того?
+В итоге Кашьяп и Эгген при поддержке Дешпанде сделали эту ставку. Сегодня можно с уверенностью сказать: в пересчете на каждый вложенный доллар это была лучшая инвестиция в истории Qualcomm Ventures. Она изменила повседневную жизнь сотен миллионов людей по всему миру. И вы, скорее всего, один из них.
+
+Испанский 
+LA MENTALIDAD DEL CAPITAL RIESGO
+Cómo hacer apuestas más inteligentes y lograr un crecimiento extraordinario
+Ilya Strebulaev
+Alex Dang
+INTRODUCCIÓN
+¿Qué es Saasbee y por qué es importante?
+Era noviembre de 2012. Tres inversores de capital riesgo —Sachin Deshpande, Patrick Eggen y Nagraj Kashyap— se enfrentaban a una decisión crucial: ¿debían invertir 500 000 dólares en una pequeña startup llamada Saasbee? Unos meses antes, gracias a la mediación de Bill Tai, el prolífico inversor ángel de Silicon Valley, Kashyap había conocido al fundador de Saasbee, quien prometía revolucionar las videoconferencias en la era pos-PC. El nombre de la empresa fusionaba las siglas SaaS (software as a service, «software como servicio») con la palabra bee («abeja»), en alusión al laborioso insecto.
+Kashyap dirigía Qualcomm Ventures, la filial de inversión de un gran fabricante de semiconductores encargada de inyectar capital en empresas emergentes prometedoras. Desde la sede de Qualcomm en San Diego, Kashyap y su equipo gestionaban inversiones en más de trescientas startups por todo el mundo. Un día podían estar evaluando nanotecnología en Corea y, al siguiente, intentando descifrar el potencial de una empresa de software brasileña. Kashyap estaba acostumbrado a escuchar promesas de éxito garantizado y afirmaciones extraordinarias de boca de cada emprendedor que conocía. ¿Sería diferente esta vez?
+En 2012, la competencia en el sector de las videocomunicaciones ya era feroz. WebEx, una unidad del gigante de las telecomunicaciones Cisco, era un actor consolidado con millones de usuarios registrados. Microsoft había comprado Skype el año anterior. Google trabajaba para mejorar la función Hangouts de Google Plus. El servicio web GoToMeeting acababa de ampliarse para dar cabida a audiencias más numerosas. Además, había que enfrentarse a nuevas startups bien financiadas, como BlueJeans Network y Fuzebox.
+El fundador de Saasbee sostenía que su pequeña empresa superaría con éxito a todas ellas, incluso a WebEx. Sin embargo, en noviembre de 2012, Saasbee no tenía ni un solo cliente de pago. Además, corrían tiempos en los que la gente seguía prefiriendo las reuniones presenciales o, simplemente, descolgar el teléfono.
+El fundador de Saasbee, un ingeniero de origen chino con un inglés imperfecto, se había mudado a Silicon Valley doce años atrás. Tras su llegada a Estados Unidos, WebEx lo contrató, y permaneció en la plantilla cuando Cisco adquirió la compañía en 2007. No obstante, abandonó la empresa después de que la dirección rechazara su propuesta de desarrollar una herramienta de videoconferencia optimizada para teléfonos inteligentes.
+¿Era Saasbee tan buena como afirmaba su creador? Para averiguarlo, Kashyap recurrió a su colega Sachin Deshpande.
+—¿Podrías investigar esto? —le dijo—. Tú eres nuestro experto en vídeo. échale un buen vistazo.
+Deshpande había cofundado una startup de vídeo al estilo TikTok que Qualcomm adquirió en 2010, y había dedicado mucho tiempo y energía a comprender el floreciente espacio del vídeo, un campo que le apasionaba.
+—Me enamoré tras la primera llamada con el fundador —nos contó Deshpande en una entrevista.
+Dos días después de aquella llamada, voló a la zona de la bahía de San Francisco para reunirse con él. Gracias a su experiencia en el sector, Deshpande supo ver en qué se diferenciaba Saasbee de la competencia. El vídeo era la aplicación más difícil de ejecutar en una interfaz móvil y, sin embargo, al hacer clic en el botón, la transmisión se veía nítida, sin interrupciones ni retrasos. A continuación, Deshpande pasó a su teléfono y voilà: la imagen era más pequeña, pero conservaba la misma calidad que en su portátil. El producto funcionaba a las mil maravillas. Impresionado por el conocimiento exhaustivo que tenía el fundador sobre el mercado de las videoconferencias, Deshpande regresó a San Diego.
+—Esto es algo más que especial —le dijo a Kashyap—. Tenemos que meter cinco millones de dólares en Saasbee.
+A esta reunión se unió su colega Patrick Eggen. Licenciado en humanidades y sin conocimientos financieros previos, Eggen había pasado por un bautismo de fuego trabajando cien horas semanales en un gran banco de inversión de Londres. Posteriormente, cursó un MBA. La mayoría de sus entrevistas de trabajo habían sido con fondos de cobertura y empresas clásicas de gestión de inversiones. Entonces le invitaron a formar parte del equipo junior de Qualcomm Ventures, donde se convirtió, tal como lo describió Deshpande, en «un genio creativo de la financiación semilla».
+Qualcomm tenía su sede en San Diego, pero en 2010 Eggen se trasladó a Silicon Valley, donde pronto se convirtió en un auténtico sabueso de oportunidades, localizando startups para que sus colegas realizaran la diligencia debida. A Eggen le impresionó la obsesión del fundador de Saasbee por crear un producto superior. Tras su segundo encuentro en una cafetería Philz Coffee, en el distrito SoMa del centro de San Francisco, Eggen pensó que el fundador de Saasbee era también un vendedor bastante bueno.
+—¡Qué virtuoso de la técnica con dotes naturales para la venta! —exclamó Eggen ante nosotros años más tarde.
+A principios de octubre de 2012, Kashyap y su equipo volaron desde San Diego a la oficina de Qualcomm en Silicon Valley para reunirse con seis startups en un solo día, entre ellas Saasbee. Según algunos participantes, justo cuando iba a comenzar la demostración, falló la conexión. El fundador dijo: «Oye, estoy aquí al lado». Así que todos se dirigieron a la pequeña oficina de Saasbee, donde una demostración impecable a través de múltiples dispositivos hizo que Kashyap se diera cuenta de inmediato de que el mercado total disponible podía ser inmenso.
+Ahora, los tres presionaban para que Qualcomm Ventures se convirtiera en el inversor principal de Saasbee, con un compromiso considerable de al menos tres millones de dólares. En el plazo de una semana, Deshpande y Kashyap presentaron la oportunidad al resto del equipo de ventures, su comité de inversión. Nadie más quiso participar. El resto de los miembros del equipo se sentía incómodo invirtiendo en Saasbee.
+Kashyap, Deshpande y Eggen se sintieron decepcionados, aunque no del todo sorprendidos por las dudas de sus colegas. Veían demasiada incertidumbre y demasiadas señales de alarma. No solo el espacio de las videoconferencias estaba saturado, sino que Saasbee intentaba dirigirse a las pequeñas empresas, un mercado difícil de penetrar. La diferenciación técnica respecto a otros actores no estaba clara. El dominio imperfecto del inglés del fundador suponía una distracción. Y la valoración propuesta de veinte millones de dólares parecía muy alta para una startup con un solo fundador, un equipo de ingenieros con base en China y ni un solo cliente. El escepticismo se veía reforzado por el incómodo hecho de que al menos otras ocho firmas de capital riesgo habían rechazado financiar a Saasbee. ¿Por qué? Todas tenían costosas salas de Cisco TelePresence con internet de alta velocidad en sus oficinas. Si tienes chófer privado, es fácil subestimar el potencial de Uber.
+El rechazo habría supuesto el final de la historia de no ser por una característica distintiva de la operativa de Qualcomm Ventures: existía una vía alternativa para acuerdos poco convencionales de este tipo. En 2010 se creó un fondo de fase temprana para inversiones más pequeñas y, a menudo, más arriesgadas.
+—Por supuesto, legalmente no era un fondo real per se —nos recordó Kashyap años después—, pero conceptualmente sí lo era.
+La idea subyacente consistía en invertir pequeñas cantidades de dinero a gran velocidad y sin mucha burocracia. Eggen dirigía este fondo de fase temprana y, por tanto, estaba autorizado a realizar inversiones de hasta 500 000 dólares del fondo de capital preaprobado, él solo. Huelga decir que esta libertad conllevaba una mayor responsabilidad en caso de que la inversión seleccionada fracasara.
+Así pues, los tres disponían de una «puerta trasera» para llevar a cabo una operación poco ortodoxa. Podían poner 500 000 dólares del dinero de Qualcomm en Saasbee a pesar de la oposición del resto del equipo. Pero ¿merecía la pena el riesgo?
+Kashyap y Eggen acabaron haciendo la apuesta, apoyados por Deshpande. Resultó ser, con diferencia, la mejor inversión en términos de rentabilidad de la historia de Qualcomm Ventures, y contribuyó a transformar las rutinas diarias de cientos de millones de personas en todo el mundo. Probablemente, usted sea una de ellas.
+
+Французский
+L’ESPRIT CAPITAL-RISQUE
+Comment miser plus judicieusement et atteindre une croissance extraordinaire
+Ilya Strebulaev
+Alex Dang
+INTRODUCTION
+Qu’est-ce que Saasbee et pourquoi est-ce important ?
+Nous sommes en novembre 2012. Trois investisseurs en capital-risque, Sachin Deshpande, Patrick Eggen et Nagraj Kashyap, sont confrontés à une décision cruciale : doivent-ils investir 500 000 dollars dans une petite start-up nommée Saasbee ? Plus tôt dans l’année, par l’entremise de Bill Tai, prolifique business angel de la Silicon Valley, Kashyap avait été présenté au fondateur de Saasbee. Ce dernier promettait de révolutionner la visioconférence à l’ère post-PC. Le nom de l’entreprise était la contraction de SaaS (software as a service, « logiciel en tant que service ») et de bee (« l’abeille »), cet insecte travailleur.
+Kashyap dirigeait Qualcomm Ventures, la branche d’investissement d’un grand fabricant de semi-conducteurs chargée de financer des start-up prometteuses. Depuis le siège de Qualcomm à San Diego, Kashyap et son équipe avaient investi dans plus de 300 jeunes pousses à travers le monde. Tantôt l’équipe évaluait des nanotechnologies en Corée, tantôt elle tentait de cerner le potentiel d’un logiciel brésilien. Kashyap était habitué à entendre des promesses de succès garanti et des affirmations extraordinaires de la bouche de chaque entrepreneur qu’il rencontrait. Cette fois-ci serait-elle différente ?
+En 2012, la concurrence dans le secteur de la communication vidéo était déjà féroce. WebEx, une unité du géant des télécommunications Cisco, faisait figure d’acteur incontournable avec ses millions d’utilisateurs enregistrés. Skype avait été racheté par Microsoft l’année précédente. Google travaillait à l’amélioration de la fonctionnalité Hangouts de Google Plus. Le service hébergé GoToMeeting venait de s’étendre pour accueillir des audiences plus larges. Par ailleurs, il fallait compter avec de nouvelles start-up bien financées, telles que BlueJeans Network et Fuzebox.
+Le fondateur de Saasbee soutenait que sa petite structure réussirait à les surpasser toutes, même WebEx. Or, en novembre 2012, Saasbee ne comptait pas un seul client payant. En outre, à cette époque, les gens préféraient encore les réunions en présentiel ou, tout simplement, décrocher leur téléphone.
+Le fondateur de Saasbee, un ingénieur d’origine chinoise dont l’anglais était imparfait, s’était installé dans la Silicon Valley une douzaine d’années plus tôt. Dès son arrivée aux États-Unis, WebEx l’avait recruté, et il était resté en poste lorsque Cisco avait acquis l’entreprise en 2007. Toutefois, il avait quitté le navire après que la direction eut rejeté sa proposition de développer un outil de visioconférence optimisé pour les smartphones.
+Saasbee était-elle aussi performante que son créateur le prétendait ? Pour en savoir plus, Kashyap se tourna vers son collègue Sachin Deshpande.
+— Pourrais-tu examiner cela ? lui demanda-t-il. Tu es notre spécialiste vidéo. Jettes-y un œil attentif.
+Deshpande avait cofondé une start-up vidéo dans le style de TikTok, acquise par Qualcomm en 2010, et avait consacré beaucoup de temps et d’énergie à comprendre le secteur florissant de la vidéo, qui le passionnait.
+— Je suis tombé amoureux dès le premier appel avec le fondateur, nous a confié Deshpande lors d’un entretien.
+Deux jours après cet appel, il s’envola pour la région de la baie de San Francisco afin de rencontrer l’entrepreneur. Fort de son expérience dans le domaine, Deshpande comprit immédiatement en quoi Saasbee se distinguait de la concurrence. La vidéo représentait l’application la plus difficile à faire fonctionner sur une interface mobile ; pourtant, dès qu’il cliqua sur le bouton, le flux apparut clair, sans interruption ni latence. Deshpande bascula ensuite sur son téléphone et — voilà — l’image était plus petite, mais conservait la même qualité que sur son ordinateur portable. Le produit fonctionnait à merveille. Impressionné par la connaissance exhaustive du marché de la visioconférence dont faisait preuve le fondateur, Deshpande retourna à San Diego.
+— C’est tout bonnement exceptionnel, rapporta-t-il à Kashyap. Nous devons investir 5 millions de dollars dans Saasbee.
+Son collègue Patrick Eggen se joignit à cette réunion. Diplômé en lettres et sciences humaines sans connaissances financières préalables, Eggen avait subi son baptême du feu en travaillant cent heures par semaine dans une grande banque d’investissement à Londres. Par la suite, il avait repris ses études pour obtenir un MBA. La plupart de ses entretiens d’embauche s’étaient déroulés avec des hedge funds et des sociétés de gestion d’investissements classiques. Puis, il avait été invité à rejoindre l’équipe junior de Qualcomm Ventures, où il était devenu, selon les mots de Deshpande, « un génie créatif du financement d’amorçage ».
+Bien que Qualcomm fût basée à San Diego, Eggen avait déménagé dans la Silicon Valley en 2010, où il était rapidement devenu accro aux transactions, dénichant des start-up pour les soumettre à la diligence raisonnable de ses collègues. Eggen fut impressionné par l’obsession du fondateur de Saasbee : construire un produit supérieur. Après leur deuxième rencontre dans un café Philz Coffee, dans le quartier SoMa du centre de San Francisco, Eggen estima que le fondateur de Saasbee était également un très bon vendeur.
+— Quel virtuose technique, doté d’un talent inné pour la vente ! s’exclama Eggen devant nous des années plus tard.
+Au début du mois d’octobre 2012, Kashyap et son équipe prirent l’avion depuis San Diego pour se rendre au bureau de Qualcomm dans la Silicon Valley afin de rencontrer six start-up en une seule journée, dont Saasbee. Selon certains participants, alors que la démonstration était sur le point de commencer, la connexion échoua. Le fondateur déclara : « Hé, je suis juste au bout de la rue. » Ils se rendirent donc tous dans le petit bureau de Saasbee, où une démonstration fluide sur plusieurs appareils fit immédiatement réaliser à Kashyap que le marché total adressable pouvait être immense.
+Désormais, tous trois faisaient pression pour que Qualcomm Ventures devienne l’investisseur principal de Saasbee, avec un engagement considérable d’au moins 3 millions de dollars. En l’espace d’une semaine, Deshpande et Kashyap présentèrent l’opportunité au reste de l’équipe et à son comité d’investissement. Aucun autre preneur ne se manifesta. Les autres membres de l’équipe se sentaient mal à l’aise à l’idée d’investir dans Saasbee.
+Kashyap, Deshpande et Eggen furent déçus, mais pas totalement surpris par les doutes de leurs collègues. Ces derniers voyaient trop d’incertitudes et trop de signaux d’alarme. Non seulement l’espace de la visioconférence était déjà saturé, mais Saasbee tentait de cibler les petites entreprises, un marché difficile à pénétrer. La différenciation technique par rapport aux autres acteurs n’était pas flagrante. La maîtrise imparfaite de l’anglais du fondateur constituait une distraction. De plus, la valorisation proposée de 20 millions de dollars semblait très élevée pour une start-up avec un seul fondateur, une équipe d’ingénieurs basée en Chine et pas un seul client. Ce scepticisme était renforcé par le fait gênant qu’au moins huit autres sociétés de capital-risque avaient refusé de financer Saasbee. Pourquoi ? Toutes disposaient dans leurs bureaux de coûteuses salles Cisco TelePresence avec Internet haut débit. Lorsque l’on a un chauffeur privé, il est facile de sous-estimer le potentiel d’Uber.
+Ce refus aurait pu marquer la fin de l’histoire, sans une caractéristique distinctive du fonctionnement de Qualcomm Ventures : il existait une voie parallèle pour les accords non conventionnels de ce type. En 2010, un fonds d’amorçage avait été créé pour des investissements plus petits et souvent plus risqués.
+— Certes, ce n’était pas légalement un véritable fonds en soi, se souvint Kashyap des années plus tard, mais conceptuellement, c’en était un.
+L’idée sous-jacente consistait à investir de petites sommes d’argent à grande vitesse, sans lourdeur administrative. Eggen dirigeait ce fonds d’amorçage et était par conséquent autorisé à réaliser des investissements allant jusqu’à 500 000 dollars à partir du capital pré-approuvé, et ce, de sa propre initiative. Bien entendu, cette liberté s’accompagnait d’une plus grande responsabilité en cas d’échec de l’investissement choisi.
+Ainsi, tous trois disposaient d’une porte dérobée pour poursuivre une transaction peu orthodoxe. Ils pouvaient injecter 500 000 dollars de l’argent de Qualcomm dans Saasbee malgré l’opposition du reste de l’équipe. Mais le jeu en valait-il la chandelle ?
+Kashyap et Eggen finirent par faire ce pari, soutenus par Deshpande. Il s’est avéré être, de loin, le meilleur investissement, dollar pour dollar, de l’histoire de Qualcomm Ventures. Il a contribué à transformer le quotidien de centaines de millions de personnes dans le monde. Vous en faites probablement partie.
+
+
+
+
+
+
+
+
+
+
+
+
+
+2. NEXUS: A Brief History of Information Networks from the Stone Age to AI. 
+Yuval Noah Harari
+
+Оригинальный английский текст: 
+
+PROLOGUE
+
+We have named our species Homo sapiens—the wise human. But it is debatable how well we have lived up to the name.
+Over the last 100,000 years, we Sapiens have certainly accumulated
+enormous power. Just listing all our discoveries, inventions, and conquests
+would fill volumes. But power isn’t wisdom, and after 100,000 years of
+discoveries, inventions, and conquests humanity has pushed itself into an
+existential crisis. We are on the verge of ecological collapse, caused by the
+misuse of our own power. We are also busy creating new technologies like
+artificial intelligence (AI) that have the potential to escape our control and
+enslave or annihilate us. Yet instead of our species uniting to deal with these
+existential challenges, international tensions are rising, global cooperation
+is becoming more difficult, countries are stockpiling doomsday weapons,
+and a new world war does not seem impossible.
+If we Sapiens are so wise, why are we so self-destructive?
+At a deeper level, although we have accumulated so much information
+about everything from DNA molecules to distant galaxies, it doesn’t seem
+that all this information has given us an answer to the big questions of life:
+Who are we? What should we aspire to? What is a good life, and how
+should we live it? Despite the stupendous amounts of information at our
+disposal, we are as susceptible as our ancient ancestors to fantasy and
+delusion. Nazism and Stalinism are but two recent examples of the mass
+insanity that occasionally engulfs even modern societies. Nobody disputes
+that humans today have a lot more information and power than in the Stone
+Age, but it is far from certain that we understand ourselves and our role in
+the universe much better.Why are we so good at accumulating more information and power, but far
+less successful at acquiring wisdom? Throughout history many traditions
+have believed that some fatal flaw in our nature tempts us to pursue powers
+we don’t know how to handle. The Greek myth of Phaethon told of a boy
+who discovers that he is the son of Helios, the sun god. Wishing to prove
+his divine origin, Phaethon demands the privilege of driving the chariot of
+the sun. Helios warns Phaethon that no human can control the celestial
+horses that pull the solar chariot. But Phaethon insists, until the sun god
+relents. After rising proudly in the sky, Phaethon indeed loses control of the
+chariot. The sun veers off course, scorching all vegetation, killing numerous
+beings, and threatening to burn the earth itself. Zeus intervenes and strikes
+Phaethon with a thunderbolt. The conceited human drops from the sky like
+a falling star, himself on fire. The gods reassert control of the sky and save
+the world.
+Two thousand years later, when the Industrial Revolution was making its
+first steps and machines began replacing humans in numerous tasks, Johann
+Wolfgang von Goethe published a similar cautionary tale titled “The
+Sorcerer’s Apprentice.” Goethe’s poem (later popularized as a Walt Disney
+animation starring Mickey Mouse) tells how an old sorcerer leaves a young
+apprentice in charge of his workshop and gives him some chores to tend to
+while he is gone, like fetching water from the river. The apprentice decides
+to make things easier for himself and, using one of the sorcerer’s spells,
+enchants a broom to fetch the water for him. But the apprentice doesn’t
+know how to stop the broom, which relentlessly fetches more and more
+water, threatening to flood the workshop. In panic, the apprentice cuts the
+enchanted broom in two with an ax, only to see each half become another
+broom. Now two enchanted brooms are inundating the workshop with
+water. When the old sorcerer returns, the apprentice pleads for help: “The
+spirits that I summoned, I now cannot rid myself of again.” The sorcerer
+immediately breaks the spell and stops the flood. The lesson to the
+apprentice—and to humanity—is clear: never summon powers you cannot control.
+What do the cautionary fables of the apprentice and of Phaethon tell us in
+the twenty-first century? We humans have obviously refused to heed their
+warnings. We have already driven the earth’s climate out of balance and
+have summoned billions of enchanted brooms, drones, chatbots, and other
+algorithmic spirits that may escape our control and unleash a flood of
+unintended consequences.
+What should we do, then? The fables offer no answers, other than to wait
+for some god or sorcerer to save us. This, of course, is an extremely
+dangerous message. It encourages people to abdicate responsibility and put
+their faith in gods and sorcerers instead. Even worse, it fails to appreciate
+that gods and sorcerers are themselves a human invention—just like
+chariots, brooms, and algorithms. The tendency to create powerful things
+with unintended consequences started not with the invention of the steam
+engine or AI but with the invention of religion. Prophets and theologians
+have repeatedly summoned powerful spirits that were supposed to bring
+love and joy but ended up flooding the world with blood.
+The Phaethon myth and Goethe’s poem fail to provide useful advice
+because they misconstrue the way humans gain power. In both fables, a
+single human acquires enormous power, but is then corrupted by hubris and
+greed. The conclusion is that our flawed individual psychology makes us
+abuse power. What this crude analysis misses is that human power is never
+the outcome of individual initiative. Power always stems from cooperation
+between large numbers of humans.
+Accordingly, it isn’t our individual psychology that causes us to abuse
+power. After all, alongside greed, hubris, and cruelty, humans are also
+capable of love, compassion, humility, and joy. True, among the worst
+members of our species, greed and cruelty reign supreme and lead bad
+actors to abuse power. But why would human societies choose to entrust
+power to their worst members? Most Germans in 1933, for example, were
+not psychopaths. So why did they vote for Hitler?
+Our tendency to summon powers we cannot control stems not from
+individual psychology but from the unique way our species cooperates in
+large numbers. The main argument of this book is that humankind gains
+enormous power by building large networks of cooperation, but the way
+these networks are built predisposes them to use power unwisely. Our
+problem, then, is a network problem.
+Even more specifically, it is an information problem. Information is the
+glue that holds networks together. But for tens of thousands of years,
+Sapiens built and maintained large networks by inventing and spreading
+fictions, fantasies, and mass delusions—about gods, about enchanted
+broomsticks, about AI, and about a great many other things. While each
+individual human is typically interested in knowing the truth about
+themselves and the world, large networks bind members and create order by
+relying on fictions and fantasies. That’s how we got, for example, to
+Nazism and Stalinism. These were exceptionally powerful networks, held
+together by exceptionally deluded ideas. As George Orwell famously put it,
+ignorance is strength.
+The fact that the Nazi and Stalinist regimes were founded on cruel
+fantasies and shameless lies did not make them historically exceptional, nor
+did it preordain them to collapse. Nazism and Stalinism were two of the
+strongest networks humans ever created. In late 1941 and early 1942, the
+Axis powers came within reach of winning World War II. Stalin eventually
+emerged as the victor of that war,
+1 and in the 1950s and 1960s he and his
+heirs also had a reasonable chance of winning the Cold War. By the 1990s
+liberal democracies had gained the upper hand, but this now seems like a
+temporary victory. In the twenty-first century, some new totalitarian regime
+may well succeed where Hitler and Stalin failed, creating an all-powerful
+network that could prevent future generations from even attempting to
+expose its lies and fictions. We should not assume that delusional networks
+are doomed to failure. If we want to prevent their triumph, we will have to
+do the hard work ourselves.
+
+
+Русский 
+
+NEXUS
+Краткая история информационных сетей от каменного века до искусственного интеллекта
+Юваль Ной Харари
+ПРОЛОГ
+Мы назвали свой вид Homo sapiens — человек разумный. Однако спорно, насколько мы оправдываем это имя.
+За последние 100 000 лет мы, сапиенсы, безусловно, накопили огромную власть. Если просто перечислить все наши открытия, изобретения и завоевания, это займет множество томов. Но сила — это еще не мудрость, и после ста тысячелетий открытий и завоеваний человечество загнало себя в экзистенциальный тупик. Мы стоим на грани экологической катастрофы, вызванной злоупотреблением нашей же собственной мощью. Мы также заняты созданием новых технологий, таких как искусственный интеллект (ИИ), которые могут выйти из-под контроля и поработить или уничтожить нас. Но вместо того чтобы объединиться перед лицом этих угроз, наш вид лишь усиливает международную напряженность. Глобальное сотрудничество становится все труднее, страны накапливают оружие судного дня, и новая мировая война уже не кажется чем-то невозможным.
+Если мы, сапиенсы, так мудры, почему же мы занимаемся саморазрушением?
+На более глубоком уровне, хоть мы и собрали колоссальный объем сведений обо всем — от молекул ДНК до далеких галактик, — не похоже, чтобы вся эта информация дала нам ответ на главные вопросы бытия. Кто мы? К чему нам следует стремиться? Что такое хорошая жизнь и как ее прожить? Несмотря на гигантские массивы данных, имеющиеся в нашем распоряжении, мы так же подвержены фантазиям и заблуждениям, как и наши далекие предки. Нацизм и сталинизм — лишь два недавних примера массового безумия, которое время от времени охватывает даже современные общества. Никто не спорит, что сегодня у людей гораздо больше информации и власти, чем в каменном веке, но вовсе не факт, что мы стали намного лучше понимать самих себя и свою роль во Вселенной.
+Почему мы так преуспели в накоплении информации и власти, но гораздо хуже справляемся с обретением мудрости?
+На протяжении истории во многих традициях считалось, что какой-то роковой изъян в нашей природе толкает нас к погоне за силами, с которыми мы не умеем обращаться. Греческий миф о Фаэтоне повествует о юноше, который узнает, что он сын Гелиоса, бога Солнца. Желая доказать свое божественное происхождение, Фаэтон требует права управлять солнечной колесницей. Гелиос предупреждает сына, что ни один человек не в силах совладать с небесными конями. Но Фаэтон настаивает, пока бог не уступает. Гордо взмыв в небо, юноша действительно теряет управление. Солнце сходит с курса, выжигая растительность, убивая множество живых существ и грозя спалить саму Землю. Зевс вмешивается и поражает Фаэтона молнией. Тщеславный смертный падает с небес, подобно горящей звезде. Боги возвращают контроль над небом и спасают мир.
+Две тысячи лет спустя, когда промышленная революция делала свои первые шаги, а машины начали заменять людей во многих задачах, Иоганн Вольфганг фон Гёте опубликовал похожее предостережение — балладу «Ученик чародея». В стихотворении Гёте (позже популяризированном в диснеевском мультфильме с Микки Маусом) старый колдун оставляет мастерскую на попечение юного ученика, поручая ему хозяйственные дела, например носить воду из реки. Ученик решает облегчить себе жизнь и, используя одно из заклинаний наставника, оживляет метлу, чтобы та носила воду за него. Но он не знает, как остановить метлу, которая без устали таскает все больше и больше воды, грозя затопить мастерскую. В панике ученик разрубает заколдованную метлу топором надвое, но видит, как каждая половина становится новой метлой. Теперь уже две метлы заливают помещение водой. Когда возвращается старый колдун, ученик молит о помощи: «Вызвал я духов, а как спровадить их — не знаю». Чародей тут же снимает чары и останавливает потоп. Урок для ученика — и для человечества — ясен: никогда не призывай силы, которые не можешь контролировать.
+О чем же говорят нам в XXI веке эти поучительные истории о Фаэтоне и ученике чародея?
+Мы, люди, очевидно, отказались прислушаться к предупреждениям. Мы уже вывели климат Земли из равновесия и призвали миллиарды заколдованных метел, дронов, чат-ботов и других алгоритмических духов, которые могут вырваться из-под нашего контроля и обрушить на нас поток непредвиденных последствий.
+Что же нам делать? Сказки не дают ответов, кроме как ждать, пока нас спасет какой-нибудь бог или чародей. Это, разумеется, крайне опасный посыл. Он побуждает людей снимать с себя ответственность и полагаться на высшие силы. Хуже того, он упускает из виду, что боги и чародеи — это тоже человеческое изобретение, такое же, как колесницы, метлы и алгоритмы. Тенденция создавать могущественные вещи с непредвиденными последствиями началась не с изобретения парового двигателя или ИИ, а с изобретения религии. Пророки и богословы неоднократно призывали могущественных духов, которые должны были принести любовь и радость, но в итоге заливали мир кровью.
+Миф о Фаэтоне и поэма Гёте не дают полезного совета, потому что неверно истолковывают то, как люди получают власть. В обеих баснях огромную силу обретает одиночка, которого затем развращают гордыня и алчность. Вывод напрашивается такой: злоупотреблять властью нас заставляет несовершенная индивидуальная психология. Этот грубый анализ упускает главное: человеческая власть никогда не является результатом личной инициативы. Власть всегда проистекает из сотрудничества больших групп людей.
+Следовательно, к злоупотреблению властью нас толкает не личная психология. Ведь наряду с жадностью, гордыней и жестокостью люди способны на любовь, сострадание, смирение и радость. Верно, что среди худших представителей нашего вида жадность и жестокость безраздельно правят бал, заставляя их творить зло. Но почему человеческие общества решают доверить власть своим худшим представителям? Ведь большинство немцев в 1933 году, например, не были психопатами. Так почему же они проголосовали за Гитлера?
+Наша склонность призывать силы, которые мы не можем контролировать, проистекает не из индивидуальной психологии, а из уникального способа, которым наш вид сотрудничает в больших масштабах. Главный аргумент этой книги заключается в том, что человечество обретает огромную власть, создавая обширные сети сотрудничества, но сам способ построения этих сетей предрасполагает к неразумному использованию власти. Наша проблема, таким образом, — это проблема сетей.
+Говоря еще точнее, это информационная проблема. Информация — это клей, скрепляющий сети. Но на протяжении десятков тысяч лет сапиенсы строили и поддерживали большие сети, изобретая и распространяя вымыслы, фантазии и массовые заблуждения — о богах, о заколдованных метлах, об искусственном интеллекте и о великом множестве других вещей. В то время как каждый отдельный человек обычно заинтересован в том, чтобы знать правду о себе и мире, большие сети связывают участников и создают порядок, опираясь на фикции. Так мы пришли, например, к нацизму и сталинизму. Это были исключительно мощные сети, скрепленные исключительно бредовыми идеями. Как известно, Джордж Оруэлл сформулировал это так: «Незнание — сила».
+Тот факт, что нацистский и сталинский режимы были основаны на жестоких фантазиях и бесстыдной лжи, не делал их исторически исключительными и не означал, что их крах был предрешен. Нацизм и сталинизм были двумя сильнейшими сетями, когда-либо созданными людьми. В конце 1941-го и начале 1942 года страны Оси были близки к победе во Второй мировой войне. Сталин в итоге вышел из той войны победителем, а в 1950-х и 1960-х годах он и его преемники имели неплохие шансы выиграть холодную войну. К 1990-м годам либеральные демократии взяли верх, но теперь это кажется временной победой. В XXI веке какой-нибудь новый тоталитарный режим вполне может преуспеть там, где потерпели неудачу Гитлер и Сталин, создав всемогущую сеть, которая лишит будущие поколения даже возможности попытаться разоблачить её ложь и фикции. Не стоит полагать, что основанные на заблуждениях сети обречены на провал. Если мы хотим предотвратить их триумф, нам придется сделать эту тяжелую работу самим.
+
+
+Испанский
+NEXUS
+Una breve historia de las redes de información desde la Edad de Piedra hasta la IA
+Yuval Noah Harari
+PRÓLOGO
+Hemos bautizado a nuestra especie como Homo sapiens, el humano sabio. Sin embargo, resulta discutible si hemos estado a la altura de tal nombre.
+A lo largo de los últimos 100 000 años, los sapiens hemos acumulado sin duda un poder enorme. La mera enumeración de nuestros descubrimientos, inventos y conquistas llenaría volúmenes enteros. Pero el poder no es sabiduría y, tras cien milenios de hallazgos y victorias, la humanidad se ha empujado a sí misma hacia una crisis existencial. Nos encontramos al borde del colapso ecológico, provocado por el mal uso de nuestro propio poder. También estamos ocupados creando nuevas tecnologías, como la inteligencia artificial (IA), que tienen el potencial de escapar a nuestro control y esclavizarnos o aniquilarnos. Sin embargo, en lugar de que nuestra especie se una para hacer frente a estos desafíos existenciales, las tensiones internacionales aumentan, la cooperación global se vuelve más difícil, los países acumulan armas apocalípticas y una nueva guerra mundial no parece imposible.
+Si los sapiens somos tan sabios, ¿por qué somos tan autodestructivos?
+En un nivel más profundo, aunque hemos acumulado tanta información sobre todo lo imaginable, desde las moléculas de ADN hasta las galaxias lejanas, no parece que toda esa información nos haya dado una respuesta a las grandes preguntas de la vida: ¿quiénes somos?, ¿a qué debemos aspirar?, ¿qué es una buena vida y cómo debemos vivirla? A pesar de las ingentes cantidades de información a nuestra disposición, somos tan susceptibles a la fantasía y el delirio como nuestros antiguos antepasados. El nazismo y el estalinismo no son más que dos ejemplos recientes de la locura colectiva que ocasionalmente envuelve incluso a las sociedades modernas. Nadie discute que los humanos de hoy tienen mucha más información y poder que en la Edad de Piedra, pero no es ni mucho menos seguro que nos comprendamos a nosotros mismos y nuestro papel en el universo mucho mejor.
+¿Por qué se nos da tan bien acumular más información y poder, pero tenemos mucho menos éxito a la hora de adquirir sabiduría? A lo largo de la historia, muchas tradiciones han creído que algún defecto fatal en nuestra naturaleza nos tienta a perseguir poderes que no sabemos manejar. El mito griego de Faetón narra la historia de un muchacho que descubre que es hijo de Helios, el dios del sol. Deseando probar su origen divino, Faetón exige el privilegio de conducir el carro solar. Helios advierte a Faetón de que ningún humano puede controlar los caballos celestiales que tiran del carro. Pero Faetón insiste hasta que el dios del sol cede. Tras elevarse orgulloso en el cielo, Faetón pierde efectivamente el control del carro. El sol se desvía de su curso, abrasando toda la vegetación, matando a numerosos seres y amenazando con quemar la propia Tierra. Zeus interviene y fulmina a Faetón con un rayo. El vanidoso humano cae del cielo como una estrella fugaz, envuelto en llamas. Los dioses retoman el control del cielo y salvan el mundo.
+Dos mil años más tarde, cuando la Revolución Industrial daba sus primeros pasos y las máquinas comenzaban a reemplazar a los humanos en numerosas tareas, Johann Wolfgang von Goethe publicó una fábula admonitoria similar titulada El aprendiz de brujo. El poema de Goethe (popularizado más tarde como una animación de Walt Disney protagonizada por Mickey Mouse) cuenta cómo un viejo hechicero deja a un joven aprendiz a cargo de su taller y le encomienda algunos quehaceres mientras él está fuera, como traer agua del río. El aprendiz decide facilitarse las cosas y, utilizando uno de los hechizos del brujo, encanta una escoba para que traiga el agua por él. Pero el aprendiz no sabe cómo detener la escoba, que implacablemente trae más y más agua, amenazando con inundar el taller. Presa del pánico, el aprendiz corta la escoba encantada en dos con un hacha, solo para ver cómo cada mitad se convierte en otra escoba. Ahora dos escobas encantadas inundan el taller de agua. Cuando regresa el viejo hechicero, el aprendiz suplica ayuda: «Los espíritus que convoqué, ahora no puedo librarme de ellos». El brujo rompe inmediatamente el hechizo y detiene la inundación. La lección para el aprendiz —y para la humanidad— es clara: nunca invoques poderes que no puedas controlar.
+¿Qué nos dicen las fábulas admonitorias del aprendiz y de Faetón en el siglo XXI? Evidentemente, los humanos nos hemos negado a escuchar sus advertencias. Ya hemos desequilibrado el clima de la Tierra y hemos invocado miles de millones de escobas encantadas, drones, chatbots y otros espíritus algorítmicos que pueden escapar a nuestro control y desatar una inundación de consecuencias imprevistas.
+¿Qué debemos hacer entonces? Las fábulas no ofrecen respuestas, más allá de esperar a que algún dios o hechicero nos salve. Este es, por supuesto, un mensaje extremadamente peligroso, pues anima a la gente a abdicar de su responsabilidad y depositar su fe en dioses y brujos. Peor aún, no aprecia que los dioses y los hechiceros son en sí mismos una invención humana, al igual que los carros, las escobas y los algoritmos. La tendencia a crear cosas poderosas con consecuencias imprevistas no comenzó con la invención de la máquina de vapor o la IA, sino con la invención de la religión. Profetas y teólogos han invocado repetidamente a espíritus poderosos que se suponía debían traer amor y alegría, pero que terminaron inundando el mundo de sangre.
+El mito de Faetón y el poema de Goethe no proporcionan consejos útiles porque malinterpretan la forma en que los humanos obtienen poder. En ambas fábulas, un solo humano adquiere un poder enorme, pero luego se corrompe por la soberbia y la codicia. La conclusión es que nuestra defectuosa psicología individual nos hace abusar del poder. Lo que este análisis rudimentario pasa por alto es que el poder humano nunca es el resultado de la iniciativa individual. El poder siempre emana de la cooperación entre un gran número de humanos.
+En consecuencia, no es nuestra psicología individual la que nos lleva a abusar del poder. Al fin y al cabo, junto a la codicia, la soberbia y la crueldad, los humanos también son capaces de amor, compasión, humildad y alegría. Es cierto que, entre los peores miembros de nuestra especie, la codicia y la crueldad reinan supremas y llevan a los malos actores a abusar del poder. Pero ¿por qué las sociedades humanas elegirían confiar el poder a sus peores miembros? La mayoría de los alemanes en 1933, por ejemplo, no eran psicópatas. Entonces, ¿por qué votaron a Hitler?
+Nuestra tendencia a invocar poderes que no podemos controlar no proviene de la psicología individual, sino de la forma única en que nuestra especie coopera en grandes números. El argumento principal de este libro es que la humanidad obtiene un poder enorme construyendo grandes redes de cooperación, pero la forma en que se construyen estas redes las predispone a usar el poder de manera imprudente. Nuestro problema, entonces, es un problema de redes.
+Más específicamente, es un problema de información. La información es el pegamento que mantiene unidas las redes. Pero durante decenas de miles de años, los sapiens construyeron y mantuvieron grandes redes inventando y difundiendo ficciones, fantasías y delirios colectivos: sobre dioses, sobre escobas encantadas, sobre la IA y sobre muchas otras cosas. Si bien cada ser humano individual suele estar interesado en conocer la verdad sobre sí mismo y el mundo, las grandes redes vinculan a los miembros y crean orden basándose en ficciones y fantasías. Así fue como llegamos, por ejemplo, al nazismo y al estalinismo. Estas eran redes excepcionalmente poderosas, mantenidas unidas por ideas excepcionalmente delirantes. Como dijo famosamente George Orwell, la ignorancia es la fuerza.
+El hecho de que los regímenes nazi y estalinista se fundaran sobre fantasías crueles y mentiras desvergonzadas no los hizo históricamente excepcionales ni los condenó de antemano al colapso. El nazismo y el estalinismo fueron dos de las redes más fuertes que los humanos hayan creado jamás. A finales de 1941 y principios de 1942, las potencias del Eje estuvieron a punto de ganar la Segunda Guerra Mundial. Stalin emergió finalmente como el vencedor de esa guerra y, en las décadas de 1950 y 1960, él y sus herederos también tuvieron una oportunidad razonable de ganar la Guerra Fría. En la década de 1990, las democracias liberales habían ganado la partida, pero esto ahora parece una victoria temporal. En el siglo XXI, algún nuevo régimen totalitario bien podría tener éxito donde Hitler y Stalin fracasaron, creando una red todopoderosa que podría impedir que las generaciones futuras siquiera intentaran exponer sus mentiras y ficciones. No debemos asumir que las redes delirantes están condenadas al fracaso. Si queremos evitar su triunfo, tendremos que hacer el trabajo duro nosotros mismos.
+
+Французский
+NEXUS
+Une brève histoire des réseaux d’information de l’âge de pierre à l’IA
+Yuval Noah Harari
+PROLOGUE
+Nous avons baptisé notre espèce Homo sapiens, « l’homme sage ». Il est toutefois permis de douter que nous ayons été à la hauteur de cette appellation.
+Au cours des 100 000 dernières années, nous, Sapiens, avons certes accumulé un pouvoir énorme. La simple énumération de nos découvertes, inventions et conquêtes remplirait des volumes entiers. Or, la puissance n’est pas la sagesse ; après cent millénaires de découvertes et de victoires, l’humanité s’est précipitée dans une crise existentielle. Nous sommes au bord de l’effondrement écologique, provoqué par le mauvais usage de notre propre puissance. Nous nous employons également à créer de nouvelles technologies, comme l’intelligence artificielle (IA), qui ont le potentiel d’échapper à notre contrôle pour nous asservir ou nous anéantir. Pourtant, au lieu de s’unir pour faire face à ces défis existentiels, notre espèce laisse monter les tensions internationales. La coopération mondiale devient plus difficile, les pays stockent des armes apocalyptiques et une nouvelle guerre mondiale ne semble pas impossible.
+Si nous, Sapiens, sommes si sages, pourquoi sommes-nous si autodestructeurs ?
+À un niveau plus profond, bien que nous ayons accumulé tant d’informations sur tout, des molécules d’ADN aux galaxies lointaines, il ne semble pas que cette somme de connaissances nous ait apporté une réponse aux grandes questions de la vie : Qui sommes-nous ? À quoi devons-nous aspirer ? Qu’est-ce qu’une vie bonne et comment devons-nous la vivre ? Malgré les quantités stupéfiantes d’informations à notre disposition, nous sommes aussi sujets aux fantasmes et aux délires que nos ancêtres. Le nazisme et le stalinisme ne sont que deux exemples récents de la folie collective qui engloutit parfois même les sociétés modernes. Nul ne conteste que les humains possèdent aujourd’hui beaucoup plus d’informations et de pouvoir qu’à l’âge de pierre, mais il est loin d’être certain que nous nous comprenions nous-mêmes et notre rôle dans l’univers beaucoup mieux.
+Pourquoi excellons-nous à accumuler toujours plus d’informations et de pouvoir, tout en réussissant beaucoup moins bien à acquérir la sagesse ? Tout au long de l’histoire, de nombreuses traditions ont cru qu’un défaut fatal de notre nature nous tentait de poursuivre des puissances que nous ne savons pas maîtriser. Le mythe grec de Phaéton raconte l’histoire d’un garçon qui découvre qu’il est le fils d’Hélios, le dieu du soleil. Désireux de prouver son origine divine, Phaéton exige le privilège de conduire le char du soleil. Hélios avertit Phaéton qu’aucun humain ne peut contrôler les chevaux célestes qui tirent le char solaire. Mais Phaéton insiste, jusqu’à ce que le dieu du soleil cède. Après s’être élevé fièrement dans le ciel, Phaéton perd effectivement le contrôle du char. Le soleil dévie de sa trajectoire, calcinant toute végétation, tuant de nombreux êtres et menaçant de brûler la terre elle-même. Zeus intervient et foudroie Phaéton. L’humain vaniteux tombe du ciel comme une étoile filante, lui-même en feu. Les dieux reprennent le contrôle du ciel et sauvent le monde.
+Deux mille ans plus tard, alors que la révolution industrielle faisait ses premiers pas et que les machines commençaient à remplacer les humains dans de nombreuses tâches, Johann Wolfgang von Goethe publia un conte d’avertissement similaire intitulé L’Apprenti sorcier. Le poème de Goethe (popularisé plus tard par un dessin animé de Walt Disney mettant en vedette Mickey Mouse) raconte comment un vieux sorcier laisse un jeune apprenti responsable de son atelier et lui confie quelques corvées pendant son absence, comme puiser de l’eau à la rivière. L’apprenti décide de se faciliter la tâche et, utilisant l’un des sortilèges du sorcier, charme un balai pour qu’il aille chercher l’eau à sa place. Mais l’apprenti ignore comment arrêter le balai, qui rapporte inlassablement de plus en plus d’eau, menaçant d’inonder l’atelier. Paniqué, l’apprenti coupe le balai enchanté en deux avec une hache, pour voir chaque moitié devenir un autre balai. Désormais, deux balais enchantés inondent l’atelier. Lorsque le vieux sorcier revient, l’apprenti implore son aide : « Les esprits que j’ai invoqués, je ne peux plus m’en débarrasser. » Le sorcier rompt immédiatement le charme et arrête l’inondation. La leçon pour l’apprenti — et pour l’humanité — est claire : n’invoquez jamais des puissances que vous ne pouvez contrôler.
+Que nous disent les fables de l’apprenti et de Phaéton au XXIe siècle ? De toute évidence, nous, humains, avons refusé d’écouter leurs avertissements. Nous avons déjà déséquilibré le climat de la Terre et invoqué des milliards de balais enchantés, de drones, de chatbots et d’autres esprits algorithmiques qui pourraient échapper à notre contrôle et déclencher un déluge de conséquences involontaires.
+Que devons-nous faire, alors ? Les fables n’offrent aucune réponse, si ce n’est d’attendre qu’un dieu ou un sorcier nous sauve. C’est là, bien sûr, un message extrêmement dangereux. Il encourage les gens à abdiquer leurs responsabilités et à placer leur foi dans des dieux et des sorciers. Pire encore, il ne prend pas en compte le fait que les dieux et les sorciers sont eux-mêmes une invention humaine — tout comme les chars, les balais et les algorithmes. La tendance à créer des choses puissantes aux conséquences imprévues n’a pas commencé avec l’invention de la machine à vapeur ou de l’IA, mais avec l’invention de la religion. Prophètes et théologiens n’ont cessé d’invoquer des esprits puissants censés apporter amour et joie, mais qui ont fini par inonder le monde de sang.
+Le mythe de Phaéton et le poème de Goethe ne fournissent pas de conseils utiles car ils interprètent mal la façon dont les humains acquièrent le pouvoir. Dans les deux fables, un seul humain acquiert un pouvoir énorme, mais est ensuite corrompu par l’orgueil et l’avidité. La conclusion est que notre psychologie individuelle défaillante nous pousse à abuser du pouvoir. Ce que cette analyse grossière omet, c’est que la puissance humaine n’est jamais le résultat d’une initiative individuelle. Le pouvoir découle toujours de la coopération entre un grand nombre d’humains.
+Par conséquent, ce n’est pas notre psychologie individuelle qui nous pousse à abuser du pouvoir. Après tout, aux côtés de l’avidité, de l’orgueil et de la cruauté, les humains sont aussi capables d’amour, de compassion, d’humilité et de joie. Certes, chez les pires membres de notre espèce, l’avidité et la cruauté règnent en maîtres et conduisent les mauvais acteurs à abuser du pouvoir. Mais pourquoi les sociétés humaines choisiraient-elles de confier le pouvoir à leurs pires membres ? La plupart des Allemands en 1933, par exemple, n’étaient pas des psychopathes. Alors pourquoi ont-ils voté pour Hitler ?
+Notre tendance à invoquer des puissances que nous ne pouvons contrôler ne découle pas de la psychologie individuelle, mais de la manière unique dont notre espèce coopère en grand nombre. L’argument principal de ce livre est que l’humanité acquiert une puissance énorme en bâtissant de vastes réseaux de coopération, mais que la façon dont ces réseaux sont construits les prédispose à utiliser le pouvoir de manière imprudente. Notre problème est donc un problème de réseau.
+Plus spécifiquement encore, c’est un problème d’information. L’information est le ciment qui maintient les réseaux ensemble. Mais pendant des dizaines de milliers d’années, Sapiens a construit et maintenu de grands réseaux en inventant et en diffusant des fictions, des fantasmes et des délires collectifs — sur les dieux, sur les balais enchantés, sur l’IA et sur bien d’autres choses. Alors que chaque être humain individuel est généralement intéressé à connaître la vérité sur lui-même et sur le monde, les grands réseaux lient les membres et créent de l’ordre en s’appuyant sur des fictions et des fantasmes. C’est ainsi que nous sommes arrivés, par exemple, au nazisme et au stalinisme. Il s’agissait de réseaux exceptionnellement puissants, maintenus ensemble par des idées exceptionnellement délirantes. Comme l’a dit George Orwell dans une formule célèbre : l’ignorance, c’est la force.
+Le fait que les régimes nazi et stalinien aient été fondés sur des fantasmes cruels et des mensonges éhontés ne les a pas rendus historiquement exceptionnels, ni ne les a prédestinés à l’effondrement. Le nazisme et le stalinisme furent deux des réseaux les plus puissants jamais créés par l’homme. Fin 1941 et début 1942, les puissances de l’Axe étaient sur le point de gagner la Seconde Guerre mondiale. Staline finit par sortir vainqueur de cette guerre et, dans les années 1950 et 1960, lui et ses héritiers avaient également une chance raisonnable de gagner la guerre froide. Dans les années 1990, les démocraties libérales avaient pris le dessus, mais cela ressemble aujourd’hui à une victoire temporaire. Au XXIe siècle, un nouveau régime totalitaire pourrait bien réussir là où Hitler et Staline ont échoué, en créant un réseau tout-puissant qui empêcherait les générations futures de tenter ne serait-ce que d’exposer ses mensonges et ses fictions. Nous ne devrions pas présumer que les réseaux délirants sont voués à l’échec. Si nous voulons empêcher leur triomphe, nous devrons nous atteler nous-mêmes à cette lourde tâche.
+
+ 
+3. ЭВОЛЮЦИЯ ЧЕЛОВЕКА 
+Обезьяны, нейроны и душа
+        Александр Марков
+             при участии Елены Наймарк
+
+
+Оригинальный русский текст: 
+
+
+Глава 1.
+В поисках душевной грани
+
+Скандальная тема
+
+В заключительной главе дарвиновского “Происхождения видов”
+есть примечательный прогноз: “В будущем, я предвижу, откроет-
+ся еще новое важное поле исследования. Психология будет про-
+чно основана на необходимости приобретения каждого умствен-
+ного качества и способности постепенным путем”. Здесь Дарвин,
+по сути дела, предсказал развитие научной дисциплины, которую
+в наши дни называют эволюционной психологией.
+Идеи Дарвина во многом опередили свое время, и развитие
+эволюционной психологии поначалу шло медленно. Из всех
+эволюционных идей именно идея об эволюционном происхож-
+дении человеческой психики вызывает самое ожесточенное со-
+противление и у широкой публики, и даже у некоторых ученых.
+Но факты — вещь упрямая, и в конце концов эволюционный
+подход все-таки стал доминирующим в научной психологии
+и этологии человека. Однако ученые, работающие в этом направ-
+лении, до сих пор подвергаются яростным нападкам. Им прихо-
+дится активно отстаивать свою позицию, и отголоски этой борь-
+бы проникают даже на страницы серьезных научных изданий.
+Один из номеров журнала Nature за 2007 год открывается
+редакционной статьей “Эволюция и мозг”. Заявления, сделан-
+ные в этой статье, примечательны своей решительностью и ка-
+жущейся безапелляционностью. “При всем уважении к чувс-
+твам верующих, идею о том, что человек создан по образу Божию, можно уверенно отбросить”,– пишет редакция одного
+из самых солидных и уважаемых научных журналов мира. По-
+водом для статьи стали, с одной стороны, антиэволюционные
+высказывания американских политиков, с другой — новейшие
+достижения психологов и нейробиологов.
+Неужели все так серьезно? Неужели наука действительно
+должна настаивать на отрицании столь важного для многих
+верующих религиозного догмата? Нельзя ли тут найти
+какой-то компромисс?
+Еще недавно многим казалось, что компромисс вполне до-
+стижим, причем сравнительно малой кровью. Перспективный
+путь для примирения науки с традиционными мифологически-
+ми представлениями о природе человека был намечен в xix веке
+Альфредом Уоллесом (который, как известно, одновременно
+с Дарвином разработал теорию эволюции на основе отбора). Уол-
+лес полагал, что эволюционная теория объясняет очень многое,
+но те умственные различия, которые наблюдаются между “чело-
+веком и животными”, она объяснить не в силах. Можно допус-
+тить естественное эволюционное происхождение “животной
+стороны” человеческого существа, но “высшие” наши качества —
+умственные, моральные, эстетические — имеют иную природу.
+Такая позиция еще до недавнего времени могла кое-как устро-
+ить даже закоренелых ученых-материалистов (хотя, конечно, да-
+леко не всех), поскольку о природе человеческого разума, памяти,
+сознания, эмоций строгими научными методами мало что удава-
+лось выяснить. Но в последние десятилетия ситуация стала ради-
+кально меняться.
+Конечно, наука и сегодня не может похвастаться полной
+расшифровкой всех тайн человеческой психики. Нерешенных
+проблем еще много. Главная из них в том, что нейробиологи
+не могут пока даже теоретически себе представить, как из ней-
+ронов и синапсов может быть сделан воспринимающий субъ-
+ект — “я”. Но тенденция налицо: один за другим важнейшие
+аспекты человеческой личности, до самого последнего време-
+ни считавшиеся недосягаемыми для естественных наук (на-
+пример, память, эмоции и даже мораль), уверенно переносятся
+в сферу материального, раскрывают свою физиологическую,
+клеточную, биохимическую природу и эволюционные корни.
+Одним словом, сегодня наука уже вплотную подобралась
+к “самому святому” в человеке, и некоторые эксперты опасают-
+ся, что это может привести к новому обострению конфликта
+религии и науки. Этим начинают пользоваться в своих инте-
+ресах политики, особенно в странах, где развитая демократия
+сочетается с высоким авторитетом религиозных конфессий,
+отличающихся непримиримостью по отношению к эволюци-
+онной биологии.
+Вышеупомянутая редакционная статья в Nature была на-
+правлена в первую очередь против антиэволюционных демар-
+шей сенатора Сэма Браунбека. Браунбек заявил в прессе, что че-
+ловек — не эволюционная случайность, что в нем отражается
+“образ и подобие” наивысшего существа. “Аспекты эволюцион-
+ной теории, совместимые с этой истиной, являются полезным
+дополнением к человеческим знаниям. Те же ее аспекты, кото-
+рые подрывают эту истину, должны быть решительно отвергну-
+ты как атеистическая теология, притворяющаяся наукой”.
+Редакция Nature приняла вызов. “И тело, и разум человека
+произошли путем эволюции от более ранних приматов, — ут-
+верждается в статье. — Способ человеческого мышления сви-
+детельствует о таком происхождении столь же убедительно,
+как и строение и работа конечностей, иммунной системы
+или колбочек глаза”. Речь идет не только о механизмах работы
+нейронов, но и о таких “высших” психических проявлениях,
+как мораль. В том, как эмоции управляют нашей моралью, ре-
+дакция Nature видит веское доказательство эволюционного
+происхождения того и другого. “То, что человеческий разум
+является продуктом эволюции, — не атеистическая теология.
+Это неоспоримый факт”, — утверждается в статье.
+
+
+
+Испанский
+
+
+LA EVOLUCIÓN HUMANA
+Monos, neuronas y alma
+Alexander Markov
+Con la participación de Elena Naimark
+Capítulo 1
+En busca de la frontera del alma
+Un tema polémico
+En el capítulo final de El origen de las especies de Darwin hay un pronóstico notable: «En el futuro veo abierto un campo de investigación mucho más importante. La psicología se basará en un nuevo cimiento: el de la adquisición necesaria de cada una de las facultades y capacidades mentales por gradación». Con estas palabras, Darwin predijo esencialmente el desarrollo de la disciplina científica que hoy llamamos psicología evolutiva.
+Las ideas de Darwin se adelantaron en gran medida a su tiempo, y el desarrollo de la psicología evolutiva fue lento al principio. De todas las ideas evolutivas, precisamente la del origen evolutivo de la psique humana es la que provoca la resistencia más feroz tanto en el gran público como, incluso, en algunos científicos. Pero los hechos son tozudos y, al final, el enfoque evolutivo terminó por convertirse en el dominante dentro de la psicología científica y la etología humana. Sin embargo, los científicos que trabajan en esta dirección siguen siendo objeto de ataques furibundos. Tienen que defender activamente su posición, y los ecos de esta lucha llegan incluso a las páginas de las publicaciones científicas serias.
+Uno de los números de la revista Nature de 2007 se abre con un artículo editorial titulado «La evolución y el cerebro». Las declaraciones vertidas en este artículo destacan por su determinación y su aparente rotundidad. «Con todo el respeto a los sentimientos de los creyentes, la idea de que el hombre fue creado a imagen y semejanza de Dios puede descartarse con seguridad», escribe la redacción de una de las revistas científicas más sólidas y respetadas del mundo. El motivo del artículo fueron, por un lado, las declaraciones antievolucionistas de ciertos políticos estadounidenses y, por otro, los últimos logros de psicólogos y neurobiólogos.
+¿De verdad es todo tan grave? ¿Realmente debe la ciencia insistir en negar un dogma religioso tan importante para muchos creyentes? ¿No se puede encontrar algún compromiso?
+Hasta hace poco, a muchos les parecía que el compromiso era bastante factible, y además con relativamente poca sangre. Alfred Wallace (quien, como se sabe, desarrolló la teoría de la evolución basada en la selección natural simultáneamente con Darwin) trazó en el siglo XIX un camino prometedor para reconciliar la ciencia con las ideas mitológicas tradicionales sobre la naturaleza humana. Wallace creía que la teoría evolutiva explicaba muchas cosas, pero que era incapaz de explicar las diferencias mentales observadas entre «el hombre y los animales». Se podía admitir el origen evolutivo natural de la «parte animal» del ser humano, pero nuestras cualidades «superiores» —mentales, morales, estéticas— tenían una naturaleza diferente.
+Hasta hace poco, tal posición podía satisfacer más o menos incluso a los científicos materialistas más inveterados (aunque, por supuesto, no a todos), ya que poco se había logrado averiguar sobre la naturaleza de la mente, la memoria, la conciencia y las emociones humanas mediante métodos científicos rigurosos. Pero en las últimas décadas la situación ha comenzado a cambiar radicalmente.
+Por supuesto, la ciencia no puede presumir hoy de haber descifrado todos los secretos de la psique humana. Aún quedan muchos problemas sin resolver. El principal es que los neurobiólogos ni siquiera pueden imaginar teóricamente por ahora cómo se puede construir un sujeto perceptor —el «yo»— a partir de neuronas y sinapsis. Pero la tendencia es evidente: uno tras otro, los aspectos más importantes de la personalidad humana, que hasta hace muy poco se consideraban inalcanzables para las ciencias naturales (por ejemplo, la memoria, las emociones e incluso la moral), se trasladan con confianza a la esfera de lo material, revelando su naturaleza fisiológica, celular, bioquímica y sus raíces evolutivas.
+En resumen, la ciencia se ha acercado hoy mucho a «lo más sagrado» del ser humano, y algunos expertos temen que esto pueda conducir a una nueva agudización del conflicto entre religión y ciencia. Los políticos comienzan a utilizar esto en su propio interés, especialmente en países donde una democracia desarrollada se combina con una gran autoridad de las confesiones religiosas, que se distinguen por su intransigencia hacia la biología evolutiva.
+El mencionado editorial de Nature iba dirigido principalmente contra las iniciativas antievolucionistas del senador Sam Brownback. Brownback declaró en la prensa que el ser humano no es un accidente evolutivo, sino que en él se refleja la «imagen y semejanza» de un ser supremo. «Los aspectos de la teoría evolutiva compatibles con esta verdad son un complemento útil para el conocimiento humano. Aquellos aspectos que socavan esta verdad deben ser rechazados resueltamente como una teología atea que finge ser ciencia».
+La redacción de Nature aceptó el desafío. «Tanto el cuerpo como la mente humana surgieron mediante la evolución a partir de primates anteriores», se afirma en el artículo. «El modo de pensar humano atestigua tal origen de manera tan convincente como la estructura y el funcionamiento de las extremidades, el sistema inmunológico o los conos del ojo». No se trata solo de los mecanismos de funcionamiento de las neuronas, sino también de manifestaciones psíquicas «superiores» como la moral. En el modo en que las emociones gobiernan nuestra moral, la redacción de Nature ve una prueba de peso del origen evolutivo de ambas. «Que la mente humana sea producto de la evolución no es teología atea. Es un hecho indiscutible», sentencia el artículo.
+
+
+
+Французский
+
+
+L’ÉVOLUTION DE L’HOMME
+Singes, neurones et l’âme
+Alexander Markov
+Avec la participation d’Elena Naimark
+Chapitre 1
+À la recherche des frontières de l’âme
+Un sujet controversé
+Dans le dernier chapitre de L’Origine des espèces de Darwin figure une prédiction remarquable : « Je vois dans l’avenir un champ ouvert à des recherches bien plus importantes. La psychologie sera solidement assise sur un nouveau fondement, celui de l’acquisition nécessaire de chaque faculté et capacité mentale par gradations. » Par ces mots, Darwin prédisait essentiellement le développement de la discipline scientifique que nous appelons aujourd’hui la psychologie évolutionniste.
+Les idées de Darwin étaient à bien des égards en avance sur leur temps, et le développement de la psychologie évolutionniste fut lent à ses débuts. De toutes les théories évolutionnistes, c’est précisément l’idée de l’origine évolutive du psychisme humain qui suscite la résistance la plus acharnée, tant auprès du grand public que chez certains scientifiques. Mais les faits sont têtus et, en fin de compte, l’approche évolutionniste est devenue dominante dans la psychologie scientifique et l’éthologie humaine. Toutefois, les chercheurs travaillant dans cette direction font encore l’objet d’attaques virulentes. Ils doivent défendre activement leur position, et les échos de cette lutte pénètrent jusque dans les pages des publications scientifiques sérieuses.
+L’un des numéros de la revue Nature de 2007 s’ouvre sur un éditorial intitulé « L’évolution et le cerveau ». Les déclarations faites dans cet article sont remarquables par leur détermination et leur caractère apparemment péremptoire. « Avec tout le respect dû aux sentiments des croyants, l’idée que l’homme a été créé à l’image de Dieu peut être écartée avec certitude », écrit la rédaction de l’une des revues scientifiques les plus solides et respectées au monde. Cet article a été motivé, d’une part, par les déclarations anti-évolutionnistes de politiciens américains et, d’autre part, par les dernières avancées des psychologues et des neurobiologistes.
+La situation est-elle vraiment si grave ? La science doit-elle réellement insister sur le déni d’un dogme religieux si important pour de nombreux croyants ? Ne peut-on trouver ici un compromis ?
+Il n’y a pas si longtemps, beaucoup pensaient qu’un compromis était tout à fait possible, et ce à moindre coût. Une voie prometteuse pour réconcilier la science avec les représentations mythologiques traditionnelles de la nature humaine avait été tracée au XIXe siècle par Alfred Wallace (qui, comme on le sait, avait élaboré la théorie de l’évolution par la sélection naturelle simultanément avec Darwin). Wallace estimait que la théorie de l’évolution expliquait beaucoup de choses, mais qu’elle était incapable d’expliquer les différences mentales observées entre « l’homme et les animaux ». On pouvait admettre l’origine évolutive naturelle du « côté animal » de l’être humain, mais nos qualités « supérieures » — intellectuelles, morales, esthétiques — possédaient une autre nature.
+Jusqu’à une date récente, une telle position pouvait plus ou moins satisfaire même les scientifiques matérialistes endurcis (bien que certainement pas tous), car les méthodes scientifiques rigoureuses ne permettaient guère d’élucider la nature de la raison humaine, de la mémoire, de la conscience et des émotions. Cependant, au cours des dernières décennies, la situation a commencé à changer radicalement.
+Certes, la science ne peut aujourd’hui se targuer d’avoir déchiffré tous les secrets du psychisme humain. Les problèmes non résolus restent nombreux. Le principal d’entre eux réside dans le fait que les neurobiologistes ne peuvent pas encore imaginer, même théoriquement, comment un sujet percevant — un « Moi » — peut être constitué à partir de neurones et de synapses. Mais la tendance est évidente : l’un après l’autre, les aspects les plus importants de la personnalité humaine, considérés jusqu’à tout récemment comme inaccessibles aux sciences naturelles (par exemple, la mémoire, les émotions et même la morale), sont transférés avec assurance dans la sphère matérielle, révélant leur nature physiologique, cellulaire, biochimique et leurs racines évolutives.
+En un mot, la science s’est aujourd’hui rapprochée au plus près de ce qu’il y a de « plus sacré » chez l’homme, et certains experts craignent que cela ne conduise à une nouvelle exacerbation du conflit entre religion et science. Les politiciens commencent à utiliser cela à leurs propres fins, en particulier dans les pays où une démocratie développée se conjugue à la haute autorité de confessions religieuses qui se distinguent par leur intransigeance envers la biologie évolutive.
+L’éditorial susmentionné de Nature visait en premier lieu les démarches anti-évolutionnistes du sénateur Sam Brownback. Ce dernier avait déclaré dans la presse que l’homme n’est pas un accident de l’évolution, mais qu’en lui se reflète « l’image et la ressemblance » d’un être suprême. « Les aspects de la théorie de l’évolution compatibles avec cette vérité constituent un complément utile aux connaissances humaines. Quant aux aspects qui sapent cette vérité, ils doivent être résolument rejetés comme une théologie athée prétendant être de la science. »
+La rédaction de Nature a relevé le défi. « Le corps comme l’esprit humains sont issus de l’évolution à partir de primates antérieurs », affirme l’article. « Le mode de pensée humain témoigne de cette origine de manière aussi convaincante que la structure et le fonctionnement des membres, du système immunitaire ou des cônes de l’œil. » Il ne s’agit pas seulement des mécanismes de fonctionnement des neurones, mais aussi de manifestations psychiques « supérieures » telles que la morale. Dans la manière dont les émotions régissent notre morale, la rédaction de Nature voit une preuve de poids de l’origine évolutive des deux. « Que l’esprit humain soit le produit de l’évolution n’est pas une théologie athée. C’est un fait indiscutable », conclut l’article.
+
+
+Английский
+
+HUMAN EVOLUTION
+Monkeys, Neurons, and the Soul
+Alexander Markov
+With the participation of Elena Naimark
+Chapter 1
+In Search of the Soul’s Edge
+A Scandalous Topic
+The final chapter of Darwin’s On the Origin of Species contains a remarkable forecast: “In the distant future I see open fields for far more important researches. Psychology will be based on a new foundation, that of the necessary acquirement of each mental power and capacity by gradation.” Here, Darwin essentially predicted the development of the scientific discipline we now call evolutionary psychology.
+Darwin’s ideas were far ahead of their time, and evolutionary psychology initially developed slowly. Of all evolutionary concepts, the idea that the human psyche has an evolutionary origin provokes the fiercest resistance from the general public and even some scientists. But facts are stubborn things. Eventually, the evolutionary approach became dominant in scientific psychology and human ethology. However, scientists working in this field still face furious attacks. They must actively defend their position, and echoes of this struggle reach even the pages of serious scientific journals.
+A 2007 issue of Nature opens with an editorial titled “Evolution and the Brain.” The statements in this article are notable for their decisiveness and apparent categorical nature. “With all respect for the sensibilities of believers, the idea that man was created in the image of God can be surely set aside,” writes the editorial board of one of the world’s most solid and respected scientific journals. The article was prompted by anti-evolutionary remarks from American politicians on one side, and the latest achievements of psychologists and neurobiologists on the other.
+Is it really that serious? Must science truly insist on denying a religious dogma so important to many believers? Can we not find a compromise?
+Until recently, many thought a compromise was quite achievable, and with relatively little bloodshed. Alfred Wallace (who, as is well known, developed the theory of evolution by natural selection simultaneously with Darwin) outlined a promising path to reconcile science with traditional mythological views of human nature in the 19th century. Wallace believed that evolutionary theory explains a great deal, but it cannot explain the mental differences observed between “man and animals.” One could admit the natural evolutionary origin of the “animal side” of the human being, but our “higher” qualities—mental, moral, aesthetic—have a different nature.
+Until recently, such a position could vaguely satisfy even inveterate materialist scientists (though certainly not all), since rigorous scientific methods had managed to clarify little about the nature of the human mind, memory, consciousness, and emotions. But in recent decades, the situation has changed radically.
+Of course, science today cannot boast of having deciphered every secret of the human psyche. Many unsolved problems remain. The main one is that neurobiologists cannot yet even theoretically imagine how a perceiving subject—the “I”—can be constructed from neurons and synapses. But the trend is obvious: one by one, the most important aspects of the human personality, considered until very recently out of reach for the natural sciences (for example, memory, emotions, and even morality), are confidently moving into the material sphere. They are revealing their physiological, cellular, biochemical nature and their evolutionary roots.
+In short, science has now moved very close to the “most sacred” part of the human being. Some experts fear this may lead to a renewed sharpening of the conflict between religion and science. Politicians are beginning to use this for their own interests, especially in countries where developed democracy combines with the high authority of religious denominations known for their intransigence toward evolutionary biology.
+The aforementioned Nature editorial was directed primarily against the anti-evolutionary demarches of Senator Sam Brownback. Brownback stated in the press that man is not an evolutionary accident, but reflects the “image and likeness” of a supreme being. “Aspects of evolutionary theory compatible with this truth are a useful addition to human knowledge. Those aspects that undermine this truth should be firmly rejected as atheistic theology posing as science.”
+The editors of Nature accepted the challenge. “Body and mind alike evolved from earlier primates,” the article asserts. “The way we think derives from this heritage as surely as do our limbs, our immune system or the cones in our eyes.” This applies not only to how neurons work but also to “higher” psychic manifestations like morality. Nature sees the way emotions govern our morality as weighty proof of the evolutionary origin of both. “That the human mind is a product of evolution is not atheistic theology. It is an unassailable fact,” the article concludes.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+4. La RÉPUBLIQUE ISLAMIQUE d’IRAN EN CRISE SYSTÉMIQUE
+         Quatre décennies de tourments
+            Sous la direction de
+       Ata Ayati et David Rigoulet-Roze
+
+Оригинальный Французский текст: 
+
+L’Iran au défi de l’état de guerre permanent. Un bilan de la politique étrangère de la République islamique
+(1979-2021)
+Sébastien Wesser
+Consultant en relations internationales
+
+On parle souvent de malédiction lorsque l’on évoque
+les pays dont les richesses –pétrolières, gazières, minières
+ou autres – suscitent l’appétit de leurs voisins et des grandes puissances. Dans le
+cas de l’Iran, la malédiction est double. Aux ressources pétrolières et gazières du pays
+s’ajoute sa situation géographique qui en fait un carrefour géostratégique .
+Rêvé par le Shah, au prix d’une dictature féroce, comme le « Japon du Moyen-Orient »
+durant les années soixante-dix, l’Iran vit, depuis l’avènement de la République Islamique
+en 1979, un état de guerre permanent. Ce qui fait dire à certains analystes que l’Iran
+est le « laboratoire de la modernité » du Proche-Orient. 
+En quarante ans, l’Iran a connu plusieurs types d’affrontements. Guerre
+de tranchées, donnant lieu à une boucherie aveugle et folle, guerres modernes
+dont les théâtres d’opérations sont aussi bien classiques que cybernétiques,
+sanctions économiques, espoirs et désillusions des négociations internationales, l’État iranien a été confronté à un nombre de cas de figure étonnant pour un
+pays qui n’est ni une puissance militaire ou économique mondiale, mais juste
+un pays au potentiel, aujourd’hui, sous-exploité.
+La politique étrangère de l’Iran, depuis 1979, est emblématique de ces pays
+qui, à l’instar du « tiers-état » dans la France de 1789, réclament une juste place
+sur la scène internationale et souhaite s’affranchir de la mainmise du jeu des
+grandes puissances. L’objectif de la politique étrangère de l’Iran est de passer
+de l’asymétrie diplomatique et militaire à une capacité à être considéré d’égal
+à égal dans la région. Si, entre 1979 et 1989, cela prend la forme d’un combat
+de David contre Goliath, l’Iran cherche, dans une seconde période (1989-2001)
+à se faire une place sur la scène – notamment diplomatique – internationale.
+L’instabilité de la région qui règne depuis les guerres en Afghanistan (2001)
+et en Irak (2003) oblige désormais le pays à naviguer et à s’imposer dans un
+environnement mouvant et chaotique.
+
+
+Quand David en remontre à Goliath
+
+Après des années de dictature sanglante et de crise économique majeure,
+l’arrivée au pouvoir, en 1979, de Khomeiny et l’avènement de la République isla-
+mique est, pour nombre d’Iraniens, une délivrance porteuse d’espoir. La chute
+du Shah est différemment perçue à Washington où l’ex-homme fort de Téhéran
+faisait office « d’enfant chéri » des administrations successives et du conglomérat
+militaro-industriel. Néanmoins, les États-Unis adoptent une attitude attentiste
+à l’égard du nouveau pouvoir se donnant le temps d’évaluer ses positions, tout
+en refusant de livrer le dictateur déchu qui s’est réfugié chez ses anciens alliés.
+L’assaut de l’ambassade américaine et la prise d’otage des diplomates en poste
+va rompre la confiance et les relations officielles entre les deux pays. Surtout,
+la détention des diplomates qui dure plus d’un an affaiblit considérablement
+l’administration Carter, coutant sa réélection au président américain, et inflige
+un grave camouflet diplomatique à la première puissance mondiale en pleine
+guerre froide. En dépit des sanctions déployées par Washington, le David perse
+donne l’impression de vaincre le Goliath américain.
+Lorsqu’en 1980, l’Irak de Saddam Hussein, socialiste et laïc, attaque l’Iran
+khomeyniste, on donne peu de chance au nouveau régime encore pris dans ses
+querelles et réorganisations internes. D’autant plus que les grandes puissances et
+les puissances régionales soutiennent le régime baasiste qui bénéficie de soutiens
+financiers et de facilités pour s’approvisionner en armement moderne. Entre
+1980 et 1988, la guerre Irak/Iran est une mauvaise répétition de la première
+guerre mondiale avec ses tranchées, ses attaques au gaz et ses fantassins massa-
+crés pour un résultat nul qui restaure le statu quo ante. Avec ses 500 000 morts
+et sa génération perdue, l’Iran gagne néanmoins une armée d’hommes aguerris
+et fidèles au régime. Les Pasdarans, bénéficiant d’un énorme prestige populaire
+au sortir de la guerre, vont jouer un rôle majeur dans les actions extérieures et
+prendre le contrôle de pans entiers de l’économie nationale.
+Incapable de gagner une guerre conventionnelle par manque de moyens,
+l’Iran a recours au terrorisme. Un terrorisme pensé pour mettre en lumière
+les failles des grandes puissances, moins habituées à ce type d’action appuyé par une logistique d’État. Des otages « sous-traités » par le Hezbollah au
+Liban à la « guerre des ambassades » avec la France, l’Iran développe l’usage du terrorisme, en réponse à une guerre asymétrique qui ne dit pas encore son
+nom, supplantant presque l’inénarrable Kadhafi comme premier financier du
+terrorisme international.
+Rapidement, la République islamique renforce, dans son discours internatio-
+nal, l’aspect politique de sa spécificité religieuse. Elle se pose du côté des « petits
+et des sans grades
+», de tous les musulmans opprimés de par le monde par la
+collusion dénoncée de leurs régimes avec l’impérialisme américain et occidental,
+dont Israël serait l’avant-poste au Moyen-Orient. Prenant fait et cause pour les
+Palestiniens, alors que certaines puissances sunnites s’en détachent, l’Iran se
+veut le défenseur des musulmans qui prône un retour à un Islam plus radical
+pour combattre un Occident devenu l’incarnation moderne du Mal et, ainsi,
+sortir de « l’humiliation ». Surfant sur un ressenti fort des populations des pays
+en développement, et avant que Ben Laden ne devienne l’icône sunnite de la
+lutte contre l’impérialisme et l’américanisation des sociétés orientales, l’Iran
+«confessionnalise» les revendications des « damnés de la terre ». Alors que la
+guerre froide a montré, tant à l’Est qu’à l’Ouest, ses limites dans la croyance à
+l’appartenance aux camps du mal ou du bien et que les nationalismes arabes ont
+échoué à créer des sociétés démocratiques et égalitaires, l’Iran, en se présentant
+comme un pays opprimé qui se bat contre l’impérialisme, propose une alternative
+à tous les citoyens du tiers-monde qui rêvent de « grand soir ». Oserait-on
+la comparaison, Khomeyni incarnerait presque le Che Guevara d’un nouveau
+«communisme vert ».
+Il est intéressant de constater que cet islamisme politique – conceptualisé, raisonné, étatique, stratégique et mis au service d’une guerre asymétrique entre États – va largement inspirer Al-Qaida et ses successeurs. Néanmoins, et
+même si ses conséquences sont tragiques pour de nombreux peuples, l’islamisme
+sunnite - de moins en moins « conceptualisé » au fil des générations de leaders –
+ne produit pas de construction politique s’enfonçant dans des logiques stériles
+et mortifères de guerres en guerre. La spécificité de la révolution iranienne est
+donc qu’elle a produit une pensée politique et une stratégie de gouvernance
+qui, même si elle a ses limites, se traduit en une politique étrangère cohérente
+et capable d’évoluer au rythme des changements internationaux.
+
+
+Русский 
+
+ИСЛАМСКАЯ РЕСПУБЛИКА ИРАН: СИСТЕМНЫЙ КРИЗИС
+Четыре десятилетия потрясений
+Под редакцией Аты Аяти и Давида Ригуле-Розе
+Иран перед вызовом перманентной войны. Итоги внешней политики Исламской Республики (1979–2021)
+Себастьен Вессер, консультант по международным отношениям
+О проклятии часто говорят, когда речь заходит о странах, чьи богатства — нефтяные, газовые, рудные или иные — разжигают аппетиты соседей и великих держав. В случае Ирана это проклятие двойное. К запасам углеводородов добавляется географическое положение, превращающее страну в геостратегический перекресток.
+Шах мечтал сделать страну «Японией Ближнего Востока» 1970-х годов — пусть и ценой жестокой диктатуры. Однако с момента провозглашения Исламской Республики в 1979 году Иран живет в состоянии перманентной войны. Это дает некоторым аналитикам повод называть страну «лабораторией современности» Ближнего Востока.
+За сорок лет Иран пережил несколько видов конфликтов. Окопная война, обернувшаяся слепой и безумной бойней; современные войны, разворачивающиеся как на классических театрах военных действий, так и в киберпространстве; экономические санкции; надежды и разочарования международных переговоров... Иранское государство столкнулось с удивительным количеством сценариев для страны, которая не является ни мировой военной, ни экономической державой, а представляет собой государство с потенциалом, который сегодня остается недоиспользованным.
+Внешняя политика Ирана после 1979 года типична для стран, которые, подобно «третьему сословию» во Франции 1789 года, требуют справедливого места на международной арене и желают освободиться от влияния великих держав. Цель Тегерана — перейти от дипломатической и военной асимметрии к статусу равноправного игрока в регионе. Если в период с 1979 по 1989 год это принимало форму битвы Давида с Голиафом, то на втором этапе (1989–2001) Иран стремился занять свое место на мировой арене, прежде всего дипломатической. Нестабильность, царящая в регионе после войн в Афганистане (2001) и Ираке (2003), отныне вынуждает страну лавировать и утверждать свое влияние в изменчивой и хаотичной среде.
+Когда Давид бросает вызов Голиафу
+После лет кровавой диктатуры и тяжелого экономического кризиса приход к власти Хомейни в 1979 году и провозглашение Исламской Республики стали для многих иранцев долгожданным освобождением, полным надежд. Падение шаха иначе восприняли в Вашингтоне, где бывшего тегеранского лидера считали «любимым дитятей» сменявших друг друга администраций и военно-промышленного комплекса. Тем не менее США заняли выжидательную позицию по отношению к новой власти, давая себе время оценить её курс, но при этом отказались выдать свергнутого диктатора, нашедшего убежище у старых союзников.
+Штурм американского посольства и захват дипломатов в заложники окончательно подорвали доверие и разрушили официальные отношения между двумя странами. Более того, удержание дипломатов, длившееся больше года, значительно ослабило администрацию Картера, стоило президенту США переизбрания и нанесло тяжелую дипломатическую пощечину первой мировой державе в разгар холодной войны. Несмотря на санкции Вашингтона, создалось впечатление, что персидский Давид одолел американского Голиафа.
+Когда в 1980 году Ирак Саддама Хусейна — социалистический и светский — напал на хомейнистский Иран, мало кто верил в новый режим, погрязший во внутренних распрях и реорганизации. Тем более что великие державы и региональные игроки поддерживали баасистский режим, получавший финансирование и доступ к современному вооружению. Война 1980–1988 годов стала зловещим повторение Первой мировой — с траншеями, газовыми атаками и массовой гибелью пехоты, — закончившись ничем: статус-кво был восстановлен. Потеряв 500 000 человек и целое поколение, Иран тем не менее получил армию закаленных и преданных режиму людей. Корпус стражей исламской революции (Пасдаран), пользовавшийся огромной народной поддержкой после войны, стал играть ключевую роль во внешних операциях и взял под контроль целые сектора национальной экономики.
+Не имея возможности выиграть конвенциональную войну из-за нехватки ресурсов, Иран прибег к терроризму. Это был терроризм, рассчитанный на использование уязвимостей великих держав, менее привычных к таким действиям, за которыми стояла государственная логистика. От заложников в Ливане, захваченных руками «Хезболлы», до «войны посольств» с Францией — Иран развивал тактику террора как ответ на асимметричную войну (которую тогда еще так не называли), едва не сместив одиозного Каддафи с позиции главного спонсора международного терроризма.
+Вскоре Исламская Республика усилила политический аспект своей религиозной специфики в международной риторике. Она позиционировала себя защитницей «малых и обездоленных», всех мусульман, угнетаемых из-за сговора их режимов с американским и западным империализмом, форпостом которого на Ближнем Востоке объявлялся Израиль. Вступившись за палестинцев, в то время как некоторые суннитские державы от них отстранились, Иран провозгласил себя защитником мусульман, призывая к возврату к более радикальному исламу. Цель состояла в борьбе с Западом, ставшим современным воплощением Зла, и в преодолении «унижения». Играя на сильных чувствах населения развивающихся стран — и задолго до того, как Бен Ладен стал суннитской иконой борьбы с империализмом и американизацией Востока, — Иран придал религиозную окраску требованиям «проклятьем заклейменных».
+В то время как холодная война продемонстрировала — и на Востоке, и на Западе — ограниченность веры в принадлежность к лагерю добра или зла, а арабский национализм не сумел создать демократические и эгалитарные общества, Иран предложил альтернативу. Представляя себя угнетенной страной, сражающейся с империализмом, он дал надежду всем гражданам третьего мира, мечтающим о великих переменах. Если позволить себе такое сравнение, Хомейни стал чуть ли не Че Геварой нового «зеленого коммунизма».
+Любопытно, что этот политический исламизм — концептуализированный, рациональный, государственный, стратегически выверенный и поставленный на службу межгосударственной асимметричной войне — во многом вдохновил «Аль-Каиду» и её последователей. Тем не менее, хотя последствия для многих народов были трагичны, суннитский исламизм (становившийся все менее «концептуальным» с каждым поколением лидеров) не породил политической конструкции, а лишь погрузился в бесплодную и гибельную логику бесконечной войны. Уникальность иранской революции в том, что она выработала политическую мысль и стратегию управления, которые, при всех своих ограничениях, трансформировались в последовательную внешнюю политику, способную адаптироваться к ритму международных перемен.
+Испанский 
+LA REPÚBLICA ISLÁMICA DE IRÁN EN CRISIS SISTÉMICA
+Cuatro décadas de tormento
+Bajo la dirección de
+Ata Ayati y David Rigoulet-Roze
+Irán ante el desafío del estado de guerra permanente. Un balance de la política exterior de la República Islámica (1979-2021)
+Sébastien Wesser
+Consultor en relaciones internacionales
+A menudo se habla de maldición al evocar países cuyas riquezas —petroleras, gasísticas, mineras u otras— despiertan el apetito de sus vecinos y de las grandes potencias. En el caso de Irán, la maldición es doble. A los recursos de petróleo y gas del país se suma su situación geográfica, que lo convierte en una encrucijada geoestratégica.
+Soñado por el sah como el «Japón de Oriente Medio» durante los años setenta, aunque al precio de una feroz dictadura, Irán vive en un estado de guerra permanente desde el advenimiento de la República Islámica en 1979. Esto lleva a algunos analistas a afirmar que Irán es el «laboratorio de la modernidad» de Oriente Próximo.
+En cuarenta años, Irán ha conocido diversos tipos de enfrentamientos. Desde la guerra de trincheras, que dio lugar a una carnicería ciega y demencial, hasta las guerras modernas cuyos teatros de operaciones son tanto clásicos como cibernéticos, pasando por sanciones económicas, esperanzas y desilusiones en las negociaciones internacionales; el Estado iraní se ha enfrentado a un número de escenarios sorprendente para un país que no es una potencia militar ni económica mundial, sino simplemente un país con un potencial que, a día de hoy, está infraexplotado.
+La política exterior de Irán desde 1979 es emblemática de esos países que, a semejanza del «Tercer Estado» en la Francia de 1789, reclaman un lugar justo en la escena internacional y desean liberarse del dominio del juego de las grandes potencias. El objetivo de la política exterior iraní es pasar de la asimetría diplomática y militar a una capacidad para ser considerado de igual a igual en la región. Si entre 1979 y 1989 esto adopta la forma de un combate de David contra Goliat, en un segundo periodo (1989-2001) Irán busca hacerse un hueco en la escena internacional, especialmente en la diplomática. La inestabilidad que reina en la región desde las guerras en Afganistán (2001) e Irak (2003) obliga ahora al país a navegar e imponerse en un entorno cambiante y caótico.
+Cuando David planta cara a Goliat
+Tras años de dictadura sangrienta y de una crisis económica mayúscula, la llegada al poder de Jomeini en 1979 y el advenimiento de la República Islámica supuso para muchos iraníes una liberación cargada de esperanza. La caída del sah se percibió de forma distinta en Washington, donde el antiguo hombre fuerte de Teherán ejercía de «niño mimado» de las sucesivas administraciones y del complejo militar-industrial. No obstante, Estados Unidos adoptó una actitud expectante respecto al nuevo poder, dándose tiempo para evaluar sus posiciones, al tiempo que se negaba a entregar al dictador depuesto, refugiado con sus antiguos aliados.
+El asalto a la embajada estadounidense y la toma como rehenes de los diplomáticos allí destinados rompió la confianza y las relaciones oficiales entre ambos países. Sobre todo, la detención de los diplomáticos, que duró más de un año, debilitó considerablemente a la administración Carter, costándole la reelección al presidente estadounidense, e infligió un grave revés diplomático a la primera potencia mundial en plena Guerra Fría. A pesar de las sanciones desplegadas por Washington, el David persa daba la impresión de vencer al Goliat americano.
+Cuando en 1980 el Irak de Sadam Husein, socialista y laico, atacó al Irán jomeinista, se le daban pocas posibilidades al nuevo régimen, aún inmerso en sus querellas y reorganizaciones internas. Más aún cuando las grandes potencias y las potencias regionales apoyaban al régimen baasista, que se beneficiaba de apoyo financiero y facilidades para abastecerse de armamento moderno. Entre 1980 y 1988, la guerra entre Irak e Irán fue una mala repetición de la Primera Guerra Mundial, con sus trincheras, sus ataques con gas y sus soldados de infantería masacrados para un resultado nulo que restauró el statu quo ante. Con sus 500 000 muertos y su generación perdida, Irán ganó, sin embargo, un ejército de hombres aguerridos y fieles al régimen. Los Pasdaranes, que gozaban de un enorme prestigio popular al salir de la guerra, jugarían un papel mayor en las acciones exteriores y tomarían el control de sectores enteros de la economía nacional.
+Incapaz de ganar una guerra convencional por falta de medios, Irán recurrió al terrorismo. Un terrorismo pensado para poner de relieve las fallas de las grandes potencias, menos habituadas a este tipo de acción apoyada por una logística de Estado. Desde los rehenes «subcontratados» por Hezbolá en el Líbano hasta la «guerra de las embajadas» con Francia, Irán desarrolló el uso del terrorismo como respuesta a una guerra asimétrica que aún no decía su nombre, suplantando casi al inefable Gadafi como primer financiador del terrorismo internacional.
+Rápidamente, la República Islámica reforzó en su discurso internacional el aspecto político de su especificidad religiosa. Se posicionó del lado de los «pequeños y los humildes», de todos los musulmanes oprimidos por el mundo debido a la colusión denunciada de sus regímenes con el imperialismo estadounidense y occidental, del cual Israel sería la avanzadilla en Oriente Medio. Tomando partido por los palestinos, mientras algunas potencias suníes se distanciaban de ellos, Irán pretendía ser el defensor de los musulmanes que aboga por un retorno a un Islam más radical para combatir a un Occidente convertido en la encarnación moderna del Mal y, así, salir de la «humillación». Aprovechando el fuerte resentimiento de las poblaciones de los países en desarrollo, y antes de que Bin Laden se convirtiera en el icono suní de la lucha contra el imperialismo y la americanización de las sociedades orientales, Irán «confesionalizó» las reivindicaciones de los «condenados de la tierra». Mientras la Guerra Fría mostraba, tanto en el Este como en el Oeste, sus límites en la creencia de pertenencia a los campos del mal o del bien, y los nacionalismos árabes fracasaban en la creación de sociedades democráticas e igualitarias, Irán, al presentarse como un país oprimido que lucha contra el imperialismo, propuso una alternativa a todos los ciudadanos del tercer mundo que sueñan con la revolución definitiva. Si nos atreviéramos con la comparación, Jomeini encarnaría casi al Che Guevara de un nuevo «comunismo verde».
+Resulta interesante constatar que este islamismo político —conceptualizado, razonado, estatal, estratégico y puesto al servicio de una guerra asimétrica entre Estados— inspiraría ampliamente a Al Qaeda y sus sucesores. No obstante, y aunque sus consecuencias sean trágicas para muchos pueblos, el islamismo suní —cada vez menos «conceptualizado» con el paso de las generaciones de líderes— no produce una construcción política, hundiéndose en lógicas estériles y mortíferas de guerra en guerra. La especificidad de la revolución iraní es, por tanto, que produjo un pensamiento político y una estrategia de gobernanza que, aun con sus límites, se traduce en una política exterior coherente y capaz de evolucionar al ritmo de los cambios internacionales.
+
+Английский
+THE ISLAMIC REPUBLIC OF IRAN IN SYSTEMIC CRISIS
+Four Decades of Turmoil
+Edited by
+Ata Ayati and David Rigoulet-Roze
+Iran Challenged by the State of Permanent War: An Assessment of the Islamic Republic’s Foreign Policy (1979-2021)
+Sébastien Wesser
+International Relations Consultant
+We often speak of a "curse" when discussing countries whose wealth—oil, gas, mining, or otherwise—whets the appetite of neighbors and great powers. In Iran’s case, the curse is double. The country’s oil and gas resources are compounded by its geography, which makes it a geostrategic crossroads.
+Dreamed by the Shah as the "Japan of the Middle East" during the seventies—albeit at the price of a ferocious dictatorship—Iran has lived in a state of permanent war since the advent of the Islamic Republic in 1979. This leads some analysts to call Iran the "laboratory of modernity" for the Near East.
+In forty years, Iran has experienced several types of conflict. From trench warfare, resulting in blind and mad butchery, to modern wars fought in both conventional and cyber theaters, to economic sanctions, and the hopes and disillusionments of international negotiations, the Iranian state has faced an astonishing number of scenarios. This is remarkable for a country that is neither a global military nor economic power, but simply a nation whose potential remains under-exploited today.
+Since 1979, Iran's foreign policy has been emblematic of those countries that, like the "Third Estate" in France in 1789, demand a fair place on the international stage and wish to free themselves from the grip of the great power games. Iran aims to move from diplomatic and military asymmetry to a capacity to be treated as an equal in the region. While this took the form of a David versus Goliath struggle between 1979 and 1989, in a second period (1989-2001) Iran sought to carve out a place for itself on the international—particularly diplomatic—stage. The instability reigning in the region since the wars in Afghanistan (2001) and Iraq (2003) now forces the country to navigate and assert itself in a shifting and chaotic environment.
+When David Teaches Goliath a Lesson
+After years of bloody dictatorship and major economic crisis, Khomeini’s rise to power in 1979 and the advent of the Islamic Republic was, for many Iranians, a deliverance full of hope. Washington viewed the Shah's fall differently; the former strongman of Tehran had served as the "darling" of successive administrations and the military-industrial complex. Nevertheless, the United States adopted a wait-and-see attitude toward the new power, giving itself time to evaluate positions while refusing to hand over the fallen dictator who had taken refuge with his former allies.
+The assault on the American embassy and the taking of diplomatic hostages shattered trust and broke official relations between the two countries. Above all, the detention of diplomats for more than a year considerably weakened the Carter administration, costing the American president his re-election. It inflicted a severe diplomatic snub on the world's leading power in the middle of the Cold War. Despite sanctions deployed by Washington, the Persian David gave the impression of defeating the American Goliath.
+When Saddam Hussein’s socialist and secular Iraq attacked Khomeinist Iran in 1980, few gave the new regime a chance, as it was still entangled in internal quarrels and reorganization. Moreover, the great powers and regional powers supported the Baathist regime, which benefited from financial backing and easy access to modern weaponry. Between 1980 and 1988, the Iran-Iraq war was a grim replay of World War I, with its trenches, gas attacks, and infantry massacred for a null result that merely restored the status quo ante. With 500,000 dead and a lost generation, Iran nevertheless gained an army of battle-hardened men loyal to the regime. The Pasdaran (Revolutionary Guards), enjoying enormous popular prestige after the war, would play a major role in external actions and take control of entire swathes of the national economy.
+Unable to win a conventional war due to a lack of means, Iran resorted to terrorism. This terrorism was designed to highlight the cracks in the great powers, which were less accustomed to this type of action supported by state logistics. From hostages "subcontracted" by Hezbollah in Lebanon to the "war of embassies" with France, Iran developed the use of terrorism in response to an asymmetric war that dared not yet speak its name. It almost supplanted the indescribable Gaddafi as the primary financier of international terrorism.
+The Islamic Republic quickly reinforced the political aspect of its religious specificity in its international discourse. It positioned itself on the side of the "small and the rankless," of all Muslims oppressed worldwide by the alleged collusion of their regimes with American and Western imperialism, of which Israel was deemed the outpost in the Middle East. Taking up the cause of the Palestinians while certain Sunni powers detached themselves from it, Iran cast itself as the defender of Muslims. It advocated a return to a more radical Islam to combat a West that had become the modern incarnation of Evil, and thus to escape "humiliation." Riding on the strong resentment of populations in developing countries—and before Bin Laden became the Sunni icon of the fight against imperialism and the Americanization of Eastern societies—Iran "sectarianized" the demands of the "wretched of the earth."
+While the Cold War showed its limits in the East and West regarding the belief in belonging to camps of good or evil, and Arab nationalisms failed to create democratic and egalitarian societies, Iran proposed an alternative. By presenting itself as an oppressed country fighting imperialism, it offered an option to all Third World citizens dreaming of a "Great Uprising." If one dared the comparison, Khomeini almost embodied the Che Guevara of a new "Green Communism."
+It is interesting to note that this political Islamism—conceptualized, reasoned, state-based, strategic, and placed at the service of an asymmetric war between states—would largely inspire Al-Qaeda and its successors. Nevertheless, even if its consequences are tragic for many peoples, Sunni Islamism—less and less "conceptualized" over generations of leaders—does not produce a political construction. Instead, it sinks into sterile and deadly logics of endless war. The specificity of the Iranian revolution is that it produced a political thought and a governance strategy which, despite its limits, translates into a coherent foreign policy capable of evolving with the rhythm of international changes.
