@@ -1,0 +1,263 @@
+{
+    "books": [
+        {
+            "id": "atomic-habits",
+            "title": "Atomic Habits",
+            "author": "James Clear",
+            "cover": "https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1655988385i/40121378.jpg",
+            "rating": 4.8,
+            "reviews": 85430,
+            "price": "$13.99",
+            "amazonUrl": "https://amazon.com/dp/0735211299",
+            "genre": [
+                "Self-Help",
+                "Non-Fiction"
+            ],
+            "description": "Tiny Changes, Remarkable Results. An Easy & Proven Way to Build Good Habits & Break Bad Ones. No matter your goals, Atomic Habits offers a proven framework for improving every day.",
+            "hasDemo": false
+        },
+        {
+            "id": "thinking-fast-slow",
+            "title": "Thinking, Fast and Slow",
+            "author": "Daniel Kahneman",
+            "cover": "https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1317793965i/11468377.jpg",
+            "rating": 4.6,
+            "reviews": 56234,
+            "price": "$11.99",
+            "amazonUrl": "https://amazon.com/dp/0374533555",
+            "genre": [
+                "Psychology",
+                "Non-Fiction"
+            ],
+            "description": "In this international bestseller, Daniel Kahneman, winner of the Nobel Prize in Economics, takes us on a groundbreaking tour of the mind.",
+            "hasDemo": false
+        },
+        {
+            "id": "sapiens",
+            "title": "Sapiens: A Brief History of Humankind",
+            "author": "Yuval Noah Harari",
+            "cover": "https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1703329310i/23692271.jpg",
+            "rating": 4.7,
+            "reviews": 92145,
+            "price": "$14.99",
+            "amazonUrl": "https://amazon.com/dp/0062316117",
+            "genre": [
+                "History",
+                "Non-Fiction"
+            ],
+            "description": "100,000 years ago, at least six human species inhabited the earth. Today there is just one. Us. Homo sapiens. How did our species succeed in the battle for dominance?",
+            "hasDemo": false
+        },
+        {
+            "id": "educated",
+            "title": "Educated: A Memoir",
+            "author": "Tara Westover",
+            "cover": "https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1506026635i/35133922.jpg",
+            "rating": 4.7,
+            "reviews": 78923,
+            "price": "$12.99",
+            "amazonUrl": "https://amazon.com/dp/0399590501",
+            "genre": [
+                "Memoir",
+                "Non-Fiction"
+            ],
+            "description": "An unforgettable memoir about a young girl who, kept out of school, leaves her survivalist family and goes on to earn a PhD from Cambridge University.",
+            "hasDemo": false
+        },
+        {
+            "id": "becoming",
+            "title": "Becoming",
+            "author": "Michelle Obama",
+            "cover": "https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1528206996i/38746485.jpg",
+            "rating": 4.8,
+            "reviews": 134567,
+            "price": "$15.99",
+            "amazonUrl": "https://amazon.com/dp/1524763136",
+            "genre": [
+                "Memoir",
+                "Non-Fiction"
+            ],
+            "description": "In her memoir, Michelle Obama invites readers into her world, chronicling the experiences that have shaped her.",
+            "hasDemo": false
+        },
+        {
+            "id": "where-the-crawdads-sing",
+            "title": "Where the Crawdads Sing",
+            "author": "Delia Owens",
+            "cover": "https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1582135294i/36809135.jpg",
+            "rating": 4.6,
+            "reviews": 112345,
+            "price": "$10.99",
+            "amazonUrl": "https://amazon.com/dp/0735219095",
+            "genre": [
+                "Fiction",
+                "Mystery"
+            ],
+            "description": "For years, rumors of the \"Marsh Girl\" have haunted Barkley Cove, a quiet town on the North Carolina coast.",
+            "hasDemo": false
+        },
+        {
+            "id": "the-alchemist",
+            "title": "The Alchemist",
+            "author": "Paulo Coelho",
+            "cover": "https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1654371463i/18144590.jpg",
+            "rating": 4.5,
+            "reviews": 98765,
+            "price": "$9.99",
+            "amazonUrl": "https://amazon.com/dp/0062315005",
+            "genre": [
+                "Fiction",
+                "Classics"
+            ],
+            "description": "Paulo Coelho's enchanting novel has inspired a devoted following around the world. The Alchemist tells the mystical story of Santiago.",
+            "hasDemo": false
+        },
+        {
+            "id": "dune",
+            "title": "Dune",
+            "author": "Frank Herbert",
+            "cover": "https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1555447414i/44767458.jpg",
+            "rating": 4.7,
+            "reviews": 87654,
+            "price": "$12.99",
+            "amazonUrl": "https://amazon.com/dp/0441172717",
+            "genre": [
+                "Science Fiction",
+                "Classics"
+            ],
+            "description": "Set on the desert planet Arrakis, Dune is the story of the boy Paul Atreides, heir to a noble family tasked with ruling an inhospitable world.",
+            "hasDemo": false
+        },
+        {
+            "id": "the-midnight-library",
+            "title": "The Midnight Library",
+            "author": "Matt Haig",
+            "cover": "https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1602190253i/52578297.jpg",
+            "rating": 4.5,
+            "reviews": 76543,
+            "price": "$11.99",
+            "amazonUrl": "https://amazon.com/dp/0525559477",
+            "genre": [
+                "Fiction",
+                "Fantasy"
+            ],
+            "description": "Between life and death there is a library, and within that library, the shelves go on forever.",
+            "hasDemo": false
+        },
+        {
+            "id": "project-hail-mary",
+            "title": "Project Hail Mary",
+            "author": "Andy Weir",
+            "cover": "https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1597695864i/54493401.jpg",
+            "rating": 4.8,
+            "reviews": 65432,
+            "price": "$14.99",
+            "amazonUrl": "https://amazon.com/dp/0593135202",
+            "genre": [
+                "Science Fiction"
+            ],
+            "description": "Ryland Grace is the sole survivor on a desperate, last-chance mission—and if he fails, humanity and the earth itself will perish.",
+            "hasDemo": false
+        },
+        {
+            "id": "pride-prejudice-store",
+            "title": "Pride and Prejudice",
+            "author": "Jane Austen",
+            "cover": "/covers/pride-prejudice.jpg",
+            "rating": 4.7,
+            "reviews": 54321,
+            "price": "$8.99",
+            "amazonUrl": "https://amazon.com/dp/0141439513",
+            "genre": [
+                "Classics",
+                "Fiction"
+            ],
+            "description": "Since its immediate success in 1813, Pride and Prejudice has remained one of the most popular novels in the English language.",
+            "hasDemo": true,
+            "demoBookId": "pride-prejudice"
+        },
+        {
+            "id": "great-gatsby-store",
+            "title": "The Great Gatsby",
+            "author": "F. Scott Fitzgerald",
+            "cover": "/covers/great-gatsby.jpg",
+            "rating": 4.5,
+            "reviews": 43210,
+            "price": "$9.99",
+            "amazonUrl": "https://amazon.com/dp/0743273567",
+            "genre": [
+                "Classics",
+                "Fiction"
+            ],
+            "description": "The Great Gatsby, F. Scott Fitzgerald's third book, stands as the supreme achievement of his career.",
+            "hasDemo": true,
+            "demoBookId": "great-gatsby"
+        },
+        {
+            "id": "1984-store",
+            "title": "1984",
+            "author": "George Orwell",
+            "cover": "/covers/1984.jpg",
+            "rating": 4.6,
+            "reviews": 67890,
+            "price": "$10.99",
+            "amazonUrl": "https://amazon.com/dp/0451524934",
+            "genre": [
+                "Classics",
+                "Fiction",
+                "Dystopian"
+            ],
+            "description": "Among the seminal texts of the 20th century, Nineteen Eighty-Four is a rare work that grows more haunting as its futuristic purgatory becomes more real.",
+            "hasDemo": true,
+            "demoBookId": "1984"
+        },
+        {
+            "id": "it-ends-with-us",
+            "title": "It Ends with Us",
+            "author": "Colleen Hoover",
+            "cover": "https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1608569691i/27362503.jpg",
+            "rating": 4.6,
+            "reviews": 156789,
+            "price": "$11.99",
+            "amazonUrl": "https://amazon.com/dp/1501110365",
+            "genre": [
+                "Romance",
+                "Fiction"
+            ],
+            "description": "Sometimes it is the one who loves you who hurts you the most. Lily hasn't always had it easy, but that's never stopped her from working hard.",
+            "hasDemo": false
+        },
+        {
+            "id": "verity",
+            "title": "Verity",
+            "author": "Colleen Hoover",
+            "cover": "https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1634158558i/59344312.jpg",
+            "rating": 4.5,
+            "reviews": 123456,
+            "price": "$12.99",
+            "amazonUrl": "https://amazon.com/dp/1538724731",
+            "genre": [
+                "Thriller",
+                "Fiction"
+            ],
+            "description": "Lowen Ashleigh is a struggling writer on the brink of financial ruin when she accepts the job offer of a lifetime.",
+            "hasDemo": false
+        },
+        {
+            "id": "a-court-thorns-roses",
+            "title": "A Court of Thorns and Roses",
+            "author": "Sarah J. Maas",
+            "cover": "https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1620324329i/50659467.jpg",
+            "rating": 4.6,
+            "reviews": 98765,
+            "price": "$13.99",
+            "amazonUrl": "https://amazon.com/dp/1635575567",
+            "genre": [
+                "Fantasy",
+                "Romance"
+            ],
+            "description": "Feyre's survival rests upon her ability to hunt and kill – the forest where she lives is a cold, bleak place in the long winter months.",
+            "hasDemo": false
+        }
+    ]
+}
