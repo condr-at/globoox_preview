@@ -126,6 +126,7 @@ export default function ReaderView({ book }: ReaderViewProps) {
                             }}
                             currentChapter={currentChapter}
                             onSelectChapter={goToChapter}
+                            disabled={isTranslating}
                         />
                     </div>
                 </div>
@@ -140,6 +141,7 @@ export default function ReaderView({ book }: ReaderViewProps) {
                             variant="ghost"
                             onClick={() => goToChapter(currentChapter - 1, true)}
                             className="w-full justify-center text-[var(--system-blue)] mb-4"
+                            disabled={isTranslating}
                         >
                             <ChevronLeft className="w-5 h-5 mr-1 text-[var(--system-blue)]" />
                             {prevChapter.title}
@@ -189,6 +191,7 @@ export default function ReaderView({ book }: ReaderViewProps) {
                             variant="ghost"
                             onClick={() => goToChapter(currentChapter + 1)}
                             className="w-full justify-center text-[var(--system-blue)] mt-4"
+                            disabled={isTranslating}
                         >
                             {nextChapter.title}
                             <ChevronRight className="w-5 h-5 ml-1 text-[var(--system-blue)]" />

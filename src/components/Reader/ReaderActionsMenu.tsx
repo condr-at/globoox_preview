@@ -16,17 +16,27 @@ interface ReaderActionsMenuProps {
     };
     currentChapter: number;
     onSelectChapter: (num: number) => void;
+    disabled?: boolean;
 }
 
 export default function ReaderActionsMenu({
     book,
     currentChapter,
-    onSelectChapter
+    onSelectChapter,
+    disabled
 }: ReaderActionsMenuProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [activeModal, setActiveModal] = useState<'none' | 'toc' | 'language' | 'settings'>('none');
     const menuRef = useRef<HTMLDivElement>(null);
     const { settings } = useAppStore();
+
+    // Close menu and modals if they are open when disabled becomes true
+    useEffect(() => {
+        if (disabled) {
+            if (isOpen) setIsOpen(false);
+            if (activeModal !== 'none') setActiveModal('none');
+        }
+    }, [disabled, isOpen, activeModal]);
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
@@ -52,6 +62,7 @@ export default function ReaderActionsMenu({
                 size="icon"
                 onClick={() => setIsOpen(!isOpen)}
                 className="text-[var(--system-blue)]"
+                disabled={disabled}
             >
                 <MoreHorizontal className="w-6 h-6" />
             </Button>
