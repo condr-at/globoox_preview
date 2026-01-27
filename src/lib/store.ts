@@ -1,20 +1,22 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type Language = 'en' | 'fr' | 'es' | 'de';
+export type Language = 'en' | 'fr' | 'es' | 'de' | 'ru';
 
 export const languageNames: Record<Language, string> = {
   en: 'English',
   fr: 'Français',
   es: 'Español',
-  de: 'Deutsch'
+  de: 'Deutsch',
+  ru: 'Русский'
 };
 
 export const languageFlags: Record<Language, string> = {
   en: '🇬🇧',
   fr: '🇫🇷',
   es: '🇪🇸',
-  de: '🇩🇪'
+  de: '🇩🇪',
+  ru: '🇷🇺'
 };
 
 interface ReaderSettings {
@@ -37,12 +39,12 @@ interface AppState {
   setFontSize: (size: number) => void;
   setTheme: (theme: 'dark' | 'light') => void;
   setLanguage: (language: Language) => void;
-  
+
   // Reading progress
   progress: ReadingProgress;
   updateProgress: (bookId: string, chapter: number, progress: number) => void;
   getProgress: (bookId: string) => { chapter: number; progress: number } | null;
-  
+
   // Translation state
   isTranslating: boolean;
   setIsTranslating: (value: boolean) => void;
@@ -57,25 +59,25 @@ export const useAppStore = create<AppState>()(
         theme: 'dark',
         language: 'en'
       },
-      
-      setFontSize: (size) => 
+
+      setFontSize: (size) =>
         set((state) => ({
           settings: { ...state.settings, fontSize: size }
         })),
-      
+
       setTheme: (theme) =>
         set((state) => ({
           settings: { ...state.settings, theme }
         })),
-      
+
       setLanguage: (language) =>
         set((state) => ({
           settings: { ...state.settings, language }
         })),
-      
+
       // Reading progress
       progress: {},
-      
+
       updateProgress: (bookId, chapter, progress) =>
         set((state) => ({
           progress: {
@@ -87,19 +89,19 @@ export const useAppStore = create<AppState>()(
             }
           }
         })),
-      
+
       getProgress: (bookId) => {
         const progress = get().progress[bookId];
         if (!progress) return null;
         return { chapter: progress.chapter, progress: progress.progress };
       },
-      
+
       // Translation state
       isTranslating: false,
       setIsTranslating: (value) => set({ isTranslating: value })
     }),
     {
-      name: 'linguaread-storage'
+      name: 'globoox-preview-storage'
     }
   )
 );

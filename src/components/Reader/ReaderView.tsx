@@ -4,11 +4,9 @@ import { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { useAppStore, Language } from '@/lib/store';
-import LanguageSwitch from './LanguageSwitch';
+import ReaderActionsMenu from './ReaderActionsMenu';
 import TranslationGlow from './TranslationGlow';
 import AppleIntelligenceGlow from './AppleIntelligenceGlow';
-import ReaderSettings from './ReaderSettings';
-import TableOfContents from './TableOfContents';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -61,7 +59,7 @@ export default function ReaderView({ book }: ReaderViewProps) {
             isFirstRender.current = false;
             return;
         }
-        
+
         // Only trigger if language actually changed
         if (previousLanguage.current !== settings.language) {
             previousLanguage.current = settings.language;
@@ -69,7 +67,7 @@ export default function ReaderView({ book }: ReaderViewProps) {
             const timer = setTimeout(() => {
                 setIsTranslating(false);
             }, 7000); // 7 seconds
-            
+
             return () => clearTimeout(timer);
         }
     }, [settings.language, setIsTranslating]);
@@ -107,10 +105,9 @@ export default function ReaderView({ book }: ReaderViewProps) {
             <header className="fixed top-0 left-0 right-0 z-40 bg-background/80 backdrop-blur-xl border-b pt-[calc(env(safe-area-inset-top)+16px)]">
                 <div className="flex items-center justify-between h-11 px-4">
                     {/* Left - Back button */}
-                    <Button variant="ghost" asChild className="text-[var(--system-blue)] -ml-2 px-2 flex-shrink-0">
-                        <Link href="/library" className="flex items-center gap-1">
-                            <ChevronLeft className="w-5 h-5 text-[var(--system-blue)]" strokeWidth={2.5} />
-                            <span className="text-base">Library</span>
+                    <Button variant="ghost" size="icon" asChild className="text-[var(--system-blue)] -ml-2 flex-shrink-0">
+                        <Link href="/library">
+                            <ChevronLeft className="w-6 h-6 text-[var(--system-blue)]" strokeWidth={2.5} />
                         </Link>
                     </Button>
 
@@ -121,13 +118,15 @@ export default function ReaderView({ book }: ReaderViewProps) {
 
                     {/* Right - Actions */}
                     <div className="flex items-center flex-shrink-0">
-                        <TableOfContents
-                            chapters={book.chapters.map(c => ({ number: c.number, title: c.title }))}
+                        <ReaderActionsMenu
+                            book={{
+                                id: book.id,
+                                languages: book.languages,
+                                chapters: book.chapters.map(c => ({ number: c.number, title: c.title }))
+                            }}
                             currentChapter={currentChapter}
                             onSelectChapter={goToChapter}
                         />
-                        <ReaderSettings />
-                        <LanguageSwitch availableLanguages={book.languages} />
                     </div>
                 </div>
             </header>
@@ -168,9 +167,9 @@ export default function ReaderView({ book }: ReaderViewProps) {
                                 {isTranslating ? (
                                     <div className="space-y-5">
                                         {[100, 95, 88, 100, 72, 100, 90, 85, 100, 60, 100, 92, 78, 100, 65].map((width, index) => (
-                                            <Skeleton 
-                                                key={index} 
-                                                className="h-5" 
+                                            <Skeleton
+                                                key={index}
+                                                className="h-5"
                                                 style={{ width: `${width}%` }}
                                             />
                                         ))}

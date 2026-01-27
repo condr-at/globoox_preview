@@ -13,14 +13,22 @@ interface TableOfContentsProps {
     chapters: Chapter[];
     currentChapter: number;
     onSelectChapter: (chapter: number) => void;
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
 }
 
 export default function TableOfContents({
     chapters,
     currentChapter,
     onSelectChapter,
+    open: externalOpen,
+    onOpenChange: setExternalOpen,
 }: TableOfContentsProps) {
-    const [isOpen, setIsOpen] = useState(false);
+    const [internalOpen, setInternalOpen] = useState(false);
+
+    const isOpen = externalOpen !== undefined ? externalOpen : internalOpen;
+    const setIsOpen = setExternalOpen !== undefined ? setExternalOpen : setInternalOpen;
+
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
@@ -34,7 +42,7 @@ export default function TableOfContents({
         };
         window.addEventListener('keydown', handleEscape);
         return () => window.removeEventListener('keydown', handleEscape);
-    }, []);
+    }, [setIsOpen]);
 
     const handleSelect = (chapterNum: number) => {
         onSelectChapter(chapterNum);
@@ -89,11 +97,10 @@ export default function TableOfContents({
                                     chapter.number
                                 )}
                             </span>
-                            <span className={`text-[17px] ${
-                                currentChapter === chapter.number
-                                    ? 'text-[var(--system-blue)] font-medium'
-                                    : 'text-[var(--label-primary)]'
-                            }`}>
+                            <span className={`text-[17px] ${currentChapter === chapter.number
+                                ? 'text-[var(--system-blue)] font-medium'
+                                : 'text-[var(--label-primary)]'
+                                }`}>
                                 {chapter.title}
                             </span>
                         </button>
@@ -105,12 +112,14 @@ export default function TableOfContents({
 
     return (
         <>
-            <button
-                onClick={() => setIsOpen(true)}
-                className="flex items-center justify-center min-w-[44px] min-h-[44px] text-[var(--system-blue)] active:opacity-70 transition-opacity"
-            >
-                <List className="w-[20px] h-[20px]" />
-            </button>
+            {externalOpen === undefined && (
+                <button
+                    onClick={() => setIsOpen(true)}
+                    className="flex items-center justify-center min-w-[44px] min-h-[44px] text-[var(--system-blue)] active:opacity-70 transition-opacity"
+                >
+                    <List className="w-[20px] h-[20px]" />
+                </button>
+            )}
 
             {mounted && modal && createPortal(modal, document.body)}
         </>

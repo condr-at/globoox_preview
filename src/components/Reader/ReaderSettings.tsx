@@ -5,8 +5,20 @@ import { createPortal } from 'react-dom';
 import { Settings, Type, X } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 
-export default function ReaderSettings() {
-    const [isOpen, setIsOpen] = useState(false);
+interface ReaderSettingsProps {
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
+}
+
+export default function ReaderSettings({
+    open: externalOpen,
+    onOpenChange: setExternalOpen,
+}: ReaderSettingsProps = {}) {
+    const [internalOpen, setInternalOpen] = useState(false);
+
+    const isOpen = externalOpen !== undefined ? externalOpen : internalOpen;
+    const setIsOpen = setExternalOpen !== undefined ? setExternalOpen : setInternalOpen;
+
     const [mounted, setMounted] = useState(false);
     const { settings, setFontSize } = useAppStore();
 
@@ -71,12 +83,14 @@ export default function ReaderSettings() {
 
     return (
         <>
-            <button
-                onClick={() => setIsOpen(true)}
-                className="flex items-center justify-center min-w-[44px] min-h-[44px] text-[var(--system-blue)] active:opacity-70 transition-opacity"
-            >
-                <Settings className="w-[20px] h-[20px]" />
-            </button>
+            {externalOpen === undefined && (
+                <button
+                    onClick={() => setIsOpen(true)}
+                    className="flex items-center justify-center min-w-[44px] min-h-[44px] text-[var(--system-blue)] active:opacity-70 transition-opacity"
+                >
+                    <Settings className="w-[20px] h-[20px]" />
+                </button>
+            )}
 
             {mounted && modal && createPortal(modal, document.body)}
         </>

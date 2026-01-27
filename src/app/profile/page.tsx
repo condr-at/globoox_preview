@@ -53,7 +53,7 @@ export default function ProfilePage() {
 
                 {/* App Info */}
                 <p className="text-center text-xs text-muted-foreground">
-                    LinguaRead v1.0.0
+                    Globoox Preview v1.0.0
                 </p>
             </div>
         </div>

@@ -3,11 +3,11 @@ import './globals.css';
 import Header from '@/components/ui/Header';
 
 export const metadata: Metadata = {
-  title: 'LinguaRead - Read in Any Language',
+  title: 'Globoox Preview',
   description: 'Read classic literature in English, French, Spanish, and German with instant translations.',
   keywords: ['reading', 'books', 'translation', 'language learning', 'ebooks'],
   openGraph: {
-    title: 'LinguaRead - Read in Any Language',
+    title: 'Globoox Preview',
     description: 'Read classic literature with instant translations',
     type: 'website',
   },

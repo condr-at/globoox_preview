@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: ReaderPageProps) {
     }
 
     return {
-        title: `${book.title} - LinguaRead`,
+        title: `${book.title} - Globoox Preview`,
         description: `Read ${book.title} by ${book.author} in multiple languages`,
     };
 }
