@@ -1,15 +1,19 @@
 import type { Metadata, Viewport } from 'next';
+import './globals.css';
+import Header from '@/components/ui/Header';
+import { ThemeProvider } from '@/components/theme-provider';
 
 export const viewport: Viewport = {
-  themeColor: '#000000',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#000000' },
+  ],
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
   viewportFit: 'cover',
 };
-import './globals.css';
-import Header from '@/components/ui/Header';
 
 export const metadata: Metadata = {
   title: 'Globoox Preview',
@@ -37,14 +41,21 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" suppressHydrationWarning>
       <body className="antialiased bg-[var(--bg-grouped)]">
-        <div className="min-h-screen">
-          <main className="pb-[calc(60px+env(safe-area-inset-bottom))]">
-            {children}
-          </main>
-        </div>
-        <Header />
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <div className="min-h-screen">
+            <main className="pb-[calc(60px+env(safe-area-inset-bottom))]">
+              {children}
+            </main>
+          </div>
+          <Header />
+        </ThemeProvider>
       </body>
     </html>
   );
