@@ -1,4 +1,13 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
+
+export const viewport: Viewport = {
+  themeColor: '#000000',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
+};
 import './globals.css';
 import Header from '@/components/ui/Header';
 
@@ -6,6 +15,15 @@ export const metadata: Metadata = {
   title: 'Globoox Preview',
   description: 'Read classic literature in English, French, Spanish, and German with instant translations.',
   keywords: ['reading', 'books', 'translation', 'language learning', 'ebooks'],
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Globoox',
+  },
+  formatDetection: {
+    telephone: false,
+  },
   openGraph: {
     title: 'Globoox Preview',
     description: 'Read classic literature with instant translations',
