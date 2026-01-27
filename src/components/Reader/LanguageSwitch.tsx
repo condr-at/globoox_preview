@@ -9,6 +9,7 @@ interface LanguageSwitchProps {
     onLanguageChange?: (lang: Language) => void;
     open?: boolean;
     onOpenChange?: (open: boolean) => void;
+    disabled?: boolean;
 }
 
 export default function LanguageSwitch({
@@ -16,6 +17,7 @@ export default function LanguageSwitch({
     onLanguageChange,
     open: externalOpen,
     onOpenChange: setExternalOpen,
+    disabled
 }: LanguageSwitchProps) {
     const [internalOpen, setInternalOpen] = useState(false);
     const isOpen = externalOpen !== undefined ? externalOpen : internalOpen;
@@ -23,6 +25,13 @@ export default function LanguageSwitch({
 
     const dropdownRef = useRef<HTMLDivElement>(null);
     const { settings, setLanguage, setIsTranslating } = useAppStore();
+
+    // Close dropdown if it's open when disabled becomes true
+    useEffect(() => {
+        if (disabled && isOpen) {
+            setIsOpen(false);
+        }
+    }, [disabled, isOpen, setIsOpen]);
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
@@ -55,7 +64,8 @@ export default function LanguageSwitch({
             {externalOpen === undefined && (
                 <button
                     onClick={() => setIsOpen(!isOpen)}
-                    className="flex items-center gap-[4px] px-[8px] min-w-[44px] min-h-[44px] text-[var(--system-blue)] active:opacity-70 transition-opacity"
+                    disabled={disabled}
+                    className="flex items-center gap-[4px] px-[8px] min-w-[44px] min-h-[44px] text-[var(--system-blue)] active:opacity-70 disabled:opacity-50 transition-opacity"
                 >
                     <span className="text-[15px] font-medium">{settings.language.toUpperCase()}</span>
                     <ChevronDown className={`w-[16px] h-[16px] transition-transform ${isOpen ? 'rotate-180' : ''}`} />

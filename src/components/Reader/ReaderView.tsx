@@ -7,6 +7,7 @@ import { useAppStore, Language } from '@/lib/store';
 import ReaderActionsMenu from './ReaderActionsMenu';
 import TranslationGlow from './TranslationGlow';
 import AppleIntelligenceGlow from './AppleIntelligenceGlow';
+import LanguageSwitch from './LanguageSwitch';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -72,7 +73,31 @@ export default function ReaderView({ book }: ReaderViewProps) {
         }
     }, [settings.language, setIsTranslating]);
 
-    // Save progress
+    const [showHeader, setShowHeader] = useState(true);
+    const lastScrollY = useRef(0);
+
+    // Header visibility on scroll
+    useEffect(() => {
+        const handleScroll = () => {
+            const currentScrollY = window.scrollY;
+
+            // Show header if scrolling up or at the very top
+            if (currentScrollY < lastScrollY.current || currentScrollY < 50) {
+                setShowHeader(true);
+            }
+            // Hide header if scrolling down and not at the top
+            else if (currentScrollY > lastScrollY.current && currentScrollY > 100) {
+                setShowHeader(false);
+            }
+
+            lastScrollY.current = currentScrollY;
+        };
+
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    // ... existing save progress effect ...
     useEffect(() => {
         const progress = (currentChapter / book.chapters.length) * 100;
         updateProgress(book.id, currentChapter, progress);
@@ -102,7 +127,12 @@ export default function ReaderView({ book }: ReaderViewProps) {
             <AppleIntelligenceGlow />
 
             {/* Navigation Bar */}
-            <header className="fixed top-0 left-0 right-0 z-40 bg-background/80 backdrop-blur-xl border-b pt-[calc(env(safe-area-inset-top)+16px)]">
+            <header className={`
+                fixed top-0 left-0 right-0 z-40 bg-background/80 backdrop-blur-xl border-b 
+                transition-transform duration-300 ease-in-out
+                ${showHeader ? 'translate-y-0' : '-translate-y-full'}
+                pt-[calc(env(safe-area-inset-top)+16px)]
+            `}>
                 <div className="flex items-center justify-between h-11 px-4">
                     {/* Left - Back button */}
                     <Button variant="ghost" size="icon" asChild className="text-[var(--system-blue)] -ml-2 flex-shrink-0">
@@ -118,6 +148,10 @@ export default function ReaderView({ book }: ReaderViewProps) {
 
                     {/* Right - Actions */}
                     <div className="flex items-center flex-shrink-0">
+                        <LanguageSwitch
+                            availableLanguages={book.languages}
+                            disabled={isTranslating}
+                        />
                         <ReaderActionsMenu
                             book={{
                                 id: book.id,

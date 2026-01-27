@@ -83,22 +83,16 @@ export default function TableOfContents({
                             `}
                         >
                             <span className={`
-                                w-[28px] h-[28px] rounded-full flex items-center justify-center text-[12px] font-medium
-                                ${chapter.number < currentChapter
-                                    ? 'bg-[var(--system-blue)] text-white'
-                                    : chapter.number === currentChapter
-                                        ? 'bg-[var(--system-blue)] text-white'
-                                        : 'bg-[var(--fill-tertiary)] text-[var(--label-secondary)]'
+                                w-[28px] text-[15px] font-medium transition-colors
+                                ${currentChapter === chapter.number
+                                    ? 'text-[var(--system-blue)]'
+                                    : 'text-[var(--label-tertiary)]'
                                 }
                             `}>
-                                {chapter.number < currentChapter ? (
-                                    <Check className="w-[14px] h-[14px]" />
-                                ) : (
-                                    chapter.number
-                                )}
+                                {chapter.number}
                             </span>
                             <span className={`text-[17px] ${currentChapter === chapter.number
-                                ? 'text-[var(--system-blue)] font-medium'
+                                ? 'text-[var(--system-blue)] font-semibold'
                                 : 'text-[var(--label-primary)]'
                                 }`}>
                                 {chapter.title}
