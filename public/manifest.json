@@ -1,7 +1,7 @@
 {
     "name": "Globoox Preview",
     "short_name": "Globoox",
-    "description": "Read classic literature with instant translations",
+    "description": "Reading app that translates any book with AI",
     "start_url": "/",
     "display": "standalone",
     "background_color": "#000000",

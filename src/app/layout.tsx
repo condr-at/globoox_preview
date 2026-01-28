@@ -17,7 +17,7 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: 'Globoox Preview',
-  description: 'Read classic literature in English, French, Spanish, and German with instant translations.',
+  description: 'Reading app that translates any book with AI',
   keywords: ['reading', 'books', 'translation', 'language learning', 'ebooks'],
   manifest: '/manifest.json',
   appleWebApp: {
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: 'Globoox Preview',
-    description: 'Read classic literature with instant translations',
+    description: 'Reading app that translates any book with AI',
     type: 'website',
   },
 };
