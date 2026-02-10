@@ -1,6 +1,6 @@
 'use client';
 
-import { RefObject, useEffect, useState } from 'react';
+import { RefObject, useEffect, useLayoutEffect, useState } from 'react';
 
 interface UseAdaptiveDropdownOptions {
   isOpen: boolean;
@@ -28,8 +28,9 @@ export function useAdaptiveDropdown({
     left: number;
     transformOrigin: string;
   }>({ top: 0, left: 0, transformOrigin: '100% 0%' });
+  const isPositioned = menuStyle.top !== 0 || menuStyle.left !== 0;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!isOpen || !triggerRef.current) return;
 
     const updateMenuPosition = () => {
@@ -95,5 +96,5 @@ export function useAdaptiveDropdown({
     };
   }, [isOpen, menuRef, triggerRef, setIsOpen]);
 
-  return { menuStyle };
+  return { menuStyle, isPositioned };
 }

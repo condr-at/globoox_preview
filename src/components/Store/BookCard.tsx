@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { StarIcon } from 'lucide-react';
@@ -17,6 +18,7 @@ interface BookCardProps {
   isDemo?: boolean;
   onHide?: (id: string) => void;
   onDelete?: (id: string) => void;
+  hideLabel?: string;
 }
 
 export default function BookCard({
@@ -27,20 +29,36 @@ export default function BookCard({
   progress = 0,
   onHide,
   onDelete,
+  hideLabel,
 }: BookCardProps) {
-  return (
-    <Link href={`/reader/${id}`} className="block active:scale-[0.98] transition-transform">
-      <Card className="w-full">
-        <CardContent className="p-3 relative">
-          {(onHide || onDelete) && (
-            <div className="absolute top-4 right-4">
-              <BookActionsMenu
-                onHide={() => onHide?.(id)}
-                onDelete={() => onDelete?.(id)}
-              />
-            </div>
-          )}
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const hasActions = Boolean(onHide || onDelete);
 
+  return (
+    <Card className="w-full">
+      <CardContent className="p-3 relative">
+        {hasActions && (
+          <div className="absolute top-4 right-4">
+            <BookActionsMenu
+              onHide={() => onHide?.(id)}
+              onDelete={() => onDelete?.(id)}
+              hideLabel={hideLabel}
+              onOpenChange={setIsMenuOpen}
+            />
+          </div>
+        )}
+
+        <Link
+          href={`/reader/${id}`}
+          className={`block transition-transform ${isMenuOpen ? 'pointer-events-none' : 'active:scale-[0.98]'}`}
+          tabIndex={isMenuOpen ? -1 : 0}
+          aria-disabled={isMenuOpen}
+          onClick={(event) => {
+            if (isMenuOpen) {
+              event.preventDefault();
+            }
+          }}
+        >
           <div className="aspect-[2/3] rounded-md bg-muted mb-2 overflow-hidden relative">
             <Image
               src={cover}
@@ -62,9 +80,9 @@ export default function BookCard({
           <CardDescription className="text-xs line-clamp-1">
             {author}
           </CardDescription>
-        </CardContent>
-      </Card>
-    </Link>
+        </Link>
+      </CardContent>
+    </Card>
   );
 }
 

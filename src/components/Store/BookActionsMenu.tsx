@@ -1,22 +1,36 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { EyeOff, MoreHorizontal, Trash2 } from 'lucide-react';
+import { Eye, EyeOff, MoreHorizontal, Trash2 } from 'lucide-react';
 import { useAdaptiveDropdown } from '@/components/ui/useAdaptiveDropdown';
 
 interface BookActionsMenuProps {
   onHide: () => void;
   onDelete: () => void;
+  hideLabel?: string;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export default function BookActionsMenu({ onHide, onDelete }: BookActionsMenuProps) {
+export default function BookActionsMenu({ onHide, onDelete, hideLabel = 'Hide', onOpenChange }: BookActionsMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const setMenuOpen = (open: boolean) => {
+    setIsOpen(open);
+    onOpenChange?.(open);
+    if (!open) {
+      setMenuVisible(false);
+      return;
+    }
+    requestAnimationFrame(() => {
+      setMenuVisible(true);
+    });
+  };
 
-  const { menuStyle } = useAdaptiveDropdown({
+  const { menuStyle, isPositioned } = useAdaptiveDropdown({
     isOpen,
-    setIsOpen,
+    setIsOpen: setMenuOpen,
     triggerRef,
     menuRef,
     menuWidth: 176,
@@ -24,25 +38,36 @@ export default function BookActionsMenu({ onHide, onDelete }: BookActionsMenuPro
   });
 
   const handleHide = () => {
-    setIsOpen(false);
+    setMenuOpen(false);
     onHide();
   };
 
   const handleDelete = () => {
-    setIsOpen(false);
+    setMenuOpen(false);
     onDelete();
   };
 
   return (
-    <div className="relative z-10" onClick={(e) => e.preventDefault()}>
+    <div
+      className="relative z-10"
+      onPointerDown={(e) => {
+        e.stopPropagation();
+      }}
+      onClick={(e) => {
+        e.stopPropagation();
+      }}
+    >
       <button
         ref={triggerRef}
         type="button"
         className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-background/80 backdrop-blur text-[var(--system-blue)] active:opacity-70"
+        onPointerDown={(e) => {
+          e.stopPropagation();
+        }}
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          setIsOpen((prev) => !prev);
+          setMenuOpen(!isOpen);
         }}
       >
         <MoreHorizontal className="w-5 h-5" />
@@ -52,20 +77,42 @@ export default function BookActionsMenu({ onHide, onDelete }: BookActionsMenuPro
         <div
           ref={menuRef}
           className="fixed py-1 w-44 bg-[var(--bg-grouped-secondary)] rounded-xl shadow-lg border border-[var(--separator)] overflow-hidden z-[100]"
-          style={menuStyle}
+          style={{
+            ...menuStyle,
+            visibility: menuVisible && isPositioned ? 'visible' : 'hidden',
+            opacity: menuVisible && isPositioned ? 1 : 0
+          }}
         >
           <button
-            onClick={handleHide}
+            type="button"
+            onPointerDown={(e) => {
+              e.stopPropagation();
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleHide();
+            }}
             className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors active:bg-[var(--fill-tertiary)]"
           >
-            <EyeOff className="w-4 h-4 text-[var(--system-blue)]" />
-            <span className="text-[15px]">Hide</span>
+            {hideLabel === 'Unhide' ? (
+              <Eye className="w-4 h-4 text-[var(--system-blue)]" />
+            ) : (
+              <EyeOff className="w-4 h-4 text-[var(--system-blue)]" />
+            )}
+            <span className="text-[15px]">{hideLabel}</span>
           </button>
 
           <div className="h-[0.5px] bg-[var(--separator)] mx-4" />
 
           <button
-            onClick={handleDelete}
+            type="button"
+            onPointerDown={(e) => {
+              e.stopPropagation();
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDelete();
+            }}
             className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors active:bg-[var(--fill-tertiary)]"
           >
             <Trash2 className="w-4 h-4 text-[var(--system-red)]" />

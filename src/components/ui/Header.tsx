@@ -26,9 +26,9 @@ export default function Header() {
                 <Button
                     variant="ghost"
                     asChild
-                    className={`flex-1 flex-col gap-0.5 h-full rounded-none hover:bg-transparent ${
+                    className={`flex-1 flex-col gap-0.5 h-full rounded-none ${
                         isActive('/library') 
-                            ? 'text-[var(--system-blue)]' 
+                            ? 'text-primary'
                             : 'text-muted-foreground'
                     }`}
                 >
@@ -40,9 +40,9 @@ export default function Header() {
                 <Button
                     variant="ghost"
                     asChild
-                    className={`flex-1 flex-col gap-0.5 h-full rounded-none hover:bg-transparent ${
+                    className={`flex-1 flex-col gap-0.5 h-full rounded-none ${
                         isActive('/store') 
-                            ? 'text-[var(--system-blue)]' 
+                            ? 'text-primary'
                             : 'text-muted-foreground'
                     }`}
                 >
@@ -54,9 +54,9 @@ export default function Header() {
                 <Button
                     variant="ghost"
                     asChild
-                    className={`flex-1 flex-col gap-0.5 h-full rounded-none hover:bg-transparent ${
+                    className={`flex-1 flex-col gap-0.5 h-full rounded-none ${
                         isActive('/profile') 
-                            ? 'text-[var(--system-blue)]' 
+                            ? 'text-primary'
                             : 'text-muted-foreground'
                     }`}
                 >
