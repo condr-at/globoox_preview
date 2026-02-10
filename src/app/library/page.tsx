@@ -216,6 +216,7 @@ export default function LibraryPage() {
               className="sr-only"
               onChange={handleUpload}
             />
+            {/*
             <Button
               asChild
               size="sm"
@@ -223,6 +224,7 @@ export default function LibraryPage() {
             >
               <label htmlFor="book-upload-input">Add book</label>
             </Button>
+            */}
           </>
         </div>
       </header>
