@@ -1,0 +1,38 @@
+[
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440001",
+    "title": "The Venture Mindset",
+    "author": "Ilya Strebulaev and Alex Dang",
+    "cover_url": "/covers/venture.jpg",
+    "original_language": "en",
+    "available_languages": ["en", "ru", "es", "fr"],
+    "created_at": "2025-01-10T12:00:00Z"
+  },
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440002",
+    "title": "Nexus",
+    "author": "Yuval Noah Harari",
+    "cover_url": "/covers/nexus.jpg",
+    "original_language": "en",
+    "available_languages": ["en", "ru", "es", "fr"],
+    "created_at": "2025-01-11T12:00:00Z"
+  },
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440003",
+    "title": "Human Evolution",
+    "author": "Alexander Markov",
+    "cover_url": "/covers/evolution.jpg",
+    "original_language": "ru",
+    "available_languages": ["ru", "en", "es", "fr"],
+    "created_at": "2025-01-12T12:00:00Z"
+  },
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440004",
+    "title": "The Islamic Republic of Iran in Systemic Crisis",
+    "author": "Ata Ayati and David Rigoulet-Roze",
+    "cover_url": "/covers/iran.jpg",
+    "original_language": "fr",
+    "available_languages": ["fr", "ru", "es", "en"],
+    "created_at": "2025-01-13T12:00:00Z"
+  }
+]
