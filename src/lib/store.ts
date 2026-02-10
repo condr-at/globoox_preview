@@ -19,6 +19,22 @@ export const languageFlags: Record<Language, string> = {
   ru: '🇷🇺'
 };
 
+export interface CustomChapter {
+  number: number;
+  title: string;
+  content: Record<Language, string>;
+}
+
+export interface CustomBook {
+  id: string;
+  title: string;
+  author: string;
+  cover: string;
+  languages: Language[];
+  chapters: CustomChapter[];
+  isCustom?: boolean;
+}
+
 interface ReaderSettings {
   fontSize: number;
   theme: 'dark' | 'light';
@@ -44,6 +60,14 @@ interface AppState {
   progress: ReadingProgress;
   updateProgress: (bookId: string, chapter: number, progress: number) => void;
   getProgress: (bookId: string) => { chapter: number; progress: number } | null;
+
+  // Library state
+  customBooks: CustomBook[];
+  hiddenBookIds: string[];
+  addCustomBook: (book: CustomBook) => void;
+  hideBook: (bookId: string) => void;
+  unhideBook: (bookId: string) => void;
+  deleteBook: (bookId: string) => void;
 
   // Translation state
   isTranslating: boolean;
@@ -95,6 +119,35 @@ export const useAppStore = create<AppState>()(
         if (!progress) return null;
         return { chapter: progress.chapter, progress: progress.progress };
       },
+
+      // Library state
+      customBooks: [],
+      hiddenBookIds: [],
+      addCustomBook: (book) =>
+        set((state) => ({
+          customBooks: [book, ...state.customBooks.filter((b) => b.id !== book.id)],
+          hiddenBookIds: state.hiddenBookIds.filter((id) => id !== book.id)
+        })),
+      hideBook: (bookId) =>
+        set((state) => ({
+          hiddenBookIds: state.hiddenBookIds.includes(bookId)
+            ? state.hiddenBookIds
+            : [...state.hiddenBookIds, bookId]
+        })),
+      unhideBook: (bookId) =>
+        set((state) => ({
+          hiddenBookIds: state.hiddenBookIds.filter((id) => id !== bookId)
+        })),
+      deleteBook: (bookId) =>
+        set((state) => {
+          const nextProgress = { ...state.progress };
+          delete nextProgress[bookId];
+          return {
+            customBooks: state.customBooks.filter((b) => b.id !== bookId),
+            hiddenBookIds: state.hiddenBookIds.filter((id) => id !== bookId),
+            progress: nextProgress
+          };
+        }),
 
       // Translation state
       isTranslating: false,

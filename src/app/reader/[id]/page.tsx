@@ -1,38 +1,30 @@
-import { notFound } from 'next/navigation';
+'use client';
+
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import ReaderView from '@/components/Reader/ReaderView';
 import demoBooks from '@/data/demo-books.json';
+import { useAppStore } from '@/lib/store';
 
-interface ReaderPageProps {
-    params: Promise<{ id: string }>;
-}
+export default function ReaderPage() {
+  const params = useParams<{ id: string }>();
+  const { customBooks } = useAppStore();
 
-export async function generateStaticParams() {
-    return demoBooks.books.map((book) => ({
-        id: book.id,
-    }));
-}
+  const allBooks = [...customBooks, ...demoBooks.books];
+  const book = allBooks.find((item) => item.id === params.id);
 
-export async function generateMetadata({ params }: ReaderPageProps) {
-    const { id } = await params;
-    const book = demoBooks.books.find((b) => b.id === id);
+  if (!book) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6 text-center">
+        <div>
+          <p className="text-lg font-semibold mb-2">Book not found</p>
+          <Link href="/library" className="text-[var(--system-blue)]">
+            Back to Library
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
-    if (!book) {
-        return { title: 'Book not found' };
-    }
-
-    return {
-        title: `${book.title} - Globoox Preview`,
-        description: `Read ${book.title} by ${book.author} in multiple languages`,
-    };
-}
-
-export default async function ReaderPage({ params }: ReaderPageProps) {
-    const { id } = await params;
-    const book = demoBooks.books.find((b) => b.id === id);
-
-    if (!book) {
-        notFound();
-    }
-
-    return <ReaderView book={book as any} />;
+  return <ReaderView book={book as never} />;
 }
