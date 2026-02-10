@@ -13,6 +13,11 @@ const nextConfig: NextConfig = {
         hostname: 'm.media-amazon.com',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'mricrybtjsizqywvyxkr.supabase.co',
+        pathname: '/storage/**',
+      },
     ],
   },
 };
