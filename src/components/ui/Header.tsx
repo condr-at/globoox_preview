@@ -15,9 +15,10 @@ export default function Header() {
         return pathname.startsWith(path);
     };
 
-    // Hide tab bar on reader pages
+    // Hide tab bar on full-screen pages
     const isReaderPage = pathname.startsWith('/reader');
-    if (isReaderPage) return null;
+    const isAuthPage = pathname.startsWith('/auth');
+    if (isReaderPage || isAuthPage) return null;
 
     return (
         <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-t pb-[env(safe-area-inset-bottom)]">

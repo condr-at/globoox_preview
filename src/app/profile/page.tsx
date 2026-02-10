@@ -1,7 +1,8 @@
 'use client';
 
+import Link from 'next/link';
 import { User, Settings, HelpCircle, LogOut } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 
@@ -28,6 +29,9 @@ export default function ProfilePage() {
                                 <CardDescription>Sign in to sync your progress</CardDescription>
                             </div>
                         </div>
+                        <Button asChild className="mt-4 w-full sm:w-auto">
+                            <Link href="/auth">Sign In</Link>
+                        </Button>
                     </CardContent>
                 </Card>
 
