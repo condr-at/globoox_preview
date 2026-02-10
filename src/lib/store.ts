@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 export type Language = 'en' | 'fr' | 'es' | 'de' | 'ru';
+export type LocalizedText = string | Partial<Record<Language, string>>;
 
 export const languageNames: Record<Language, string> = {
   en: 'English',
@@ -21,7 +22,7 @@ export const languageFlags: Record<Language, string> = {
 
 export interface CustomChapter {
   number: number;
-  title: string;
+  title: LocalizedText;
   content: Record<Language, string>;
 }
 

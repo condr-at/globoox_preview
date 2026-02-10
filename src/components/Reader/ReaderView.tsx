@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
-import { useAppStore, Language } from '@/lib/store';
+import { useAppStore, Language, LocalizedText } from '@/lib/store';
 import ReaderActionsMenu from './ReaderActionsMenu';
 import TranslationGlow from './TranslationGlow';
 import AppleIntelligenceGlow from './AppleIntelligenceGlow';
@@ -13,7 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 interface Chapter {
     number: number;
-    title: string;
+    title: LocalizedText;
     content: Record<Language, string>;
 }
 
@@ -107,6 +107,21 @@ export default function ReaderView({ book }: ReaderViewProps) {
     const prevChapter = book.chapters.find(c => c.number === currentChapter - 1);
     const nextChapter = book.chapters.find(c => c.number === currentChapter + 1);
 
+    const getChapterTitle = (chapter?: Chapter) => {
+        if (!chapter) {
+            return '';
+        }
+
+        if (typeof chapter.title === 'string') {
+            return chapter.title;
+        }
+
+        return chapter.title[settings.language]
+            || chapter.title.en
+            || Object.values(chapter.title).find(Boolean)
+            || `Chapter ${chapter.number}`;
+    };
+
     const goToChapter = (num: number, scrollToBottom = false) => {
         if (num >= 1 && num <= book.chapters.length) {
             setCurrentChapter(num);
@@ -156,7 +171,7 @@ export default function ReaderView({ book }: ReaderViewProps) {
                             book={{
                                 id: book.id,
                                 languages: book.languages,
-                                chapters: book.chapters.map(c => ({ number: c.number, title: c.title }))
+                                chapters: book.chapters.map(c => ({ number: c.number, title: getChapterTitle(c) }))
                             }}
                             currentChapter={currentChapter}
                             onSelectChapter={goToChapter}
@@ -178,7 +193,7 @@ export default function ReaderView({ book }: ReaderViewProps) {
                             disabled={isTranslating}
                         >
                             <ChevronLeft className="w-5 h-5 mr-1 text-[var(--system-blue)]" />
-                            {prevChapter.title}
+                            {getChapterTitle(prevChapter)}
                         </Button>
                     )}
 
@@ -189,7 +204,7 @@ export default function ReaderView({ book }: ReaderViewProps) {
                                 <Skeleton className="h-7 w-40 mb-5" />
                             ) : (
                                 <h2 className="text-xl font-bold mb-5">
-                                    {currentChapterData?.title}
+                                    {getChapterTitle(currentChapterData)}
                                 </h2>
                             )}
 
@@ -227,7 +242,7 @@ export default function ReaderView({ book }: ReaderViewProps) {
                             className="w-full justify-center text-[var(--system-blue)] mt-4"
                             disabled={isTranslating}
                         >
-                            {nextChapter.title}
+                            {getChapterTitle(nextChapter)}
                             <ChevronRight className="w-5 h-5 ml-1 text-[var(--system-blue)]" />
                         </Button>
                     )}

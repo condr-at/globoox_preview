@@ -18,7 +18,7 @@ type ImportedBook = {
   cover?: string;
   language?: string;
   text?: string;
-  chapters?: Array<{ title?: string; content?: string | Record<string, string> }>;
+  chapters?: Array<{ title?: string | Record<string, string>; content?: string | Record<string, string> }>;
 };
 
 type UploadingPreview = {
@@ -89,9 +89,20 @@ const parseJsonToBook = (raw: string, fileName: string): CustomBook => {
       }
     }
 
+    const titleByLanguage: Partial<Record<Language, string>> = {};
+    if (chapter.title && typeof chapter.title === 'object') {
+      for (const [langKey, value] of Object.entries(chapter.title)) {
+        if (supportedLanguages.includes(langKey as Language) && typeof value === 'string' && value.trim()) {
+          titleByLanguage[langKey as Language] = value;
+        }
+      }
+    }
+
     return {
       number: index + 1,
-      title: chapter.title || `Chapter ${index + 1}`,
+      title: typeof chapter.title === 'string' && chapter.title.trim()
+        ? chapter.title
+        : (Object.keys(titleByLanguage).length > 0 ? titleByLanguage : `Chapter ${index + 1}`),
       content: contentByLanguage
     };
   });
