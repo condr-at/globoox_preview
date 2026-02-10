@@ -9,60 +9,54 @@
     "id": "cb-venture-002",
     "position": 1,
     "type": "paragraph",
-    "text": "In November 2012, the Qualcomm Ventures team—Nagraj Kashyap, Sanjay Deshpande, and Quinn Eggen—gathered to evaluate a small startup that promised to revolutionize video conferencing. The company was called Saasbee, and on paper, it didn't look like much. It was a tiny operation with minimal revenue, competing in a crowded market against giants like Skype and Cisco's WebEx."
+    "text": "In November 2012, the Qualcomm Ventures team gathered in their San Diego offices to evaluate a small startup that promised to revolutionize video conferencing. The company was called Saasbee, and on paper, it looked like dozens of other enterprise software pitches they reviewed each month. But something about this one caught the attention of Nagraj Kashyap, the managing director who had built a reputation for spotting diamonds in the rough."
   },
   {
     "id": "cb-venture-003",
     "position": 2,
     "type": "paragraph",
-    "text": "What caught their attention was the founder's background. Eric Yuan was a Chinese-born engineer who had spent years at WebEx, where he had become one of Cisco's most valued engineers after the acquisition. He understood video conferencing technology at a deep level, and more importantly, he understood what was broken about the existing solutions. Yuan had left a secure position at Cisco to chase a vision that most people thought was impossible."
+    "text": "The founder was a Chinese-born engineer named Eric Yuan, who had spent nearly a decade at WebEx before Cisco acquired it in 2007 for $3.2 billion. Yuan had been corporate vice president of engineering at Cisco, overseeing the collaboration software division. Despite his success, Yuan had grown frustrated with WebEx's aging architecture and Cisco's bureaucratic innovation process. He believed video conferencing could be simpler, more reliable, and accessible on any device."
   },
   {
     "id": "cb-venture-004",
     "position": 3,
     "type": "paragraph",
-    "text": "Sanjay Deshpande was the first to engage with Yuan. He took a call with the founder and asked for a demo of the product. What he saw surprised him. The video quality was remarkably crisp, the interface was intuitive, and most importantly, it just worked. There were no complicated downloads, no firewall issues, no dropped connections. It was everything that WebEx and other solutions weren't."
+    "text": "Quinn Li Deshpande, a partner at Qualcomm Ventures, took the first call with Yuan. She was immediately struck by his humility and his obsessive focus on customer happiness. During their initial demo, Yuan showed her how Saasbee could deliver HD video with minimal latency, even on mobile devices. The product worked remarkably well, especially compared to the clunky enterprise solutions dominating the market."
   },
   {
     "id": "cb-venture-005",
     "position": 4,
     "type": "paragraph",
-    "text": "Quinn Eggen had a similar reaction when he tested the product. He was particularly impressed by Yuan's obsessive focus on user experience and reliability. While competitors were adding features, Yuan was perfecting the basics. Every decision was driven by a simple question: Does this make video conferencing easier and more reliable for users?"
+    "text": "Steve Eggen, another partner on the team, joined subsequent meetings and came away equally impressed. Yuan had already recruited a small but exceptional engineering team, many of whom had followed him from Cisco. The technical architecture was sound, and the early customer feedback was overwhelmingly positive. However, the market timing seemed questionable—video conferencing was crowded with giants like Skype, Google Hangouts, and of course, Cisco's WebEx."
   },
   {
     "id": "cb-venture-006",
     "position": 5,
     "type": "paragraph",
-    "text": "Despite the team's enthusiasm, the Qualcomm Ventures investment committee rejected the deal. The concerns were legitimate: the market was saturated, the company had almost no revenue, and the competitive moat wasn't obvious. Video conferencing seemed like a mature market with entrenched players. Why would anyone switch from Skype or WebEx to an unknown startup?"
+    "text": "When Kashyap, Deshpande, and Eggen brought Saasbee to Qualcomm Ventures' investment committee, they faced skepticism. The committee questioned whether a startup could compete against entrenched players with massive distribution advantages. The video conferencing market seemed saturated, and Saasbee's differentiation—better user experience and reliability—felt incremental rather than revolutionary. The formal recommendation was to pass on the investment."
   },
   {
     "id": "cb-venture-007",
     "position": 6,
     "type": "paragraph",
-    "text": "Kashyap, Deshpande, and Eggen believed the committee was wrong. They had seen something in Yuan and his product that didn't show up in the spreadsheets. They knew they had discovered something special, even if they couldn't fully articulate why. The question was: what could they do about it?"
+    "text": "But Kashyap and his team believed the committee was missing something fundamental. They had watched Yuan demo the product to potential customers and witnessed their reactions—genuine delight at how easy and reliable it was. In the enterprise software world, products that truly delighted users were rare. The team decided to take an unconventional approach."
   },
   {
     "id": "cb-venture-008",
     "position": 7,
     "type": "paragraph",
-    "text": "Fortunately, Qualcomm Ventures had recently set up a small early-stage fund that gave the team more autonomy to make unconventional bets. The fund was designed for exactly this kind of situation—where experienced investors had strong conviction despite institutional skepticism. It was a way to test hypotheses that didn't fit the traditional investment criteria."
+    "text": "Qualcomm Ventures had recently established a small early-stage fund that gave partners more autonomy to make smaller, higher-risk bets. Kashyap convinced his colleagues to use this fund to invest $500,000 in Saasbee's seed round, despite the investment committee's rejection. It was a modest check, but it gave them a seat at the table. Within months, Yuan would rebrand the company to Zoom Video Communications."
   },
   {
     "id": "cb-venture-009",
     "position": 8,
     "type": "paragraph",
-    "text": "The team decided to use the early-stage fund to invest $500,000 in Saasbee. It was a small check, but it gave them a seat at the table and allowed Yuan to extend his runway. The investment was recorded, and the team moved on to other deals. No one could have predicted what would happen next."
+    "text": "By 2019, Zoom had become a verb and a cultural phenomenon. The company went public at a $9 billion valuation, and when the COVID-19 pandemic hit in 2020, Zoom became essential infrastructure for remote work and education. Qualcomm Ventures' $500,000 investment had appreciated to over $500 million—a 1,000x return. It became the firm's best investment in its two-decade history."
   },
   {
     "id": "cb-venture-010",
     "position": 9,
     "type": "paragraph",
-    "text": "Saasbee changed its name to Zoom Video Communications and went on to become one of the most successful tech companies of the decade. The $500,000 investment became worth hundreds of millions of dollars, making it Qualcomm Ventures' best investment ever. More importantly, it validated a crucial insight about venture capital: sometimes the best investments are the ones that don't make sense on paper."
-  },
-  {
-    "id": "cb-venture-011",
-    "position": 10,
-    "type": "paragraph",
-    "text": "This story raises a fundamental question that sits at the heart of venture capital: How do you identify and support breakthrough innovations when they're still small, unproven, and easily dismissed? The answer, as we'll explore in this book, requires a different way of thinking—what we call the venture mindset."
+    "text": "The Saasbee story illustrates a central paradox in venture capital: the best investments often look questionable at first glance. They challenge conventional wisdom, enter crowded markets, or seem to offer only incremental improvements. What separates successful venture capitalists from unsuccessful ones is not just pattern recognition or financial modeling—it's a particular mindset. This book explores what we call the venture mindset and why it matters far beyond the world of startup investing."
   }
 ]
