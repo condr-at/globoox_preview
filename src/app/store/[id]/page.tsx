@@ -120,16 +120,19 @@ export default function BookDetailPage({ params }: BookDetailPageProps) {
                             </Link>
                         )}
 
-                        <a
-                            href={book.amazonUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
-                            <button className={`w-full ${book.hasDemo ? 'btn-gray' : 'btn-primary'}`}>
+                        <div>
+                            <button
+                                className="w-full btn-gray"
+                                disabled
+                                aria-disabled="true"
+                            >
                                 <ExternalLink className="w-[20px] h-[20px]" />
-                                Buy on Amazon
+                                Buy
                             </button>
-                        </a>
+                            <p className="mt-[6px] text-[12px] text-[var(--label-tertiary)] text-center">
+                                comnig soon
+                            </p>
+                        </div>
                     </div>
                 </div>
 
