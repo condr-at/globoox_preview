@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BookOpen, User } from 'lucide-react';
+import { BookOpen, ShoppingBag, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function Header() {
@@ -35,6 +35,20 @@ export default function Header() {
                     <Link href="/library">
                         <BookOpen className="w-6 h-6" strokeWidth={isActive('/library') ? 2 : 1.5} />
                         <span className="text-[10px] font-medium">Library</span>
+                    </Link>
+                </Button>
+                <Button
+                    variant="ghost"
+                    asChild
+                    className={`flex-1 flex-col gap-0.5 h-full rounded-none ${
+                        isActive('/store') 
+                            ? 'text-primary'
+                            : 'text-muted-foreground'
+                    }`}
+                >
+                    <Link href="/store">
+                        <ShoppingBag className="w-6 h-6" strokeWidth={isActive('/store') ? 2 : 1.5} />
+                        <span className="text-[10px] font-medium">Store</span>
                     </Link>
                 </Button>
                 <Button
