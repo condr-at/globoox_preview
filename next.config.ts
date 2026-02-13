@@ -18,6 +18,11 @@ const nextConfig: NextConfig = {
         hostname: 'mricrybtjsizqywvyxkr.supabase.co',
         pathname: '/storage/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'covers.openlibrary.org',
+        pathname: '/**',
+      },
     ],
   },
 };
