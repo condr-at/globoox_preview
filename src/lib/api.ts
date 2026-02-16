@@ -72,16 +72,56 @@ export interface TranslateRequest {
   blockIds: string[]
 }
 
+const GET_CACHE_TTL_MS = 2000
+const inflightGetRequests = new Map<string, Promise<unknown>>()
+const recentGetResponses = new Map<string, { expiresAt: number; value: unknown }>()
+
+function buildGetCacheKey(path: string, options?: RequestInit): string | null {
+  const method = (options?.method ?? 'GET').toUpperCase()
+  if (method !== 'GET') return null
+  const body = typeof options?.body === 'string' ? options.body : ''
+  return `${path}::${body}`
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
-    ...options,
-  })
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}))
-    throw new Error(body.message || `Request failed: ${res.status}`)
+  const key = buildGetCacheKey(path, options)
+  if (key) {
+    const cached = recentGetResponses.get(key)
+    if (cached && cached.expiresAt > Date.now()) return cached.value as T
+    recentGetResponses.delete(key)
+
+    const inflight = inflightGetRequests.get(key)
+    if (inflight) return inflight as Promise<T>
   }
-  return res.json()
+
+  const fetchPromise = (async () => {
+    const res = await fetch(`${API_URL}${path}`, {
+      headers: { 'Content-Type': 'application/json' },
+      ...options,
+    })
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      throw new Error(body.message || `Request failed: ${res.status}`)
+    }
+
+    const data = await res.json()
+    if (key) {
+      recentGetResponses.set(key, {
+        expiresAt: Date.now() + GET_CACHE_TTL_MS,
+        value: data,
+      })
+    }
+    return data as T
+  })()
+
+  if (!key) return fetchPromise
+
+  inflightGetRequests.set(key, fetchPromise as Promise<unknown>)
+  try {
+    return await fetchPromise
+  } finally {
+    inflightGetRequests.delete(key)
+  }
 }
 
 export function fetchBooks(status?: string): Promise<ApiBook[]> {
@@ -90,7 +130,17 @@ export function fetchBooks(status?: string): Promise<ApiBook[]> {
 }
 
 export function fetchBook(id: string): Promise<ApiBook> {
-  return request<ApiBook>(`/api/books/${id}`)
+  return request<ApiBook>(`/api/books/${id}`).catch(async (error: unknown) => {
+    const message = error instanceof Error ? error.message : ''
+    const isNotFound = message.includes('404') || message.toLowerCase().includes('not found')
+    if (!isNotFound) throw error
+
+    // Backend may not implement /api/books/:id yet.
+    const allBooks = await request<ApiBook[]>('/api/books')
+    const book = allBooks.find((item) => item.id === id)
+    if (!book) throw error
+    return book
+  })
 }
 
 export function createBook(data: { title: string; author?: string; cover_url?: string; source_language?: string }): Promise<ApiBook> {
