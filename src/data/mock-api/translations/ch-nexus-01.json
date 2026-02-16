@@ -1,0 +1,41 @@
+{
+  "RU": {
+    "cb-nexus-001": "Пролог",
+    "cb-nexus-002": "Мы назвали себя Homo sapiens — человеком разумным. Но насколько разумны наши действия? Будь мы по-настоящему мудры, разве оказались бы перед лицом экзистенциального кризиса собственного создания? На протяжении 100 000 лет наш вид накапливал силу через технологические инновации, социальную организацию и научное познание.",
+    "cb-nexus-003": "И вот мы стоим на пороге двадцать первого века, обладая богоподобной властью — и без мудрости, чтобы ею распорядиться.",
+    "cb-nexus-004": "Предупреждения древних",
+    "cb-nexus-005": "Древние греки хорошо понимали эту дилемму — о чём свидетельствует миф о Фаэтоне. Фаэтон был сыном Гелиоса, бога Солнца, и потребовал, чтобы отец позволил ему провезти солнечную колесницу по небу всего один день.",
+    "cb-nexus-007": "Гелиос нехотя согласился, но предупредил сына: управление колесницей требует божественного мастерства. Самонадеянный Фаэтон схватил поводья — и тут же потерял контроль. Кони почуяли неопытность всадника и понеслись вихрем по небесам.",
+    "cb-nexus-009": "Ученик чародея",
+    "cb-nexus-010": "Столетия спустя Гёте переосмыслил это предупреждение в поэме «Ученик чародея». Молодой подмастерье, оставшись один в мастерской учителя, с помощью магического заклятия оживляет метлу, чтобы та носила воду и наполняла ванну.",
+    "cb-nexus-011": ["Ученик произносит заклятие, оживляющее метлу", "Метла начинает носить воду без остановки", "Не в силах её остановить, ученик разрубает метлу", "Из неё появляются две метлы — и наводнение удваивается", "Только возвращение учителя спасает мастерскую"],
+    "cb-nexus-012": "Сила сетей",
+    "cb-nexus-013": "Эти истории принято трактовать как предупреждения об индивидуальной самонадеянности. Но такая интерпретация упускает главный урок. Сила человечества никогда не исходила прежде всего от исключительных личностей. Она рождается из нашей уникальной способности к гибкому сотрудничеству в большом масштабе.",
+    "cb-nexus-014": ["Смартфоны создали сети из миллионов инженеров", "Ядерное оружие потребовало широкого государственного сотрудничества", "ИИ-системы строятся распределёнными командами по всему миру", "Ни один человек не мог бы создать эти технологии в одиночку"],
+    "cb-nexus-015": "Что позволяет людям сотрудничать в таком масштабе? Ответ — информация. Именно она скрепляет наши сети. Но здесь кроется более глубокая проблема: человеческие сети строятся не только на истине, но и на вымыслах, фантазиях и общих мифологиях.",
+    "cb-nexus-017": "Современный кризис",
+    "cb-nexus-018": "Сегодня наша власть растёт по экспоненте, а мудрость не поспевает за ней. Современные информационные сети мгновенно охватывают весь земной шар, координируя действия миллиардов людей. Эти сети породили невиданное прежде процветание, здоровье и знания.",
+    "cb-nexus-020": "Метла ученика разделилась на миллионы мётел, каждая из которых тащит информацию вместо воды, — а заклятия, способного их остановить, у нас нет.",
+    "cb-nexus-021": "Эта книга исследует нексус — точку соединения — между информацией и властью на протяжении всей человеческой истории. Поняв, как информационные сети формировали наше прошлое, мы, возможно, обретём мудрость, необходимую для управления ими в настоящем и будущем."
+  },
+  "FR": {
+    "cb-nexus-001": "Prologue",
+    "cb-nexus-002": "Nous nous sommes nommés Homo sapiens — l'humain sage. Mais quelle sagesse y a-t-il dans nos actions ? Si nous étions vraiment sages, ferions-nous face à une crise existentielle de notre propre création ? Pendant 100 000 ans, notre espèce a accumulé du pouvoir grâce à l'innovation technologique, à l'organisation sociale et à la compréhension scientifique.",
+    "cb-nexus-003": "Et nous voilà au début du vingt et unième siècle, brandissant des pouvoirs divins sans la sagesse pour les utiliser de manière responsable.",
+    "cb-nexus-009": "L'Apprenti sorcier",
+    "cb-nexus-012": "La puissance des réseaux",
+    "cb-nexus-017": "La crise moderne",
+    "cb-nexus-020": "Le balai de l'apprenti s'est divisé en millions de balais, chacun transportant de l'information plutôt que de l'eau, et nous avons perdu le sort pour les arrêter.",
+    "cb-nexus-021": "Ce livre explore le nexus — le point de connexion — entre l'information et le pouvoir tout au long de l'histoire humaine. En comprenant comment les réseaux d'information ont façonné notre passé, nous pourrions acquérir la sagesse nécessaire pour les gérer dans notre présent et notre futur."
+  },
+  "ES": {
+    "cb-nexus-001": "Prólogo",
+    "cb-nexus-002": "Nos llamamos a nosotros mismos Homo sapiens — el humano sabio. Pero ¿cuánta sabiduría hay en nuestras acciones? Si fuéramos verdaderamente sabios, ¿estaríamos enfrentando una crisis existencial de nuestra propia creación? Durante 100 000 años, nuestra especie ha acumulado poder a través de la innovación tecnológica, la organización social y la comprensión científica.",
+    "cb-nexus-003": "Y aquí estamos, al comienzo del siglo veintiuno, blandiendo poderes divinos sin la sabiduría para usarlos de manera responsable.",
+    "cb-nexus-009": "El aprendiz de brujo",
+    "cb-nexus-012": "El poder de las redes",
+    "cb-nexus-017": "La crisis moderna",
+    "cb-nexus-020": "La escoba del aprendiz se ha dividido en millones de escobas, cada una acarreando información en lugar de agua, y hemos perdido el hechizo para detenerlas.",
+    "cb-nexus-021": "Este libro explora el nexo — el punto de conexión — entre la información y el poder a lo largo de la historia humana. Al comprender cómo las redes de información moldearon nuestro pasado, podríamos ganar la sabiduría para gestionarlas en nuestro presente y futuro."
+  }
+}

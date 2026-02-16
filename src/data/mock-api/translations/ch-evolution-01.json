@@ -1,0 +1,52 @@
+{
+  "RU": {
+    "cb-evolution-001": "В поисках рубежа души",
+    "cb-evolution-002": "В 1859 году Чарльз Дарвин завершил «Происхождение видов» смелым предсказанием о будущем психологии. Он написал, что наука о разуме человека в конечном счёте будет поставлена на новый фундамент — фундамент эволюционной биологии.",
+    "cb-evolution-004": "Дарвин понимал: если естественный отбор формировал наши тела, он должен был формировать и наш разум, наши эмоции, и наше социальное поведение.",
+    "cb-evolution-005": "Сопротивление эволюционной психологии",
+    "cb-evolution-006": "Сопротивление эволюционным объяснениям человеческого поведения глубоко укоренилось — даже среди образованных людей, легко принимающих эволюцию как происхождение нашей физической формы. Существует некая невидимая черта — то, что можно назвать рубежом души, — за которой эволюционные объяснения считаются неуместными.",
+    "cb-evolution-007": ["Большие пальцы рук и прямохождение — широко признаны результатом эволюции", "Предпочтения в партнёрстве — спорно объяснять с эволюционной точки зрения", "Моральные интуиции — нередко считаются вне эволюции", "Эстетические вкусы — редко обсуждаются в эволюционном ключе"],
+    "cb-evolution-009": "Компромисс Уоллеса",
+    "cb-evolution-010": "Альфред Рассел Уоллес, независимо открывший естественный отбор вместе с Дарвином, в итоге выработал компромиссную позицию, которую многие негласно разделяют и сегодня.",
+    "cb-evolution-011": "Высшие умственные качества",
+    "cb-evolution-012": ["Сознание и самосознание", "Моральное мышление и этические интуиции", "Математическое и абстрактное мышление", "Художественное восприятие и творчество"],
+    "cb-evolution-013": "Уоллес утверждал, что эти способности требуют божественного вмешательства или какой-то иной нематериальной силы. На протяжении большей части двадцатого века этот компромисс пользовался значительным авторитетом: мы могли быть животными «ниже шеи», но чем-то большим — «выше шеи».",
+    "cb-evolution-015": "Вызовы современной нейронауки",
+    "cb-evolution-016": "Последние достижения нейронауки и когнитивистики делают компромисс Уоллеса всё менее состоятельным. Исследования с применением нейровизуализации показывают, что наши самые дорогие ментальные переживания — любовь, нравственное суждение, религиозное чувство — соответствуют конкретным паттернам нейронной активности.",
+    "cb-evolution-018": "Если бы наши «высшие» качества зависели от чего-то нематериального, они не были бы столь уязвимы к физическим повреждениям мозга.",
+    "cb-evolution-019": "Поиски рубежа души — той границы, разделяющей эволюционировавшие животные стороны человечества от якобы неэволюционировавших высших сторон, — оказались тщетными. Современная эволюционная психология предполагает, что такой границы не существует.",
+    "cb-evolution-020": "Понимание эволюционных корней человеческой психики может быть неудобным, но оно является необходимым фундаментом для подлинной науки о человеческой природе."
+  },
+  "EN": {
+    "cb-evolution-001": "In Search of the Soul's Edge",
+    "cb-evolution-002": "In 1859, Charles Darwin concluded 'The Origin of Species' with a bold prediction about the future of psychology. He wrote that the science of the human mind would eventually be placed on a new foundation — the foundation of evolutionary biology.",
+    "cb-evolution-004": "Darwin understood that if natural selection shaped our bodies, it must have also shaped our minds, our emotions, and our social behaviors.",
+    "cb-evolution-005": "The Resistance to Evolutionary Psychology",
+    "cb-evolution-006": "The resistance to evolutionary explanations of human behavior runs deep, even among educated people who readily accept evolution as the origin of our physical form. There seems to be an invisible line — what we might call the soul's edge — beyond which evolutionary explanations are deemed inappropriate.",
+    "cb-evolution-007": ["Opposable thumbs and bipedal locomotion — widely accepted as evolved", "Mating preferences — controversial to explain evolutionarily", "Moral intuitions — often considered beyond evolution", "Aesthetic sensibilities — rarely discussed in evolutionary terms"],
+    "cb-evolution-009": "Wallace's Compromise",
+    "cb-evolution-010": "Alfred Russel Wallace, who independently discovered natural selection alongside Darwin, eventually developed a compromise position that many people still implicitly hold today.",
+    "cb-evolution-011": "The Higher Mental Qualities",
+    "cb-evolution-012": ["Consciousness and self-awareness", "Moral reasoning and ethical intuitions", "Mathematical and abstract thinking", "Artistic appreciation and creativity"],
+    "cb-evolution-013": "Wallace argued these capabilities required divine intervention or some other non-material force. For much of the twentieth century, this compromise held considerable appeal — we could be animals from the neck down, but something more from the neck up.",
+    "cb-evolution-015": "Modern Neuroscience Challenges",
+    "cb-evolution-016": "Recent advances in neuroscience and cognitive science have made Wallace's compromise increasingly untenable. Brain imaging studies reveal that our most cherished mental experiences — love, moral judgment, religious feeling — correspond to specific patterns of neural activity.",
+    "cb-evolution-018": "If our 'higher' qualities depended on something non-physical, they should not be so vulnerable to physical brain injuries.",
+    "cb-evolution-019": "The search for the soul's edge — that boundary separating the evolved animal aspects of humanity from the supposedly non-evolved higher aspects — has proven fruitless. Modern evolutionary psychology suggests there is no such edge.",
+    "cb-evolution-020": "Understanding the evolutionary origins of the human psyche may be uncomfortable, but it is the necessary foundation for a genuine science of human nature."
+  },
+  "ES": {
+    "cb-evolution-001": "En busca del límite del alma",
+    "cb-evolution-002": "En 1859, Charles Darwin concluyó 'El origen de las especies' con una audaz predicción sobre el futuro de la psicología. Escribió que la ciencia de la mente humana eventualmente se asentaría sobre una nueva base — la base de la biología evolutiva.",
+    "cb-evolution-005": "La resistencia a la psicología evolutiva",
+    "cb-evolution-009": "El compromiso de Wallace",
+    "cb-evolution-015": "Desafíos de la neurociencia moderna"
+  },
+  "FR": {
+    "cb-evolution-001": "À la recherche du bord de l'âme",
+    "cb-evolution-002": "En 1859, Charles Darwin conclut 'L'Origine des espèces' avec une prédiction audacieuse sur l'avenir de la psychologie. Il écrivit que la science de l'esprit humain serait finalement placée sur une nouvelle fondation — la fondation de la biologie évolutive.",
+    "cb-evolution-005": "La résistance à la psychologie évolutive",
+    "cb-evolution-009": "Le compromis de Wallace",
+    "cb-evolution-015": "Les défis des neurosciences modernes"
+  }
+}
