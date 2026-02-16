@@ -219,7 +219,7 @@ interface ApiBook {
   author: string | null
   cover_url: string | null
   original_language: string | null    // "EN", "RU", "FR", "ES" (uppercase)
-  available_languages: string[]       // языки, для которых есть кэш переводов
+  available_languages: string[]       // пункты для дропдауна языков в читалке
   status: string                      // "ready", "processing", etc.
   created_at: string                  // ISO 8601
 }
