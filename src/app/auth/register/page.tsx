@@ -1,9 +1,9 @@
 'use client';
 
 import { Suspense, useRef, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { GoogleIcon } from '@/components/icons/GoogleIcon';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -22,6 +22,7 @@ export default function RegisterPage() {
 }
 
 function RegisterForm() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const nextUrl = searchParams.get('next') || '/library';
   const supabaseRef = useRef<SupabaseClient | null>(null);
@@ -35,16 +36,32 @@ function RegisterForm() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
+  const passwordStrength = getPasswordStrength(password);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError(null);
     setMessage(null);
 
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+
+    if (passwordStrength.level === 'weak') {
+      setError('Use a stronger password.');
+      return;
+    }
+
+    setLoading(true);
     const supabase = getSupabase();
     const siteUrl = getSiteUrl();
     const { error } = await supabase.auth.signUp({
@@ -61,8 +78,17 @@ function RegisterForm() {
       return;
     }
 
-    setMessage('Check your email for a confirmation link.');
+    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+    if (signInError) {
+      setError(signInError.message);
+      setLoading(false);
+      return;
+    }
+
+    setMessage('Account created. Redirecting to your library...');
+    setRedirecting(true);
     setLoading(false);
+    setTimeout(() => router.push(nextUrl), 1800);
   };
 
   const handleGoogleSignIn = async () => {
@@ -121,19 +147,76 @@ function RegisterForm() {
                 <label htmlFor="password" className="text-sm font-medium">
                   Password
                 </label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  disabled={loading}
-                  minLength={6}
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    disabled={loading || redirecting}
+                    minLength={8}
+                    className="pr-11"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-1 top-1 h-8 w-8 text-muted-foreground"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    disabled={loading || redirecting}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  </Button>
+                </div>
+                <div className="space-y-1">
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                    <div
+                      className={`h-full rounded-full transition-all ${passwordStrength.barClass}`}
+                      style={{ width: passwordStrength.width }}
+                    />
+                  </div>
+                  <p className={`text-xs ${passwordStrength.textClass}`}>
+                    Password strength: {passwordStrength.label}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Use 8+ characters with uppercase, lowercase, number, and symbol.
+                  </p>
+                </div>
               </div>
-              <Button type="submit" className="h-10 w-full" disabled={loading}>
-                {loading ? <Loader2 className="size-4 animate-spin" /> : 'Create account'}
+              <div className="space-y-2">
+                <label htmlFor="confirmPassword" className="text-sm font-medium">
+                  Confirm password
+                </label>
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    disabled={loading || redirecting}
+                    minLength={8}
+                    className="pr-11"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-1 top-1 h-8 w-8 text-muted-foreground"
+                    onClick={() => setShowConfirmPassword((prev) => !prev)}
+                    disabled={loading || redirecting}
+                    aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showConfirmPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  </Button>
+                </div>
+              </div>
+              <Button type="submit" className="h-10 w-full" disabled={loading || redirecting}>
+                {loading || redirecting ? <Loader2 className="size-4 animate-spin" /> : 'Create account'}
               </Button>
             </form>
 
@@ -147,7 +230,7 @@ function RegisterForm() {
               variant="outline"
               className="h-10 w-full"
               onClick={handleGoogleSignIn}
-              disabled={loading}
+              disabled={loading || redirecting}
             >
               <GoogleIcon className="size-4" />
               Continue with Google
@@ -164,4 +247,51 @@ function RegisterForm() {
       </section>
     </div>
   );
+}
+
+function getPasswordStrength(password: string) {
+  if (!password) {
+    return {
+      level: 'empty',
+      label: 'Enter password',
+      width: '0%',
+      barClass: 'bg-muted',
+      textClass: 'text-muted-foreground',
+    };
+  }
+
+  let score = 0;
+  if (password.length >= 8) score += 1;
+  if (/[A-Z]/.test(password)) score += 1;
+  if (/[a-z]/.test(password)) score += 1;
+  if (/\d/.test(password)) score += 1;
+  if (/[^A-Za-z0-9]/.test(password)) score += 1;
+
+  if (score <= 2) {
+    return {
+      level: 'weak',
+      label: 'Weak',
+      width: '33%',
+      barClass: 'bg-destructive',
+      textClass: 'text-destructive',
+    };
+  }
+
+  if (score <= 4) {
+    return {
+      level: 'medium',
+      label: 'Medium',
+      width: '66%',
+      barClass: 'bg-amber-500',
+      textClass: 'text-amber-600',
+    };
+  }
+
+  return {
+    level: 'strong',
+    label: 'Strong',
+    width: '100%',
+    barClass: 'bg-emerald-500',
+    textClass: 'text-emerald-600',
+  };
 }

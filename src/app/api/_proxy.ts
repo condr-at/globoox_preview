@@ -2,15 +2,23 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
 /**
- * Forwards the incoming request to NEXT_PUBLIC_API_URL (real backend) with Supabase auth.
- * Returns null if NEXT_PUBLIC_API_URL is not set — caller falls back to mock data.
+ * Logged-in users: forward request to real backend with Supabase auth.
+ * Logged-out users: return null so caller falls back to mock data.
  */
 export async function proxyToBackend(request: Request): Promise<NextResponse | null> {
-  const backendUrl = process.env.NEXT_PUBLIC_API_URL
-  if (!backendUrl) return null
-
   const supabase = await createClient()
   const { data: { session } } = await supabase.auth.getSession()
+
+  // Guest mode: caller should serve mock data.
+  if (!session?.access_token) return null
+
+  const backendUrl = process.env.NEXT_PUBLIC_API_URL
+  if (!backendUrl) {
+    return NextResponse.json(
+      { error: 'Backend URL is not configured' },
+      { status: 500 }
+    )
+  }
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -31,9 +39,15 @@ export async function proxyToBackend(request: Request): Promise<NextResponse | n
   try {
     const res = await fetch(targetUrl, { method: request.method, headers, body })
     const data = await res.json().catch(() => null)
-    return NextResponse.json(data ?? {}, { status: res.status })
+    const response = NextResponse.json(data ?? {}, { status: res.status })
+    response.headers.set('x-data-source', 'backend')
+    response.headers.set('x-authenticated', 'true')
+    return response
   } catch {
-    // Backend unreachable — let the caller fall back to mock
-    return null
+    // Logged-in users should use backend only.
+    return NextResponse.json(
+      { error: 'Backend is unavailable' },
+      { status: 502 }
+    )
   }
 }

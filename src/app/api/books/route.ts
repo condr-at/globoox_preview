@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { proxyToBackend } from '../_proxy'
 import booksData from '@/data/mock-api/books.json'
+import type { ApiBook } from '@/lib/api'
 
 export async function GET(request: Request) {
   const proxy = await proxyToBackend(request)
@@ -8,12 +9,16 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url)
   const status = searchParams.get('status')
+  const allBooks = booksData as ApiBook[]
 
   const books = status
-    ? booksData.filter((b) => b.status === status)
-    : booksData
+    ? allBooks.filter((b) => b.status === status)
+    : allBooks
 
-  return NextResponse.json(books)
+  const response = NextResponse.json(books)
+  response.headers.set('x-data-source', 'mock')
+  response.headers.set('x-authenticated', 'false')
+  return response
 }
 
 export async function POST(request: Request) {
