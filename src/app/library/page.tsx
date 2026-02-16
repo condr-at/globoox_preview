@@ -11,14 +11,13 @@ import demoBooks from '@/data/demo-books.json';
 const FALLBACK_COVER = '/covers/great-gatsby.jpg';
 const FALLBACK_AUTHOR = 'Unknown author';
 const MIN_UPLOAD_PREVIEW_MS = 700;
-
 type ImportedBook = {
   title?: string;
   author?: string;
   cover?: string;
   language?: string;
   text?: string;
-  chapters?: Array<{ title?: string | Record<string, string>; content?: string | Record<string, string> }>;
+  chapters?: Array<{ title?: string; content?: string | Record<string, string> }>;
 };
 
 type UploadingPreview = {
@@ -89,20 +88,9 @@ const parseJsonToBook = (raw: string, fileName: string): CustomBook => {
       }
     }
 
-    const titleByLanguage: Partial<Record<Language, string>> = {};
-    if (chapter.title && typeof chapter.title === 'object') {
-      for (const [langKey, value] of Object.entries(chapter.title)) {
-        if (supportedLanguages.includes(langKey as Language) && typeof value === 'string' && value.trim()) {
-          titleByLanguage[langKey as Language] = value;
-        }
-      }
-    }
-
     return {
       number: index + 1,
-      title: typeof chapter.title === 'string' && chapter.title.trim()
-        ? chapter.title
-        : (Object.keys(titleByLanguage).length > 0 ? titleByLanguage : `Chapter ${index + 1}`),
+      title: chapter.title || `Chapter ${index + 1}`,
       content: contentByLanguage
     };
   });
@@ -216,7 +204,6 @@ export default function LibraryPage() {
               className="sr-only"
               onChange={handleUpload}
             />
-            {/*
             <Button
               asChild
               size="sm"
@@ -224,7 +211,6 @@ export default function LibraryPage() {
             >
               <label htmlFor="book-upload-input">Add book</label>
             </Button>
-            */}
           </>
         </div>
       </header>
@@ -269,8 +255,8 @@ export default function LibraryPage() {
               <BookCard
                 id={lastBook.id}
                 title={lastBook.title}
-                author={lastBook.author}
-                cover={lastBook.cover}
+                author={lastBook.author ?? FALLBACK_AUTHOR}
+                cover={lastBook.cover_url ?? FALLBACK_COVER}
                 progress={progress[lastBook.id]?.progress || 0}
                 onHide={hideBook}
                 onDelete={handleDelete}
@@ -328,9 +314,7 @@ export default function LibraryPage() {
           )}
         </section>
 
-        <p className="text-sm text-muted-foreground">
-          <span className="text-primary font-medium">Tip:</span> Upload TXT/MD/JSON books and switch languages while reading.
-        </p>
+
       </div>
     </div>
   );

@@ -1,19 +1,36 @@
 'use client';
 
+import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
 import ReaderView from '@/components/Reader/ReaderView';
-import demoBooks from '@/data/demo-books.json';
-import { useAppStore } from '@/lib/store';
+import { ApiBook, fetchBook } from '@/lib/api';
 
-export default function ReaderPage() {
-  const params = useParams<{ id: string }>();
-  const { customBooks } = useAppStore();
+interface ReaderPageProps {
+  params: Promise<{ id: string }>;
+}
 
-  const allBooks = [...customBooks, ...demoBooks.books];
-  const book = allBooks.find((item) => item.id === params.id);
+export default function ReaderPage({ params }: ReaderPageProps) {
+  const { id } = use(params);
+  const [book, setBook] = useState<ApiBook | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
 
-  if (!book) {
+  useEffect(() => {
+    fetchBook(id)
+      .then(setBook)
+      .catch(() => setNotFound(true))
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full bg-muted animate-pulse" />
+      </div>
+    );
+  }
+
+  if (notFound || !book) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6 text-center">
         <div>
@@ -26,5 +43,11 @@ export default function ReaderPage() {
     );
   }
 
-  return <ReaderView book={book as never} />;
+  return (
+    <ReaderView
+      bookId={book.id}
+      title={book.title}
+      availableLanguages={book.available_languages}
+    />
+  );
 }
