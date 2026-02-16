@@ -8,7 +8,7 @@
 
 **Решение:** Всё общение с данными идёт через Next.js API Routes (`/api/*`). Сейчас они читают локальные JSON-файлы (`mock-api/`), потом — просто переключаются на реальный сервер. Фронт ничего не знает и не меняется.
 
-**Переводы:** Контент книги — это набор блоков (абзацев). Когда пользователь переключает язык, блоки, которые он читает сейчас, уходят на перевод в первую очередь. По мере скролла — следующие блоки. Если перевод не готов — показывается скелетон, когда готов — появляется текст.
+**Переводы:** Контент книги — это набор блоков (абзацев). Бэкенд автоматически переводит блоки при запросе с `?lang=XX`. Переводы кэшируются в базе. При повторном запросе — возвращается кэшированный перевод.
 
 ---
 
@@ -64,8 +64,8 @@
     "title": "The Venture Mindset",
     "author": "Ilya Strebulaev and Alex Dang",
     "cover_url": "/covers/venture.jpg",
-    "original_language": "en",
-    "available_languages": ["en", "ru", "es", "fr"],
+    "original_language": "EN",
+    "available_languages": ["EN", "RU", "ES", "FR"],
     "status": "active",
     "created_at": "2025-01-10T12:00:00Z"
   }
@@ -90,7 +90,7 @@
   "title": "Book Title",
   "author": "Author Name",
   "cover_url": "/covers/example.jpg",
-  "source_language": "en"
+  "source_language": "EN"
 }
 ```
 
@@ -149,7 +149,7 @@
 #### `GET /api/chapters/:id/content`
 Контент главы — массив блоков на запрошенном языке.
 
-**Query params:** `?lang=en` (обязателен, default: `en`)
+**Query params:** `?lang=EN` (опционально, если указан — возвращает перевод или авто-переводит)
 
 **Response:** массив блоков, тип определяет форму объекта:
 
@@ -164,18 +164,18 @@
 ]
 ```
 
-**Правило `null`:** применяется только к переводимым полям. Нетекстовые блоки (`image`, `hr`) приходят целиком всегда.
+**Важно:** Бэкенд автоматически переводит все блоки, если запрошен язык `?lang=XX`. Нетекстовые блоки (`image`, `hr`) возвращаются без изменений.
 
-| Тип | Переводимые поля | Значение `null` |
+| Тип | Переводимые поля | Поведение |
 |-----|-----------------|-----------------|
-| `paragraph` | `text` | перевод не готов |
-| `heading` | `text` | перевод не готов |
-| `quote` | `text` | перевод не готов |
-| `list` | `items` (весь массив) | перевод не готов |
-| `image` | `caption` (опционально) | перевод caption не готов |
-| `hr` | — | не применяется |
+| `paragraph` | `text` | авто-перевод |
+| `heading` | `text` | авто-перевод |
+| `quote` | `text` | авто-перевод |
+| `list` | `items` (весь массив) | авто-перевод |
+| `image` | `src`, `alt`, `caption` | не переводится |
+| `hr` | — | не переводится |
 
-Фронт обязан обрабатывать `null` в переводимых полях как "контент в процессе" и показывать скелетон.
+Переводы кэшируются в базе. Повторные запросы возвращают кэшированный перевод мгновенно.
 
 ---
 
@@ -187,26 +187,25 @@
 **Request body:**
 ```json
 {
-  "lang": "fr",
+  "lang": "FR",
   "blockIds": ["cb-venture-001", "cb-venture-002", "cb-venture-003"]
 }
 ```
 
-**Response:** массив блоков в том же формате, что и `GET /content` — но с возможным `null` в переводимых полях:
+**Response:** массив переведённых блоков в том же формате, что и `GET /content`:
 ```json
 [
   { "id": "cb-venture-001", "position": 0, "type": "heading", "level": 1, "text": "Introduction : Qu'est-ce que Saasbee..." },
   { "id": "cb-venture-002", "position": 1, "type": "paragraph", "text": "En novembre 2012..." },
-  { "id": "cb-venture-003", "position": 2, "type": "list", "ordered": false, "items": null }
+  { "id": "cb-venture-003", "position": 2, "type": "list", "ordered": false, "items": ["Élément A", "Élément B"] }
 ]
 ```
 
-- Переводимое поле не `null` — перевод готов, рендерим
-- Переводимое поле `null` — перевод в процессе, держим скелетон
-- `image` и `hr` — возвращаются без изменений (нечего переводить)
-
-Для блоков с `null` клиент ждёт пуша от сервера (WebSocket/SSE).
-Если сервер молчит дольше **N секунд** → fallback: повторный `POST /api/chapters/{chapterId}/translate` с теми же blockIds.
+**Поведение:**
+- Перевод выполняется синхронно (ответ ждёт завершения)
+- Уже переведённые блоки возвращаются из кэша мгновенно
+- `image` и `hr` — возвращаются без изменений
+- `available_languages` книги обновляется автоматически
 
 ---
 
@@ -219,9 +218,9 @@ interface ApiBook {
   title: string
   author: string | null
   cover_url: string | null
-  original_language: string | null    // "en", "ru", "fr", etc.
-  available_languages: string[]       // языки, для которых есть (хотя бы частичный) кэш переводов
-  status: 'active' | 'hidden'
+  original_language: string | null    // "EN", "RU", "FR", "ES" (uppercase)
+  available_languages: string[]       // языки, для которых есть кэш переводов
+  status: string                      // "ready", "processing", etc.
   created_at: string                  // ISO 8601
 }
 ```
@@ -255,31 +254,31 @@ interface BaseBlock {
 
 interface ParagraphBlock extends BaseBlock {
   type: 'paragraph'
-  text: string | null           // null = перевод не готов
+  text: string                  // текст (оригинал или перевод)
 }
 
 interface HeadingBlock extends BaseBlock {
   type: 'heading'
   level: 1 | 2 | 3             // h1, h2, h3
-  text: string | null           // null = перевод не готов
+  text: string                  // текст (оригинал или перевод)
 }
 
 interface QuoteBlock extends BaseBlock {
   type: 'quote'
-  text: string | null           // null = перевод не готов
+  text: string                  // текст (оригинал или перевод)
 }
 
 interface ListBlock extends BaseBlock {
   type: 'list'
   ordered: boolean              // true = <ol>, false = <ul>
-  items: string[] | null        // null = весь список ещё не переведён
+  items: string[]               // элементы списка (оригинал или перевод)
 }
 
 interface ImageBlock extends BaseBlock {
   type: 'image'
   src: string                   // URL изображения (не переводится)
   alt: string                   // alt-текст (не переводится)
-  caption?: string | null       // undefined = нет подписи; null = перевод caption не готов
+  caption?: string              // подпись (опционально, не переводится)
 }
 
 interface HrBlock extends BaseBlock {
@@ -290,116 +289,84 @@ interface HrBlock extends BaseBlock {
 ### TranslateRequest / TranslateResponse
 ```typescript
 interface TranslateRequest {
-  lang: string        // "ru", "es", "fr", "de" — целевой язык
+  lang: string        // "RU", "ES", "FR", "EN" — целевой язык
   blockIds: string[]  // ID блоков для перевода
 }
 
 // Response — тот же ContentBlock[], что и GET /content
-// null в переводимых полях = перевод ещё не готов (pending)
+// Перевод выполняется синхронно, все поля заполнены
 type TranslateResponse = ContentBlock[]
 ```
 
 ---
 
-## Прогрессивный перевод (как это работает)
+## Перевод (как это работает)
 
-Ключевой принцип: **фронт всегда говорит беку, какие конкретно блоки переводить**.
-Никогда не "переведи всю главу" — только "переведи вот эти ID на вот этот язык".
+**Важно:** Бэкенд выполняет перевод **синхронно**. WebSocket/SSE не требуется.
 
-### Две фазы
+### Два способа получить перевод
 
-#### Фаза 1 — смена языка (с анимацией)
+#### Способ 1: GET /api/chapters/{id}/content?lang=XX
 
 ```
 Пользователь переключает язык
         ↓
-Запускается анимация перевода
+GET /api/chapters/{id}/content?lang=FR
         ↓
-useTranslation собирает: видимые блоки + блоки следующей "страницы" (lookahead)
+Бэкенд автоматически переводит все блоки (если не в кэше)
         ↓
-POST /api/chapters/{chapterId}/translate { lang, blockIds: [...] }
-        ↓
-Блоки с text != null → появляются сразу (анимация завершается)
-Блоки с text == null → держим скелетон, ждём пуш от сервера (WebSocket/SSE)
-        ↓ (если сервер молчит N секунд)
-Fallback: повторный POST /api/chapters/{chapterId}/translate с теми же blockIds
+Возвращает все блоки с переводом
 ```
 
-#### Фаза 2 — фоновый перевод по мере чтения (без анимации)
+#### Способ 2: POST /api/chapters/{id}/translate (конкретные блоки)
 
 ```
-Пользователь читает, скроллит вниз
+Фронт выбирает блоки для перевода
         ↓
-IntersectionObserver фиксирует: до конца переведённого контента осталось < THRESHOLD блоков
+POST /api/chapters/{id}/translate { lang: "FR", blockIds: [...] }
         ↓
-Тихо, без анимации:
-POST /api/chapters/{chapterId}/translate { lang, blockIds: [следующая порция] }
+Бэкенд переводит указанные блоки синхронно
         ↓
-Блоки с text != null → рендерятся сразу при скролле до них
-Блоки с text == null → скелетон до пуша от сервера
+Возвращает переведённые блоки
 ```
 
-`THRESHOLD = 10` блоков до края переведённого контента (константа, настраивается).
+### Кэширование
 
-### Lookahead при смене языка
+- Переводы сохраняются в базе (`content_blocks.translations`)
+- Повторные запросы возвращают кэш мгновенно
+- `available_languages` книги обновляется автоматически
 
-```
-[блок 1] ● видимый       → Фаза 1
-[блок 2] ● видимый       → Фаза 1
-[блок 3] ○ следующая стр → Фаза 1
-[блок 4] ○ следующая стр → Фаза 1
-─────────────────────────────────────────
-[блок 5]   далеко         → Фаза 2 (фон)
-[блок 6]   далеко         → Фаза 2 (фон)
-```
+### Рекомендация для фронта
 
-`LOOKAHEAD = ~экран вперёд` (в блоках, зависит от контента).
+Простой подход: использовать `GET /content?lang=XX` — всё переведётся автоматически.
 
-### Хук useTranslation
-
-```typescript
-function useTranslation(blocks: ContentBlock[], targetLang: Language) {
-  // Состояние: Map<blockId, translatedValue | null>
-  // IntersectionObserver следит за видимостью блоков
-  //
-  // Фаза 1: при смене targetLang — приоритетная очередь (видимые + lookahead)
-  // Фаза 2: при приближении к краю переведённого контента — фоновая очередь
-  //
-  // Батч отправки: каждые 300ms собираем накопленную очередь → POST /api/chapters/{chapterId}/translate
-
-  return {
-    getTranslation: (blockId: string) => string | string[] | null,
-    registerBlock:  (blockId: string, el: HTMLElement | null) => void
-  }
-}
-```
+Для оптимизации больших глав: `POST /translate` с конкретными blockIds.
 
 ### ContentBlockRenderer
 
 ```tsx
-function ContentBlockRenderer({ block, getTranslation, registerBlock }) {
-  const ref = useCallback(el => registerBlock(block.id, el), [block.id])
-
-  // hr и image не переводятся — рендерим сразу
-  if (block.type === 'hr')    return <hr ref={ref} />
+function ContentBlockRenderer({ block }: { block: ContentBlock }) {
+  // hr и image не переводятся
+  if (block.type === 'hr')    return <hr />
   if (block.type === 'image') return (
-    <figure ref={ref}>
+    <figure>
       <img src={block.src} alt={block.alt} />
-      {block.caption != null && <figcaption>{block.caption}</figcaption>}
+      {block.caption && <figcaption>{block.caption}</figcaption>}
     </figure>
   )
 
-  // Переводимые блоки — ждём текст
-  const translation = getTranslation(block.id)
-  if (translation === null) return <BlockSkeleton type={block.type} ref={ref} />
-
+  // Текстовые блоки — текст всегда есть (оригинал или перевод)
   switch (block.type) {
-    case 'heading':   return <h2 ref={ref}>{translation}</h2>   // h1/h2/h3 по block.level
-    case 'paragraph': return <p ref={ref}>{translation}</p>
-    case 'quote':     return <blockquote ref={ref}>{translation}</blockquote>
-    case 'list':
+    case 'heading': {
+      const Tag = `h${block.level}` as 'h1' | 'h2' | 'h3'
+      return <Tag>{block.text}</Tag>
+    }
+    case 'paragraph': return <p>{block.text}</p>
+    case 'quote':     return <blockquote>{block.text}</blockquote>
+    case 'list': {
       const Tag = block.ordered ? 'ol' : 'ul'
-      return <Tag ref={ref}>{(translation as string[]).map(item => <li>{item}</li>)}</Tag>
+      return <Tag>{block.items.map((item, i) => <li key={i}>{item}</li>)}</Tag>
+    }
   }
 }
 ```
@@ -432,31 +399,30 @@ src/data/mock-api/
 Формат `translations/ch-*.json`:
 ```json
 {
-  "ru": {
+  "RU": {
     "cb-venture-001": "Введение: что такое Saasbee...",
     "cb-venture-002": "В ноябре 2012 года..."
   },
-  "es": {
+  "ES": {
     "cb-venture-001": "Introducción: ¿qué es Saasbee?...",
     "cb-venture-002": "En noviembre de 2012..."
   },
-  "fr": {
+  "FR": {
     "cb-venture-001": "Introduction : Qu'est-ce que Saasbee...",
     "cb-venture-002": "En novembre 2012..."
   }
 }
 ```
 
-### Поведение mock `POST /api/chapters/{chapterId}/translate`
+### Поведение mock API
 
-1. Смотрит в `translations/ch-{chapterId}.json` по переданному `lang`
-2. Для каждого `blockId` из запроса:
-   - Есть в кэше → возвращает полный блок с переведённым текстом
-   - Нет в кэше → возвращает блок с `null` в переводимых полях; через ~1.5с повторный запрос вернёт фиктивный перевод
+**GET /api/chapters/{id}/content?lang=XX:**
+1. Читает `content/ch-{id}.json` (оригинал)
+2. Если `lang` указан — подставляет переводы из `translations/ch-{id}.json`
 
-### Mock WebSocket
-
-В mock-режиме WebSocket не реализуем — используется только polling-fallback (повторный запрос через N секунд). Этого достаточно для разработки.
+**POST /api/chapters/{id}/translate:**
+1. Возвращает блоки с переводами из кэша
+2. Если нет в кэше — возвращает оригинал (имитируя поведение бэкенда)
 
 ---
 
@@ -490,7 +456,7 @@ src/data/mock-api/
 | `src/lib/api.ts` | Добавить: `fetchChapters`, `fetchContent`, `translateBlocks` |
 | `src/app/library/page.tsx` | Убрать `import demoBooks`, использовать `useBooks()` |
 | `src/app/reader/[id]/page.tsx` | Переключить на `useChapters` + `useChapterContent` |
-| `src/components/Reader/ReaderView.tsx` | Рендер `ContentBlock[]` + `useTranslation` |
+| `src/components/Reader/ReaderView.tsx` | Рендер `ContentBlock[]` |
 
 ### Создать (Next.js API Routes)
 | Файл | Назначение |
@@ -505,13 +471,12 @@ src/data/mock-api/
 | Файл | Назначение |
 |------|-----------|
 | `src/lib/hooks/useChapters.ts` | Список глав по bookId |
-| `src/lib/hooks/useChapterContent.ts` | Контент главы по chapterId |
-| `src/lib/hooks/useTranslation.ts` | Прогрессивный перевод блоков |
+| `src/lib/hooks/useChapterContent.ts` | Контент главы по chapterId + lang |
 
 ### Создать (Компоненты)
 | Файл | Назначение |
 |------|-----------|
-| `src/components/Reader/ContentBlockRenderer.tsx` | Рендер одного блока (текст или скелетон) |
+| `src/components/Reader/ContentBlockRenderer.tsx` | Рендер одного блока |
 
 ### Создать (Mock данные)
 | Файл | Назначение |
