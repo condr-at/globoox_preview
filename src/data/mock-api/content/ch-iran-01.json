@@ -3,60 +3,140 @@
     "id": "cb-iran-001",
     "position": 0,
     "type": "heading",
+    "level": 1,
     "text": "The Genesis of a Theocratic Republic"
   },
   {
     "id": "cb-iran-002",
     "position": 1,
     "type": "paragraph",
-    "text": "The Islamic Revolution of 1979 transformed Iran from a secular monarchy under Shah Mohammad Reza Pahlavi into a theocratic republic unlike any other modern state. Led by Ayatollah Ruhollah Khomeini, a Shia cleric who had spent fifteen years in exile, the revolution combined religious fervor with anti-imperialist nationalism. What emerged was a political system that attempted to synthesize Islamic governance with republican institutions—a hybrid that would prove both durable and deeply problematic."
+    "text": "The Islamic Revolution of 1979 transformed Iran from a secular monarchy under Shah Mohammad Reza Pahlavi into a theocratic republic unlike any other modern state. Led by Ayatollah Ruhollah Khomeini, a Shia cleric who had spent fifteen years in exile, the revolution combined religious fervor with anti-imperialist nationalism."
   },
   {
     "id": "cb-iran-003",
     "position": 2,
-    "type": "paragraph",
-    "text": "At the heart of Iran's new political order was the concept of velayat-e faqih, or guardianship of the Islamic jurist. This doctrine, developed by Khomeini during his exile, held that in the absence of the Hidden Imam—a messianic figure in Shia Islam—a qualified Islamic jurist should serve as supreme political and religious leader. This was a revolutionary reinterpretation of Shia theology, which had traditionally kept clerics separate from direct political rule. Khomeini argued that Islamic jurists had both the religious authority and moral duty to govern."
+    "type": "image",
+    "src": "/images/khomeini-return.jpg",
+    "alt": "Ayatollah Khomeini returns to Iran",
+    "caption": "Khomeini arrives at Tehran airport, February 1, 1979"
   },
   {
     "id": "cb-iran-004",
     "position": 3,
-    "type": "paragraph",
-    "text": "The Iran-Iraq War, which began in September 1980 when Saddam Hussein invaded Iran, profoundly shaped the Islamic Republic's early development. The war lasted eight years and cost hundreds of thousands of lives, but it also consolidated the revolutionary regime's power. External threat united disparate revolutionary factions, justified repression of internal dissent, and allowed Khomeini to frame the conflict as a sacred defense of Islam. The war years saw the elimination of liberal and leftist groups that had initially supported the revolution but opposed clerical dominance."
+    "type": "heading",
+    "level": 2,
+    "text": "Velayat-e Faqih: Guardianship of the Jurist"
   },
   {
     "id": "cb-iran-005",
     "position": 4,
     "type": "paragraph",
-    "text": "Iran's constitution, ratified in December 1979, created a dual power structure that continues to define Iranian politics. On one side sits an elected president, parliament, and municipal councils—institutions that suggest democratic governance. On the other sits the Supreme Leader, appointed for life by an Assembly of Experts, who controls the military, judiciary, and media, and can overrule any elected official. Below the Supreme Leader sits the Guardian Council, which vets all candidates for elected office and can nullify parliamentary legislation deemed contrary to Islamic law."
+    "text": "At the heart of Iran's new political order was the concept of velayat-e faqih, or guardianship of the Islamic jurist. This doctrine, developed by Khomeini during his exile, held that in the absence of the Hidden Imam—a messianic figure in Shia Islam—a qualified Islamic jurist should serve as supreme political and religious leader."
   },
   {
     "id": "cb-iran-006",
     "position": 5,
-    "type": "paragraph",
-    "text": "The drafting of this constitution sparked intense debates in the Assembly of Experts, the body tasked with finalizing the document in summer and fall 1979. Many delegates, including prominent clerics, opposed granting such sweeping powers to a single unelected leader. They argued for a more collective form of religious oversight or for limiting the Supreme Leader to a ceremonial role. But Khomeini's supporters, backed by revolutionary committees and paramilitary groups, ensured that velayat-e faqih became the cornerstone of the new system."
+    "type": "quote",
+    "text": "This was a revolutionary reinterpretation of Shia theology, which had traditionally kept clerics separate from direct political rule."
   },
   {
     "id": "cb-iran-007",
     "position": 6,
-    "type": "paragraph",
-    "text": "In the revolution's immediate aftermath, Mehdi Bazargan, a liberal nationalist and religious intellectual, served as prime minister of a provisional government. Bazargan attempted to establish a moderate Islamic democracy, maintain relationships with Western countries, and prevent violence against political opponents. His government, however, had little real authority. Revolutionary committees, Islamic courts, and paramilitary groups operated independently, conducting arrests, executions, and property seizures that Bazargan could neither control nor prevent."
+    "type": "hr"
   },
   {
     "id": "cb-iran-008",
     "position": 7,
-    "type": "paragraph",
-    "text": "The hostage crisis that began on November 4, 1979, when Iranian students seized the U.S. Embassy in Tehran, destroyed any hope for Bazargan's moderate approach. The students, initially acting without official authorization, held 52 American diplomats and staff hostage for 444 days. Rather than condemn the action, Khomeini endorsed it, recognizing its utility for radicalizing the revolution and breaking ties with the United States. Bazargan resigned days after the embassy seizure, his government having lost all credibility."
+    "type": "heading",
+    "level": 2,
+    "text": "The Iran-Iraq War (1980-1988)"
   },
   {
     "id": "cb-iran-009",
     "position": 8,
     "type": "paragraph",
-    "text": "The hostage crisis had profound consequences for Iran's international position and internal development. It severed diplomatic relations with the United States, leading to crippling economic sanctions that persist decades later. It emboldened radical factions within Iran while discrediting moderates who had urged restraint. Most importantly, it made the Islamic Republic an international pariah, dependent on oil revenues but cut off from Western technology and investment. The siege mentality created by this isolation strengthened hardliners who argued that the revolution could only survive through uncompromising resistance to the West."
+    "text": "The Iran-Iraq War, which began in September 1980 when Saddam Hussein invaded Iran, profoundly shaped the Islamic Republic's early development. The war lasted eight years and cost hundreds of thousands of lives."
   },
   {
     "id": "cb-iran-010",
     "position": 9,
+    "type": "heading",
+    "level": 3,
+    "text": "Consequences of the War"
+  },
+  {
+    "id": "cb-iran-011",
+    "position": 10,
+    "type": "list",
+    "ordered": false,
+    "items": [
+      "Consolidated the revolutionary regime's power",
+      "United disparate revolutionary factions against external threat",
+      "Justified repression of internal dissent",
+      "Eliminated liberal and leftist opposition groups"
+    ]
+  },
+  {
+    "id": "cb-iran-012",
+    "position": 11,
+    "type": "heading",
+    "level": 2,
+    "text": "The Dual Power Structure"
+  },
+  {
+    "id": "cb-iran-013",
+    "position": 12,
     "type": "paragraph",
-    "text": "By 1981, the theocratic republic's basic structure was firmly in place. Khomeini reigned as Supreme Leader, enjoying near-absolute authority derived from his interpretation of Islamic law. Elected institutions existed but operated within strict boundaries policed by unelected clerical bodies. Opposition groups—liberal, nationalist, leftist, and even some clerical—had been suppressed, exiled, or executed. The system combined elements of democracy and dictatorship, republic and theocracy, in a way that defied conventional political categories. This hybrid system, born from revolution and war, would prove remarkably resilient even as it generated chronic instability and popular discontent."
+    "text": "Iran's constitution, ratified in December 1979, created a dual power structure that continues to define Iranian politics."
+  },
+  {
+    "id": "cb-iran-014",
+    "position": 13,
+    "type": "list",
+    "ordered": true,
+    "items": [
+      "Elected institutions: President, Parliament, Municipal councils",
+      "Supreme Leader: Appointed for life by Assembly of Experts",
+      "Guardian Council: Vets candidates and can nullify legislation",
+      "Revolutionary Guards: Military force loyal to Supreme Leader"
+    ]
+  },
+  {
+    "id": "cb-iran-015",
+    "position": 14,
+    "type": "image",
+    "src": "/images/iran-constitution.jpg",
+    "alt": "Iran's constitutional structure diagram",
+    "caption": "The dual power structure of the Islamic Republic"
+  },
+  {
+    "id": "cb-iran-016",
+    "position": 15,
+    "type": "hr"
+  },
+  {
+    "id": "cb-iran-017",
+    "position": 16,
+    "type": "heading",
+    "level": 2,
+    "text": "The Hostage Crisis"
+  },
+  {
+    "id": "cb-iran-018",
+    "position": 17,
+    "type": "paragraph",
+    "text": "The hostage crisis that began on November 4, 1979, when Iranian students seized the U.S. Embassy in Tehran, destroyed any hope for a moderate approach. The students held 52 American diplomats hostage for 444 days."
+  },
+  {
+    "id": "cb-iran-019",
+    "position": 18,
+    "type": "quote",
+    "text": "Rather than condemn the action, Khomeini endorsed it, recognizing its utility for radicalizing the revolution and breaking ties with the United States."
+  },
+  {
+    "id": "cb-iran-020",
+    "position": 19,
+    "type": "paragraph",
+    "text": "By 1981, the theocratic republic's basic structure was firmly in place. The system combined elements of democracy and dictatorship, republic and theocracy, in a way that defied conventional political categories. This hybrid system, born from revolution and war, would prove remarkably resilient even as it generated chronic instability and popular discontent."
   }
 ]

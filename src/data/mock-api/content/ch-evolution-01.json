@@ -3,60 +3,139 @@
     "id": "cb-evolution-001",
     "position": 0,
     "type": "heading",
+    "level": 1,
     "text": "In Search of the Soul's Edge"
   },
   {
     "id": "cb-evolution-002",
     "position": 1,
     "type": "paragraph",
-    "text": "In 1859, Charles Darwin concluded 'The Origin of Species' with a bold prediction about the future of psychology. He wrote that the science of the human mind would eventually be placed on a new foundation—the foundation of evolutionary biology. Darwin understood that if natural selection shaped our bodies, it must have also shaped our minds, our emotions, and our social behaviors. Yet more than a century and a half later, the idea that human psychology has evolutionary origins remains surprisingly controversial."
+    "text": "In 1859, Charles Darwin concluded 'The Origin of Species' with a bold prediction about the future of psychology. He wrote that the science of the human mind would eventually be placed on a new foundation—the foundation of evolutionary biology."
   },
   {
     "id": "cb-evolution-003",
     "position": 2,
-    "type": "paragraph",
-    "text": "The resistance to evolutionary explanations of human behavior runs deep, even among educated people who readily accept evolution as the origin of our physical form. Many are comfortable acknowledging that natural selection gave us opposable thumbs and bipedal locomotion, but balk at suggestions that it also influenced our mating preferences, moral intuitions, or aesthetic sensibilities. There seems to be an invisible line—what we might call the soul's edge—beyond which evolutionary explanations are deemed inappropriate or offensive."
+    "type": "image",
+    "src": "/images/darwin-portrait.jpg",
+    "alt": "Portrait of Charles Darwin",
+    "caption": "Charles Darwin, photographed in 1869"
   },
   {
     "id": "cb-evolution-004",
     "position": 3,
-    "type": "paragraph",
-    "text": "In July 2007, the prestigious scientific journal Nature published a provocative editorial titled 'Evolution and the Brain.' The editorial addressed the persistent reluctance to apply evolutionary thinking to human cognition and behavior. Nature's editors noted that while evolutionary biology had revolutionized our understanding of anatomy, physiology, and molecular biology, it had made surprisingly little headway in psychology and the social sciences. The editorial called for a more rigorous evolutionary approach to understanding the human mind."
+    "type": "quote",
+    "text": "Darwin understood that if natural selection shaped our bodies, it must have also shaped our minds, our emotions, and our social behaviors."
   },
   {
     "id": "cb-evolution-005",
     "position": 4,
-    "type": "paragraph",
-    "text": "This resistance has historical roots. Alfred Russel Wallace, who independently discovered natural selection alongside Darwin, eventually developed a compromise position that many people still implicitly hold today. Wallace argued that while human bodies evolved through natural selection like those of other animals, our 'higher' mental qualities—consciousness, morality, mathematical reasoning, artistic appreciation—could not be explained by evolution alone. Wallace believed these capabilities required divine intervention or some other non-material force."
+    "type": "heading",
+    "level": 2,
+    "text": "The Resistance to Evolutionary Psychology"
   },
   {
     "id": "cb-evolution-006",
     "position": 5,
     "type": "paragraph",
-    "text": "For much of the twentieth century, Wallace's compromise held considerable appeal. It allowed people to accept evolution without threatening their sense of human uniqueness and dignity. We could be animals from the neck down, so to speak, but something more than animals from the neck up. Our bodies might be products of blind natural processes, but our minds—our true selves—remained special, exempt from evolutionary explanation."
+    "text": "The resistance to evolutionary explanations of human behavior runs deep, even among educated people who readily accept evolution as the origin of our physical form. There seems to be an invisible line—what we might call the soul's edge—beyond which evolutionary explanations are deemed inappropriate."
   },
   {
     "id": "cb-evolution-007",
     "position": 6,
-    "type": "paragraph",
-    "text": "Recent advances in neuroscience and cognitive science have made Wallace's compromise increasingly untenable. Brain imaging studies reveal that our most cherished mental experiences—love, moral judgment, religious feeling, aesthetic appreciation—correspond to specific patterns of neural activity. Neurological damage to particular brain regions can dramatically alter personality, decision-making, and even moral sensibilities. If our 'higher' qualities depended on something non-physical, they should not be so vulnerable to physical brain injuries."
+    "type": "list",
+    "ordered": false,
+    "items": [
+      "Opposable thumbs and bipedal locomotion—widely accepted as evolved",
+      "Mating preferences—controversial to explain evolutionarily",
+      "Moral intuitions—often considered beyond evolution",
+      "Aesthetic sensibilities—rarely discussed in evolutionary terms"
+    ]
   },
   {
     "id": "cb-evolution-008",
     "position": 7,
-    "type": "paragraph",
-    "text": "The political dimension of this debate became starkly visible in 2007 when Sam Brownback, then a U.S. Senator and presidential candidate, published an op-ed explaining why he had raised his hand during a Republican primary debate when asked who did not believe in evolution. Brownback wrote that while he accepted microevolution—small changes within species—he rejected the idea that humans descended from a common ancestor with other primates. He specifically emphasized that human dignity and moral worth could not be reconciled with a fully evolutionary account of human origins."
+    "type": "hr"
   },
   {
     "id": "cb-evolution-009",
     "position": 8,
-    "type": "paragraph",
-    "text": "Nature responded with another editorial, noting the dangerous consequences of political leaders rejecting scientific consensus. The editors pointed out that evolution is not merely a theory in the colloquial sense—it is one of the most robustly supported frameworks in all of science, backed by converging evidence from paleontology, comparative anatomy, molecular biology, and genetics. Rejecting evolution requires rejecting not just one scientific finding but an entire edifice of interconnected knowledge."
+    "type": "heading",
+    "level": 2,
+    "text": "Wallace's Compromise"
   },
   {
     "id": "cb-evolution-010",
     "position": 9,
     "type": "paragraph",
-    "text": "The search for the soul's edge—that boundary separating the evolved animal aspects of humanity from the supposedly non-evolved higher aspects—has proven fruitless. Modern evolutionary psychology suggests there is no such edge. Our capacity for language, our moral instincts, our appreciation of beauty, our tendency toward religious belief—all bear the marks of natural selection. This does not diminish human dignity; if anything, it deepens our appreciation for the extraordinary complexity that evolution can produce. Understanding the evolutionary origins of the human psyche may be uncomfortable, but it is the necessary foundation for a genuine science of human nature."
+    "text": "Alfred Russel Wallace, who independently discovered natural selection alongside Darwin, eventually developed a compromise position that many people still implicitly hold today."
+  },
+  {
+    "id": "cb-evolution-011",
+    "position": 10,
+    "type": "heading",
+    "level": 3,
+    "text": "The Higher Mental Qualities"
+  },
+  {
+    "id": "cb-evolution-012",
+    "position": 11,
+    "type": "list",
+    "ordered": true,
+    "items": [
+      "Consciousness and self-awareness",
+      "Moral reasoning and ethical intuitions",
+      "Mathematical and abstract thinking",
+      "Artistic appreciation and creativity"
+    ]
+  },
+  {
+    "id": "cb-evolution-013",
+    "position": 12,
+    "type": "paragraph",
+    "text": "Wallace argued these capabilities required divine intervention or some other non-material force. For much of the twentieth century, this compromise held considerable appeal—we could be animals from the neck down, but something more from the neck up."
+  },
+  {
+    "id": "cb-evolution-014",
+    "position": 13,
+    "type": "hr"
+  },
+  {
+    "id": "cb-evolution-015",
+    "position": 14,
+    "type": "heading",
+    "level": 2,
+    "text": "Modern Neuroscience Challenges"
+  },
+  {
+    "id": "cb-evolution-016",
+    "position": 15,
+    "type": "paragraph",
+    "text": "Recent advances in neuroscience and cognitive science have made Wallace's compromise increasingly untenable. Brain imaging studies reveal that our most cherished mental experiences—love, moral judgment, religious feeling—correspond to specific patterns of neural activity."
+  },
+  {
+    "id": "cb-evolution-017",
+    "position": 16,
+    "type": "image",
+    "src": "/images/brain-scan.jpg",
+    "alt": "fMRI brain scan showing neural activity",
+    "caption": "Modern brain imaging reveals the physical basis of mental experiences"
+  },
+  {
+    "id": "cb-evolution-018",
+    "position": 17,
+    "type": "quote",
+    "text": "If our 'higher' qualities depended on something non-physical, they should not be so vulnerable to physical brain injuries."
+  },
+  {
+    "id": "cb-evolution-019",
+    "position": 18,
+    "type": "paragraph",
+    "text": "The search for the soul's edge—that boundary separating the evolved animal aspects of humanity from the supposedly non-evolved higher aspects—has proven fruitless. Modern evolutionary psychology suggests there is no such edge."
+  },
+  {
+    "id": "cb-evolution-020",
+    "position": 19,
+    "type": "paragraph",
+    "text": "Understanding the evolutionary origins of the human psyche may be uncomfortable, but it is the necessary foundation for a genuine science of human nature."
   }
 ]
