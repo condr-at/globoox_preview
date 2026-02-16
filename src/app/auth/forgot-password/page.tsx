@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
+import { getSiteUrl } from '@/lib/supabase/utils';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 type RecoveryStatus = 'idle' | 'error' | 'success';
@@ -33,8 +34,9 @@ export default function ForgotPasswordPage() {
     setError(null);
 
     const supabase = getSupabase();
+    const siteUrl = getSiteUrl();
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/callback`,
+      redirectTo: `${siteUrl}/auth/callback`,
     });
 
     if (error) {

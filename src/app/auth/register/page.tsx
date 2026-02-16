@@ -1,6 +1,7 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { Suspense, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
 import { GoogleIcon } from '@/components/icons/GoogleIcon';
@@ -9,9 +10,20 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { createClient } from '@/lib/supabase/client';
+import { getSiteUrl } from '@/lib/supabase/utils';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 export default function RegisterPage() {
+  return (
+    <Suspense>
+      <RegisterForm />
+    </Suspense>
+  );
+}
+
+function RegisterForm() {
+  const searchParams = useSearchParams();
+  const nextUrl = searchParams.get('next') || '/library';
   const supabaseRef = useRef<SupabaseClient | null>(null);
 
   function getSupabase() {
@@ -34,11 +46,12 @@ export default function RegisterPage() {
     setMessage(null);
 
     const supabase = getSupabase();
+    const siteUrl = getSiteUrl();
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: `${siteUrl}/auth/callback?next=${encodeURIComponent(nextUrl)}`,
       },
     });
 
@@ -56,10 +69,11 @@ export default function RegisterPage() {
     setLoading(true);
     setError(null);
     const supabase = getSupabase();
+    const siteUrl = getSiteUrl();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${siteUrl}/auth/callback?next=${encodeURIComponent(nextUrl)}`,
       },
     });
     if (error) {
