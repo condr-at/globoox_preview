@@ -51,20 +51,20 @@ export default function Header() {
                         <span className="text-[10px] font-medium">Store</span>
                     </Link>
                 </Button>
-                <Button
-                    variant="ghost"
-                    asChild
-                    className={`flex-1 flex-col gap-0.5 h-full rounded-none ${
-                        isActive('/profile') 
-                            ? 'text-primary'
-                            : 'text-muted-foreground'
-                    }`}
-                >
-                    <Link href="/profile">
-                        <User className="w-6 h-6" strokeWidth={isActive('/profile') ? 2 : 1.5} />
-                        <span className="text-[10px] font-medium">Profile</span>
-                    </Link>
-                </Button>
+                {/*<Button*/}
+                {/*    variant="ghost"*/}
+                {/*    asChild*/}
+                {/*    className={`flex-1 flex-col gap-0.5 h-full rounded-none ${*/}
+                {/*        isActive('/profile') */}
+                {/*            ? 'text-primary'*/}
+                {/*            : 'text-muted-foreground'*/}
+                {/*    }`}*/}
+                {/*>*/}
+                {/*    <Link href="/profile">*/}
+                {/*        <User className="w-6 h-6" strokeWidth={isActive('/profile') ? 2 : 1.5} />*/}
+                {/*        <span className="text-[10px] font-medium">Profile</span>*/}
+                {/*    </Link>*/}
+                {/*</Button>*/}
             </div>
         </nav>
     );
