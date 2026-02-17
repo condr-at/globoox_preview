@@ -496,15 +496,15 @@ export default function ReaderView({ bookId, title, availableLanguages, original
 
             {/* ── Progress bar ── */}
             <div
-                className="flex-shrink-0 flex items-center justify-between px-4 h-10 border-t border-border/20 text-xs text-muted-foreground"
+                className="flex-shrink-0 flex items-center justify-center md:justify-between px-4 h-10 border-t border-border/20 text-xs text-muted-foreground"
                 style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
             >
                 <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => goToChapter(currentChapterIndex - 1)}
+                    onClick={goToPrevPage}
                     disabled={!prevChapter}
-                    className="flex items-center gap-0.5 text-xs text-[var(--system-blue)] disabled:opacity-30 px-1"
+                    className="hidden md:flex items-center gap-0.5 text-xs text-[var(--system-blue)] disabled:opacity-30 px-1"
                 >
                     <ChevronLeft className="w-4 h-4" />
                     <span className="max-w-[80px] truncate">{prevChapter?.title ?? ''}</span>
@@ -520,9 +520,9 @@ export default function ReaderView({ bookId, title, availableLanguages, original
                 <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => goToChapter(currentChapterIndex + 1)}
+                    onClick={goToNextPage}
                     disabled={!nextChapter}
-                    className="flex items-center gap-0.5 text-xs text-[var(--system-blue)] disabled:opacity-30 px-1"
+                    className="hidden md:flex items-center gap-0.5 text-xs text-[var(--system-blue)] disabled:opacity-30 px-1"
                 >
                     <span className="max-w-[80px] truncate">{nextChapter?.title ?? ''}</span>
                     <ChevronRight className="w-4 h-4" />
