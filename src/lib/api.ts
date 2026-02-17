@@ -1,4 +1,6 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || ''
+// In browser we must call local Next.js API routes (/api/*), so auth can be injected by proxy.
+// Direct backend calls are allowed only during server-side execution.
+const API_URL = typeof window === 'undefined' ? (process.env.NEXT_PUBLIC_API_URL || '') : ''
 
 export interface ApiBook {
   id: string
@@ -94,9 +96,14 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   }
 
   const fetchPromise = (async () => {
+    const hasBody = typeof options?.body === 'string' && options.body.length > 0
+    const headers = hasBody
+      ? { 'Content-Type': 'application/json', ...(options?.headers || {}) }
+      : options?.headers
+
     const res = await fetch(`${API_URL}${path}`, {
-      headers: { 'Content-Type': 'application/json' },
       ...options,
+      headers,
     })
     if (!res.ok) {
       const body = await res.json().catch(() => ({}))
@@ -129,15 +136,11 @@ export function fetchBooks(status?: string): Promise<ApiBook[]> {
 }
 
 export function fetchBook(id: string): Promise<ApiBook> {
-  return request<ApiBook>(`/api/books/${id}`).catch(async (error: unknown) => {
-    const message = error instanceof Error ? error.message : ''
-    const isNotFound = message.includes('404') || message.toLowerCase().includes('not found')
-    if (!isNotFound) throw error
-
-    // Backend may not implement /api/books/:id yet.
-    const allBooks = await request<ApiBook[]>('/api/books')
+  // Some backend deployments expose only GET /api/books (without /api/books/:id).
+  // Resolve book from list to avoid noisy 404 in reader startup.
+  return request<ApiBook[]>('/api/books').then((allBooks) => {
     const book = allBooks.find((item) => item.id === id)
-    if (!book) throw error
+    if (!book) throw new Error('Book not found')
     return book
   })
 }
