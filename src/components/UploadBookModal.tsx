@@ -2,7 +2,8 @@
 
 import { useState, useRef } from 'react';
 import { X, Upload, Loader2, CheckCircle } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
+import { parseEpub } from '@/lib/hooks/useEpubParser';
+import { uploadBook } from '@/lib/api';
 
 interface UploadBookModalProps {
   isOpen: boolean;
@@ -36,45 +37,29 @@ export default function UploadBookModal({ isOpen, onClose, onUploaded }: UploadB
     if (!file) return;
 
     setUploading(true);
-    setProgress(10);
-    setMessage('Uploading book file...');
+    setProgress(5);
+    setMessage('Parsing EPUB file...');
     setError(null);
 
-    const supabase = createClient();
-
     try {
-      // Upload to storage
-      const fileName = `${Date.now()}-${file.name}`;
-      const storagePath = `books/${fileName}`;
+      // Parse the EPUB
+      const parsed = await parseEpub(file);
+      setProgress(40);
+      setMessage('Creating book and chapters...');
 
-      setProgress(30);
-      const { error: uploadError } = await supabase.storage
-        .from('books')
-        .upload(storagePath, file, {
-          contentType: 'application/epub+zip',
-          cacheControl: '3600',
-        });
-
-      if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
-
-      setProgress(60);
-      setMessage('Creating book record...');
-
-      // Create book record
-      const { data: book, error: insertError } = await supabase
-        .from('books')
-        .insert({
-          title: file.name.replace('.epub', '').replace(/_/g, ' '),
-          author: 'Unknown',
-          file_path: storagePath,
-          file_format: 'epub',
-          file_size: file.size,
-          status: 'active',
-        })
-        .select()
-        .single();
-
-      if (insertError) throw new Error(`Failed to create book: ${insertError.message}`);
+      // Send to backend API
+      const book = await uploadBook({
+        title: parsed.title,
+        author: parsed.author,
+        cover_url: parsed.cover,
+        file_size: file.size,
+        chapters: parsed.chapters.map((ch) => ({
+          title: ch.title,
+          href: ch.href,
+          content: ch.content,
+          blocks: ch.blocks,
+        })),
+      });
 
       setProgress(100);
       setMessage('Book uploaded successfully!');
@@ -84,6 +69,7 @@ export default function UploadBookModal({ isOpen, onClose, onUploaded }: UploadB
         handleClose();
       }, 1500);
     } catch (err: any) {
+      console.error('Upload error:', err);
       setError(err.message || 'Upload failed');
       setUploading(false);
     }

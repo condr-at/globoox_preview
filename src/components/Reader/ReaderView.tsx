@@ -66,7 +66,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
         chapterId: currentChapter?.id ?? null,
         lang: activeLang.toUpperCase(),
         blocks: displayBlocks,
-        sourceLanguage: originalLanguage,
+        sourceLanguage: originalLanguage ?? null,
         onBlocksTranslated: handleBlocksTranslated,
     });
 

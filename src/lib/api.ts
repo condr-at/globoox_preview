@@ -187,3 +187,31 @@ export function updateBookLanguage(bookId: string, lang: string): Promise<ApiBoo
     body: JSON.stringify({ selected_language: lang.toUpperCase() }),
   })
 }
+
+export interface UploadBookData {
+  title: string
+  author?: string
+  cover_url?: string | null
+  file_path?: string
+  file_size?: number
+  chapters: {
+    title: string
+    href: string
+    content: string
+    blocks: {
+      type: string
+      text?: string
+      level?: number
+      items?: string[]
+      src?: string
+      alt?: string
+    }[]
+  }[]
+}
+
+export function uploadBook(data: UploadBookData): Promise<ApiBook> {
+  return request<ApiBook>('/api/books/upload', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
