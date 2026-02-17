@@ -1,12 +1,14 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { useAppStore, Language } from '@/lib/store';
 import { updateBookLanguage } from '@/lib/api';
 import { useChapters } from '@/lib/hooks/useChapters';
 import { useChapterContent } from '@/lib/hooks/useChapterContent';
+import { useViewportTranslation } from '@/lib/hooks/useViewportTranslation';
+import { ContentBlock } from '@/lib/api';
 import ReaderActionsMenu from './ReaderActionsMenu';
 import TranslationGlow from './TranslationGlow';
 import AppleIntelligenceGlow from './AppleIntelligenceGlow';
@@ -24,7 +26,7 @@ interface ReaderViewProps {
 }
 
 export default function ReaderView({ bookId, title, availableLanguages, originalLanguage, serverLanguage }: ReaderViewProps) {
-    const { settings, updateProgress, getProgress, setBookLanguage, setIsTranslatingForBook } = useAppStore();
+    const { settings, updateProgress, getProgress, setBookLanguage, setIsTranslatingForBook } = useAppStore(); //setIsTranslating
     const isTranslating = useAppStore((state) => state.isTranslatingByBook[bookId] ?? false);
     const [currentChapterIndex, setCurrentChapterIndex] = useState(() => getProgress(bookId)?.chapter ?? 1);
     const [pendingLang, setPendingLang] = useState<Language | null>(null);
@@ -44,6 +46,30 @@ export default function ReaderView({ bookId, title, availableLanguages, original
 
     const { blocks, loading: contentLoading, error: contentError } = useChapterContent(currentChapter?.id ?? null, activeLang.toUpperCase());
 
+    // displayBlocks starts from fetched blocks, gets progressively updated with translations
+    const [displayBlocks, setDisplayBlocks] = useState<ContentBlock[]>([]);
+
+     // When blocks from the content hook change, reset displayBlocks
+    useEffect(() => {
+        setDisplayBlocks(blocks);
+    }, [blocks]);
+
+    // Merge translated blocks into displayBlocks
+    const handleBlocksTranslated = useCallback((translated: ContentBlock[]) => {
+        setDisplayBlocks((prev) => {
+            const translatedMap = new Map(translated.map((b) => [b.id, b]));
+            return prev.map((b) => translatedMap.get(b.id) ?? b);
+        });
+    }, []);
+
+    const { getRefCallback, isTranslatingAny } = useViewportTranslation({
+        chapterId: currentChapter?.id ?? null,
+        lang: activeLang.toUpperCase(),
+        blocks: displayBlocks,
+        sourceLanguage: originalLanguage,
+        onBlocksTranslated: handleBlocksTranslated,
+    });
+
     // Clear translation glow when content finishes loading (including on error)
     const wasLoadingRef = useRef(false);
     useEffect(() => {
@@ -62,6 +88,12 @@ export default function ReaderView({ bookId, title, availableLanguages, original
     useEffect(() => {
         setIsTranslatingForBook(bookId, false);
     }, [bookId, setIsTranslatingForBook]);
+
+    // Load saved progress
+    useEffect(() => {
+        const saved = getProgress(bookId);
+        if (saved) setCurrentChapterIndex(saved.chapter);
+    }, [bookId, getProgress]);
 
     // Track reading progress
     useEffect(() => {
@@ -159,7 +191,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
                             }}
                             currentChapter={currentChapterIndex}
                             onSelectChapter={goToChapter}
-                            disabled={isTranslating}
+                            disabled={false}
                         />
                     </div>
                 </div>
@@ -172,7 +204,6 @@ export default function ReaderView({ bookId, title, availableLanguages, original
                             variant="ghost"
                             onClick={() => goToChapter(currentChapterIndex - 1, true)}
                             className="w-full justify-center text-[var(--system-blue)] mb-4"
-                            disabled={isTranslating}
                         >
                             <ChevronLeft className="w-5 h-5 mr-1 text-[var(--system-blue)]" />
                             {prevChapter.title}
@@ -181,7 +212,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
 
                     <TranslationGlow>
                         <div>
-                            {isLoading || isTranslating ? (
+                            {isLoading ? (
                                 <>
                                     <Skeleton className="h-7 w-64 mb-5" />
                                     <div className="space-y-5">
@@ -195,12 +226,13 @@ export default function ReaderView({ bookId, title, availableLanguages, original
                             ) : contentError ? (
                                 <p className="text-sm text-destructive py-8 text-center">{contentError}</p>
                             ) : (
-                                blocks.map((block) => (
-                                    <ContentBlockRenderer
-                                        key={block.id}
-                                        block={block}
-                                        fontSize={settings.fontSize}
-                                    />
+                                displayBlocks.map((block) => (
+                                    <div key={block.id} ref={getRefCallback(block.id, block.type)}>
+                                        <ContentBlockRenderer
+                                            block={block}
+                                            fontSize={settings.fontSize}
+                                        />
+                                    </div>
                                 ))
                             )}
                         </div>
@@ -211,7 +243,6 @@ export default function ReaderView({ bookId, title, availableLanguages, original
                             variant="ghost"
                             onClick={() => goToChapter(currentChapterIndex + 1)}
                             className="w-full justify-center text-[var(--system-blue)] mt-4"
-                            disabled={isTranslating}
                         >
                             {nextChapter.title}
                             <ChevronRight className="w-5 h-5 ml-1 text-[var(--system-blue)]" />

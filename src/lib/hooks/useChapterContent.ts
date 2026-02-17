@@ -26,5 +26,5 @@ export function useChapterContent(chapterId: string | null, lang?: string) {
     load()
   }, [load])
 
-  return { blocks, loading, error }
+  return { blocks, setBlocks, loading, error }
 }
