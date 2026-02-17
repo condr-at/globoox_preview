@@ -358,7 +358,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
                             book={{
                                 id: bookId,
                                 languages,
-                                chapters: chapters.map((c) => ({ number: c.index, title: c.title })),
+                                chapters: chapters.map((c) => ({ number: c.index, title: c.title, depth: c.depth })),
                             }}
                             currentChapter={currentChapterIndex}
                             onSelectChapter={goToChapter}

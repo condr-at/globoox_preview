@@ -1,3 +1,5 @@
+import { trackApiRequest } from './amplitude'
+
 // In browser we must call local Next.js API routes (/api/*), so auth can be injected by proxy.
 // Direct backend calls are allowed only during server-side execution.
 const API_URL = typeof window === 'undefined' ? (process.env.NEXT_PUBLIC_API_URL || '') : ''
@@ -19,6 +21,8 @@ export interface ApiChapter {
   book_id: string
   index: number
   title: string
+  depth: number
+  parent_id: string | null
   created_at: string
 }
 
@@ -101,23 +105,38 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
       ? { 'Content-Type': 'application/json', ...(options?.headers || {}) }
       : options?.headers
 
-    const res = await fetch(`${API_URL}${path}`, {
-      ...options,
-      headers,
-    })
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}))
-      throw new Error(body.message || `Request failed: ${res.status}`)
-    }
+    const method = (options?.method ?? 'GET').toUpperCase()
+    const startTime = performance.now()
+    let statusCode: number | undefined
 
-    const data = await res.json()
-    if (key) {
-      recentGetResponses.set(key, {
-        expiresAt: Date.now() + GET_CACHE_TTL_MS,
-        value: data,
+    try {
+      const res = await fetch(`${API_URL}${path}`, {
+        ...options,
+        headers,
       })
+      statusCode = res.status
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body.message || `Request failed: ${res.status}`)
+      }
+
+      const data = await res.json()
+      if (key) {
+        recentGetResponses.set(key, {
+          expiresAt: Date.now() + GET_CACHE_TTL_MS,
+          value: data,
+        })
+      }
+
+      const durationMs = performance.now() - startTime
+      trackApiRequest(path, method, durationMs, true, statusCode)
+
+      return data as T
+    } catch (error) {
+      const durationMs = performance.now() - startTime
+      trackApiRequest(path, method, durationMs, false, statusCode)
+      throw error
     }
-    return data as T
   })()
 
   if (!key) return fetchPromise
@@ -194,10 +213,13 @@ export interface UploadBookData {
   cover_url?: string | null
   file_path?: string
   file_size?: number
+  source_language?: string | null
   chapters: {
     title: string
     href: string
     content: string
+    depth: number
+    parentIndex: number | null
     blocks: {
       type: string
       text?: string

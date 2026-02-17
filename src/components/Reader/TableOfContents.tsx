@@ -7,6 +7,7 @@ import { List, Check, X } from 'lucide-react';
 interface Chapter {
     number: number;
     title: string;
+    depth?: number;
 }
 
 interface TableOfContentsProps {
@@ -72,33 +73,47 @@ export default function TableOfContents({
 
                 {/* Chapters list */}
                 <div className="flex-1 overflow-y-auto">
-                    {chapters.map((chapter) => (
-                        <button
-                            key={chapter.number}
-                            onClick={() => handleSelect(chapter.number)}
-                            className={`
-                                w-full flex items-center gap-[12px] px-[16px] py-[12px] text-left min-h-[44px]
-                                transition-colors active:bg-[var(--fill-tertiary)]
-                                ${currentChapter === chapter.number ? 'bg-[var(--system-blue)]/10' : ''}
-                            `}
-                        >
-                            <span className={`
-                                w-[28px] text-[15px] font-medium transition-colors
-                                ${currentChapter === chapter.number
-                                    ? 'text-[var(--system-blue)]'
-                                    : 'text-[var(--label-tertiary)]'
-                                }
-                            `}>
-                                {chapter.number}
-                            </span>
-                            <span className={`text-[17px] ${currentChapter === chapter.number
-                                ? 'text-[var(--system-blue)] font-semibold'
-                                : 'text-[var(--label-primary)]'
-                                }`}>
-                                {chapter.title}
-                            </span>
-                        </button>
-                    ))}
+                    {chapters.map((chapter) => {
+                        const depth = chapter.depth || 1;
+                        const indentPx = (depth - 1) * 16;
+                        const isActive = currentChapter === chapter.number;
+                        
+                        return (
+                            <button
+                                key={chapter.number}
+                                onClick={() => handleSelect(chapter.number)}
+                                className={`
+                                    w-full flex items-center gap-[12px] py-[12px] text-left min-h-[44px]
+                                    transition-colors active:bg-[var(--fill-tertiary)]
+                                    ${isActive ? 'bg-[var(--system-blue)]/10' : ''}
+                                `}
+                                style={{ paddingLeft: `${16 + indentPx}px`, paddingRight: '16px' }}
+                            >
+                                {depth === 1 && (
+                                    <span className={`
+                                        w-[28px] text-[15px] font-medium transition-colors flex-shrink-0
+                                        ${isActive
+                                            ? 'text-[var(--system-blue)]'
+                                            : 'text-[var(--label-tertiary)]'
+                                        }
+                                    `}>
+                                        {chapter.number}
+                                    </span>
+                                )}
+                                <span className={`
+                                    ${depth === 1 ? 'text-[17px]' : depth === 2 ? 'text-[16px]' : 'text-[15px]'}
+                                    ${isActive
+                                        ? 'text-[var(--system-blue)] font-semibold'
+                                        : depth === 1
+                                            ? 'text-[var(--label-primary)]'
+                                            : 'text-[var(--label-secondary)]'
+                                    }
+                                `}>
+                                    {chapter.title}
+                                </span>
+                            </button>
+                        );
+                    })}
                 </div>
             </div>
         </>

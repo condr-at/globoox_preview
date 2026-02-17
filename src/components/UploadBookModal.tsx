@@ -44,6 +44,11 @@ export default function UploadBookModal({ isOpen, onClose, onUploaded }: UploadB
     try {
       // Parse the EPUB
       const parsed = await parseEpub(file);
+      const chaptersWithBlocks = parsed.chapters.filter(ch => ch.blocks.length > 0).length;
+      console.log(`[upload] Parsed: ${parsed.chapters.length} chapters, ${chaptersWithBlocks} with blocks`);
+      if (chaptersWithBlocks === 0) {
+        console.warn('[upload] WARNING: No blocks extracted! Check EPUB structure.');
+      }
       setProgress(40);
       setMessage('Creating book and chapters...');
 
@@ -53,10 +58,13 @@ export default function UploadBookModal({ isOpen, onClose, onUploaded }: UploadB
         author: parsed.author,
         cover_url: parsed.cover,
         file_size: file.size,
+        source_language: parsed.language,
         chapters: parsed.chapters.map((ch) => ({
           title: ch.title,
           href: ch.href,
           content: ch.content,
+          depth: ch.depth,
+          parentIndex: ch.parentIndex,
           blocks: ch.blocks,
         })),
       });

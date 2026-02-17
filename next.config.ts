@@ -1,6 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '50mb',
+    },
+  },
+  // Increase body size limit for API routes (covers can be large base64)
+  serverExternalPackages: [],
   images: {
     remotePatterns: [
       {
