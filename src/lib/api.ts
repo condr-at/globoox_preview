@@ -7,6 +7,7 @@ export interface ApiBook {
   cover_url: string | null
   original_language: string | null
   available_languages: string[]
+  selected_language?: string | null
   status: string
   created_at: string
 }
@@ -174,5 +175,12 @@ export function translateBlocks(chapterId: string, lang: string, blockIds: strin
   return request<ContentBlock[]>(`/api/chapters/${chapterId}/translate`, {
     method: 'POST',
     body: JSON.stringify({ lang: lang.toUpperCase(), blockIds }),
+  })
+}
+
+export function updateBookLanguage(bookId: string, lang: string): Promise<ApiBook> {
+  return request<ApiBook>(`/api/books/${bookId}/language`, {
+    method: 'PATCH',
+    body: JSON.stringify({ selected_language: lang.toUpperCase() }),
   })
 }

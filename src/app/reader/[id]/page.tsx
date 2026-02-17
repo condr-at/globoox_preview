@@ -48,6 +48,8 @@ export default function ReaderPage({ params }: ReaderPageProps) {
       bookId={book.id}
       title={book.title}
       availableLanguages={book.available_languages}
+      originalLanguage={book.original_language}
+      serverLanguage={book.selected_language}
     />
   );
 }

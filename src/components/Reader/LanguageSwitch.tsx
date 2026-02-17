@@ -7,6 +7,7 @@ import { useAdaptiveDropdown } from '@/components/ui/useAdaptiveDropdown';
 
 interface LanguageSwitchProps {
   availableLanguages: Language[];
+  currentLanguage?: Language;
   onLanguageChange?: (lang: Language) => void;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -15,6 +16,7 @@ interface LanguageSwitchProps {
 
 export default function LanguageSwitch({
   availableLanguages,
+  currentLanguage,
   onLanguageChange,
   open: externalOpen,
   onOpenChange: setExternalOpen,
@@ -27,6 +29,7 @@ export default function LanguageSwitch({
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const { settings, setLanguage, setIsTranslating } = useAppStore();
+  const activeLanguage = currentLanguage ?? settings.language;
 
   const effectiveOpen = isOpen && !disabled;
 
@@ -40,13 +43,13 @@ export default function LanguageSwitch({
   });
 
   const handleSelect = (lang: Language) => {
-    if (lang === settings.language) {
+    if (lang === activeLanguage) {
       setIsOpen(false);
       return;
     }
 
     setIsOpen(false);
-    setLanguage(lang);
+    if (!currentLanguage) setLanguage(lang);
     onLanguageChange?.(lang);
     setIsTranslating(true);
   };
@@ -60,7 +63,7 @@ export default function LanguageSwitch({
           disabled={disabled}
           className="flex items-center gap-[4px] px-[8px] min-w-[44px] min-h-[44px] text-[var(--system-blue)] active:opacity-70 disabled:opacity-50 transition-opacity"
         >
-          <span className="text-[15px] font-medium">{settings.language.toUpperCase()}</span>
+          <span className="text-[15px] font-medium">{activeLanguage.toUpperCase()}</span>
           <ChevronDown className={`w-[16px] h-[16px] transition-transform ${effectiveOpen ? 'rotate-180' : ''}`} />
         </button>
       )}
@@ -78,7 +81,7 @@ export default function LanguageSwitch({
               className="w-full flex items-center justify-between px-[16px] py-[12px] text-left transition-colors active:bg-[var(--fill-tertiary)]"
             >
               <span className="text-[17px]">{languageNames[lang]}</span>
-              {settings.language === lang && (
+              {activeLanguage === lang && (
                 <Check className="w-[20px] h-[20px] text-[var(--system-blue)]" />
               )}
             </button>

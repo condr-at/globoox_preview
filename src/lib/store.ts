@@ -40,6 +40,10 @@ interface AppState {
   setTheme: (theme: 'dark' | 'light') => void;
   setLanguage: (language: Language) => void;
 
+  // Per-book language preferences
+  perBookLanguages: Record<string, Language>;
+  setBookLanguage: (bookId: string, lang: Language) => void;
+
   // Reading progress
   progress: ReadingProgress;
   updateProgress: (bookId: string, chapter: number, progress: number) => void;
@@ -73,6 +77,14 @@ export const useAppStore = create<AppState>()(
       setLanguage: (language) =>
         set((state) => ({
           settings: { ...state.settings, language }
+        })),
+
+      // Per-book language preferences
+      perBookLanguages: {},
+
+      setBookLanguage: (bookId, lang) =>
+        set((state) => ({
+          perBookLanguages: { ...state.perBookLanguages, [bookId]: lang }
         })),
 
       // Reading progress

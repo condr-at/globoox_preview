@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { useAppStore, Language } from '@/lib/store';
+import { updateBookLanguage } from '@/lib/api';
 import { useChapters } from '@/lib/hooks/useChapters';
 import { useChapterContent } from '@/lib/hooks/useChapterContent';
 import ReaderActionsMenu from './ReaderActionsMenu';
@@ -18,17 +19,31 @@ interface ReaderViewProps {
     bookId: string;
     title: string;
     availableLanguages: string[];
+    originalLanguage?: string | null;
+    serverLanguage?: string | null;
 }
 
-export default function ReaderView({ bookId, title, availableLanguages }: ReaderViewProps) {
-    const { settings, updateProgress, getProgress, isTranslating, setIsTranslating } = useAppStore();
+export default function ReaderView({ bookId, title, availableLanguages, originalLanguage, serverLanguage }: ReaderViewProps) {
+    const { settings, updateProgress, getProgress, isTranslating, setIsTranslating, perBookLanguages, setBookLanguage } = useAppStore();
     const [currentChapterIndex, setCurrentChapterIndex] = useState(1);
+
+    const resolveInitialLang = (): Language => {
+        const cached = perBookLanguages[bookId];
+        if (cached) return cached;
+        const candidates = [serverLanguage, originalLanguage];
+        for (const c of candidates) {
+            const l = c?.toLowerCase() as Language;
+            if (l && ['en', 'fr', 'es', 'de', 'ru'].includes(l)) return l;
+        }
+        return settings.language;
+    };
+
+    const [activeLang, setActiveLang] = useState<Language>(resolveInitialLang);
 
     const { chapters, loading: chaptersLoading, error: chaptersError } = useChapters(bookId);
     const currentChapter = chapters[currentChapterIndex - 1] ?? null;
 
-    const lang = settings.language.toUpperCase();
-    const { blocks, loading: contentLoading, error: contentError } = useChapterContent(currentChapter?.id ?? null, lang);
+    const { blocks, loading: contentLoading, error: contentError } = useChapterContent(currentChapter?.id ?? null, activeLang.toUpperCase());
 
     // Load saved progress
     useEffect(() => {
@@ -82,6 +97,12 @@ export default function ReaderView({ bookId, title, availableLanguages }: Reader
         }
     };
 
+    const handleLanguageChange = (lang: Language) => {
+        setActiveLang(lang);
+        setBookLanguage(bookId, lang);
+        updateBookLanguage(bookId, lang).catch(() => {/* fire-and-forget */});
+    };
+
     // Map uppercase API language codes to lowercase Language type for components
     const languages = availableLanguages
         .map((l) => l.toLowerCase())
@@ -116,6 +137,8 @@ export default function ReaderView({ bookId, title, availableLanguages }: Reader
                     <div className="flex items-center flex-shrink-0">
                         <LanguageSwitch
                             availableLanguages={languages}
+                            currentLanguage={activeLang}
+                            onLanguageChange={handleLanguageChange}
                             disabled={isTranslating}
                         />
                         <ReaderActionsMenu
