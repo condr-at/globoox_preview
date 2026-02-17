@@ -77,6 +77,23 @@ export interface TranslateRequest {
   blockIds: string[]
 }
 
+export interface ReadingPosition {
+  book_id: string
+  chapter_id: string | null
+  block_id: string | null
+  block_position: number | null
+  lang: string | null
+  updated_at: string | null
+}
+
+export interface SaveReadingPositionRequest {
+  chapter_id: string
+  block_id?: string | null
+  block_position?: number | null
+  lang?: string | null
+  updated_at_client?: string
+}
+
 const GET_CACHE_TTL_MS = 2000
 const inflightGetRequests = new Map<string, Promise<unknown>>()
 const recentGetResponses = new Map<string, { expiresAt: number; value: unknown }>()
@@ -204,6 +221,20 @@ export function updateBookLanguage(bookId: string, lang: string): Promise<ApiBoo
   return request<ApiBook>(`/api/books/${bookId}/language`, {
     method: 'PATCH',
     body: JSON.stringify({ selected_language: lang.toUpperCase() }),
+  })
+}
+
+export function fetchReadingPosition(bookId: string): Promise<ReadingPosition> {
+  return request<ReadingPosition>(`/api/books/${bookId}/reading-position`)
+}
+
+export function saveReadingPosition(
+  bookId: string,
+  data: SaveReadingPositionRequest
+): Promise<{ success: boolean; persisted: boolean }> {
+  return request<{ success: boolean; persisted: boolean }>(`/api/books/${bookId}/reading-position`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
   })
 }
 
