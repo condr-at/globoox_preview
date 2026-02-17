@@ -50,8 +50,8 @@ interface AppState {
   getProgress: (bookId: string) => { chapter: number; progress: number } | null;
 
   // Translation state
-  isTranslating: boolean;
-  setIsTranslating: (value: boolean) => void;
+  isTranslatingByBook: Record<string, boolean>;
+  setIsTranslatingForBook: (bookId: string, value: boolean) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -108,12 +108,23 @@ export const useAppStore = create<AppState>()(
         return { chapter: progress.chapter, progress: progress.progress };
       },
 
-      // Translation state
-      isTranslating: false,
-      setIsTranslating: (value) => set({ isTranslating: value })
+      // Translation state (scoped per book to avoid cross-book animation bleed)
+      isTranslatingByBook: {},
+      setIsTranslatingForBook: (bookId, value) =>
+        set((state) => ({
+          isTranslatingByBook: {
+            ...state.isTranslatingByBook,
+            [bookId]: value,
+          },
+        }))
     }),
     {
-      name: 'globoox-preview-storage'
+      name: 'globoox-preview-storage',
+      partialize: (state) => ({
+        settings: state.settings,
+        perBookLanguages: state.perBookLanguages,
+        progress: state.progress,
+      }),
     }
   )
 );

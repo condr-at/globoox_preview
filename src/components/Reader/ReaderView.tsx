@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { useAppStore, Language } from '@/lib/store';
@@ -24,32 +24,25 @@ interface ReaderViewProps {
 }
 
 export default function ReaderView({ bookId, title, availableLanguages, originalLanguage, serverLanguage }: ReaderViewProps) {
-    const { settings, updateProgress, getProgress, isTranslating, setIsTranslating, perBookLanguages, setBookLanguage } = useAppStore();
-    const [currentChapterIndex, setCurrentChapterIndex] = useState(1);
+    const { settings, updateProgress, getProgress, setBookLanguage, setIsTranslatingForBook } = useAppStore();
+    const isTranslating = useAppStore((state) => state.isTranslatingByBook[bookId] ?? false);
+    const [currentChapterIndex, setCurrentChapterIndex] = useState(() => getProgress(bookId)?.chapter ?? 1);
+    const [pendingLang, setPendingLang] = useState<Language | null>(null);
 
-    const resolveInitialLang = (): Language => {
-        const cached = perBookLanguages[bookId];
-        if (cached) return cached;
+    const resolvedServerLang = useMemo<Language>(() => {
         const candidates = [serverLanguage, originalLanguage];
         for (const c of candidates) {
             const l = c?.toLowerCase() as Language;
             if (l && ['en', 'fr', 'es', 'de', 'ru'].includes(l)) return l;
         }
         return settings.language;
-    };
-
-    const [activeLang, setActiveLang] = useState<Language>(resolveInitialLang);
+    }, [serverLanguage, originalLanguage, settings.language]);
+    const activeLang = pendingLang ?? resolvedServerLang;
 
     const { chapters, loading: chaptersLoading, error: chaptersError } = useChapters(bookId);
     const currentChapter = chapters[currentChapterIndex - 1] ?? null;
 
     const { blocks, loading: contentLoading, error: contentError } = useChapterContent(currentChapter?.id ?? null, activeLang.toUpperCase());
-
-    // Load saved progress
-    useEffect(() => {
-        const saved = getProgress(bookId);
-        if (saved) setCurrentChapterIndex(saved.chapter);
-    }, [bookId, getProgress]);
 
     // Clear translation glow when content finishes loading (including on error)
     const wasLoadingRef = useRef(false);
@@ -58,9 +51,17 @@ export default function ReaderView({ bookId, title, availableLanguages, original
             wasLoadingRef.current = true;
         } else if (wasLoadingRef.current) {
             wasLoadingRef.current = false;
-            setIsTranslating(false);
+            setIsTranslatingForBook(bookId, false);
         }
-    }, [contentLoading, setIsTranslating]);
+    }, [bookId, contentLoading, setIsTranslatingForBook]);
+
+    useEffect(() => {
+        setBookLanguage(bookId, resolvedServerLang);
+    }, [bookId, resolvedServerLang, setBookLanguage]);
+
+    useEffect(() => {
+        setIsTranslatingForBook(bookId, false);
+    }, [bookId, setIsTranslatingForBook]);
 
     // Track reading progress
     useEffect(() => {
@@ -98,9 +99,18 @@ export default function ReaderView({ bookId, title, availableLanguages, original
     };
 
     const handleLanguageChange = (lang: Language) => {
-        setActiveLang(lang);
-        setBookLanguage(bookId, lang);
-        updateBookLanguage(bookId, lang).catch(() => {/* fire-and-forget */});
+        const previousLang = activeLang;
+        setPendingLang(lang);
+        setIsTranslatingForBook(bookId, true);
+        updateBookLanguage(bookId, lang)
+            .then(() => {
+                setPendingLang(lang);
+                setBookLanguage(bookId, lang);
+            })
+            .catch(() => {
+                setPendingLang(previousLang === resolvedServerLang ? null : previousLang);
+                setIsTranslatingForBook(bookId, false);
+            });
     };
 
     // Map uppercase API language codes to lowercase Language type for components
@@ -115,7 +125,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
 
     return (
         <div className="min-h-screen bg-background">
-            <AppleIntelligenceGlow />
+            <AppleIntelligenceGlow bookId={bookId} />
 
             <header className={`
                 fixed top-0 left-0 right-0 z-40 bg-background/80 backdrop-blur-xl border-b

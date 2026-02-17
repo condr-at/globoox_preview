@@ -28,7 +28,7 @@ export default function LanguageSwitch({
 
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
-  const { settings, setLanguage, setIsTranslating } = useAppStore();
+  const { settings, setLanguage } = useAppStore();
   const activeLanguage = currentLanguage ?? settings.language;
 
   const effectiveOpen = isOpen && !disabled;
@@ -51,7 +51,6 @@ export default function LanguageSwitch({
     setIsOpen(false);
     if (!currentLanguage) setLanguage(lang);
     onLanguageChange?.(lang);
-    setIsTranslating(true);
   };
 
   return (

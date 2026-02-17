@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 /**
  * Forward request to real backend API when NEXT_PUBLIC_API_URL is configured.
  * Attaches Supabase auth token when user is logged in.
- * Returns null only when no backend URL is configured (pure mock mode).
+ * Returns null only when no backend URL is configured.
  */
 export async function proxyToBackend(request: Request): Promise<NextResponse | null> {
   const backendUrl = process.env.NEXT_PUBLIC_API_URL
@@ -42,4 +42,14 @@ export async function proxyToBackend(request: Request): Promise<NextResponse | n
       { status: 502 }
     )
   }
+}
+
+export async function requireBackendProxy(request: Request): Promise<NextResponse> {
+  const proxied = await proxyToBackend(request)
+  if (proxied) return proxied
+
+  return NextResponse.json(
+    { error: 'Backend API is not configured. Set NEXT_PUBLIC_API_URL.' },
+    { status: 503 }
+  )
 }

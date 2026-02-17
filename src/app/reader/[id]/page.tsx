@@ -45,6 +45,7 @@ export default function ReaderPage({ params }: ReaderPageProps) {
 
   return (
     <ReaderView
+      key={book.id}
       bookId={book.id}
       title={book.title}
       availableLanguages={book.available_languages}
