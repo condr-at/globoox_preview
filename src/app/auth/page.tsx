@@ -10,7 +10,6 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { createClient } from '@/lib/supabase/client';
-import { getSiteUrl } from '@/lib/supabase/utils';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 export default function AuthPage() {
@@ -40,7 +39,6 @@ function AuthForm() {
     searchParams.get('error') ? 'Authentication failed. Please try again.' : null
   );
   const [message, setMessage] = useState<string | null>(null);
-  const nextUrl = searchParams.get('next') || '/library';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,7 +53,7 @@ function AuthForm() {
       setError(error.message);
       setLoading(false);
     } else {
-      router.push(nextUrl);
+      router.push('/library');
     }
   };
 
@@ -63,11 +61,10 @@ function AuthForm() {
     setLoading(true);
     setError(null);
     const supabase = getSupabase();
-    const siteUrl = getSiteUrl();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${siteUrl}/auth/callback?next=${encodeURIComponent(nextUrl)}`,
+        redirectTo: `${window.location.origin}/auth/callback`,
       },
     });
     if (error) {
