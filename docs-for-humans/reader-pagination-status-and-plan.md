@@ -1,70 +1,74 @@
-# Reader: Пагинация, жесты, прогресс и язык
+# Reader: Pagination, Gestures, Progress & Language
 
-## 1) Что есть сейчас (факт по коду)
+## 1) Current State (as per codebase)
 
-| Область | Статус сейчас | Комментарий |
+| Area | Current Status | Notes |
 |---|---|---|
-| Постраничная вёрстка | Нет | Сейчас длинный scroll по всей главе |
-| Перелистывание drag/swipe | Нет | Обработчиков жестов нет |
-| Тап по краям экрана | Нет | Tap-зоны не реализованы |
-| Прогресс по блоку (`anchorBlock`) | Нет | Сохраняется только глава + % |
-| Сохранение прогресса на сервере | Нет | Endpoint отсутствует |
-| Смена языка без потери блока-якоря | Нет | Язык меняется, но якорь блока не фиксируется |
-| Прогрессивный перевод | Да | `IntersectionObserver` + `POST /translate` |
+| Page-based layout | No | Currently a long scroll through the entire chapter |
+| Drag/swipe page turning | No | No gesture handlers implemented |
+| Tap on screen edges | No | Tap zones not implemented |
+| Block-level progress (`anchorBlock`) | No | Only chapter + % is saved |
+| Server-side progress saving | No | Endpoint missing |
+| Language switch without losing block anchor | No | Language changes, but block anchor is not preserved |
+| Progressive translation | Yes | `IntersectionObserver` + `POST /translate` |
 
 ### Reader UX
-- Текущий ридер = вертикальный скролл всей главы, не постраничный режим.
-- Навигация между главами кнопками `prev/next` + TOC.
-- Жестов `drag/swipe` для перелистывания страниц нет.
-- Тап-зон по краям экрана для перелистывания нет.
+- The current reader is a vertically scrolling single-chapter view, not a paginated mode.
+- Chapter navigation uses `prev/next` buttons and a TOC.
+- No `drag/swipe` gestures for page turning.
+- No near-edge tap zones for page turning.
 
-### Модель данных и рендер
-- Контент приходит массивом `ContentBlock[]` (у блока есть `id` и `position`).
-- В UI блоки рендерятся подряд как одна длинная колонка.
-- Пагинация (разбиение на страницы под viewport) отсутствует.
+### Data Model & Rendering
+- Content arrives as a `ContentBlock[]` array (each block has an `id` and `position`).
+- Blocks are rendered sequentially as one long column.
+- Pagination (splitting content into viewport-sized pages) is not implemented.
 
-### Сохранение прогресса
-- Прогресс сохраняется только локально в Zustand (`persist` в local storage).
-- Формат прогресса: `bookId -> { chapter, progress%, lastRead }`.
-- Якорь чтения на уровне блока (`blockId`/`position`) не сохраняется.
-- Серверного endpoint для reading position сейчас нет.
+### Progress Saving
+- Progress is saved locally only via Zustand (`persist` to local storage).
+- Progress format: `bookId -> { chapter, progress%, lastRead }`.
+- No block-level reading anchor (`blockId`/`position`) is saved.
+- No server-side endpoint for reading position exists.
 
-### Язык и перевод
-- При смене языка вызывается `PATCH /api/books/:id/language` (сохраняется `selected_language` книги).
-- Затем контент главы перечитывается для нового языка.
-- Привязка к текущему блоку при смене языка не реализована.
+### Language & Translation
+- On language switch, `PATCH /api/books/:id/language` is called (saves `selected_language` for the book).
+- Chapter content is then re-fetched for the new language.
+- No block-level anchoring is applied during language switch.
 
-### Прогрессивный перевод
-- Да, прогрессивный перевод в проекте есть:
-- Хук `useViewportTranslation` отслеживает блоки через `IntersectionObserver`.
-- Видимые блоки батчами отправляются в `POST /api/chapters/:id/translate`.
-- Переведённые блоки мерджатся в `displayBlocks`.
-- Важно: параллельно есть `GET /content?lang=XX`; нужно явно зафиксировать бэкенд-контракт, чтобы не было двойной/конфликтной стратегии.
+### Progressive Translation
+- Progressive translation is present in the project:
+  - The `useViewportTranslation` hook tracks blocks via `IntersectionObserver`.
+  - Visible blocks are batched and sent to `POST /api/chapters/:id/translate`.
+  - Translated blocks are merged into `displayBlocks`.
+- Note: `GET /content?lang=XX` runs in parallel — the backend contract should be explicitly defined to avoid a dual/conflicting translation strategy.
 
-## 2) Gap относительно целевого состояния
+---
 
-### Нужно сделать во фронте
-- Постраничную вёрстку главы под текущий viewport (а не scroll-колонку).
-- Перелистывание:
-- `drag/swipe` влево/вправо (не от самого края, чтобы не конфликтовать с системными gesture).
-- `tap` в near-edge зоны для next/prev page.
-- Логику текущего места чтения как `anchorBlock`:
-- Это верхний блок текущей страницы.
-- Сохраняется и восстанавливается как primary source of truth.
-- При смене языка:
-- Сохраняем тот же `anchorBlock`.
-- Перевёрстываем страницы для нового языка от этого же якоря.
-- Текущая страница может измениться, это нормальное поведение.
+## 2) Gaps vs. Target State
 
-### Нужно сделать в backend
-- Endpoint для чтения/записи reading position (минимум block-anchor).
-- Желательно возвращать/принимать не только `blockId`, но и `chapterId` + `blockPosition` (для отказоустойчивости, если blockId изменился).
+### Frontend work needed
+- Page-based chapter layout fitted to the current viewport (replacing the scroll column).
+- Page turning:
+  - `drag/swipe` left/right (not from the very edge, to avoid conflicts with system gestures).
+  - `tap` in near-edge zones for next/prev page.
+- Reading position logic based on `anchorBlock`:
+  - The anchor is the topmost block on the current page.
+  - Saved and restored as the primary source of truth.
+- On language switch:
+  - Preserve the same `anchorBlock`.
+  - Rebuild pages for the new language starting from that anchor.
+  - The visual page number may change — this is expected behavior.
 
-## 3) Что просить у бэкенда (конкретно)
+### Backend work needed
+- Endpoint to read/write reading position (minimum: block anchor).
+- Should accept and return not just `blockId`, but also `chapterId` + `blockPosition` (for resilience if `blockId` has changed).
 
-### Минимум для MVP
+---
+
+## 3) What to Request from Backend
+
+### MVP Minimum
 - `PUT /api/books/:bookId/reading-position`
-- Body:
+  - Body:
 ```json
 {
   "chapter_id": "ch-...",
@@ -75,7 +79,7 @@
 }
 ```
 - `GET /api/books/:bookId/reading-position`
-- Response:
+  - Response:
 ```json
 {
   "book_id": "book-...",
@@ -87,91 +91,94 @@
 }
 ```
 
-### Важные требования к контракту
-- Идемпотентность `PUT`.
-- Last-write-wins по `updated_at`.
-- Если `block_id` не найден в текущей ревизии главы:
-- fallback по `block_position` (ближайший валидный блок).
-- Если нет сохранённой позиции: `404` или `null` (оговорить заранее).
+### Contract Requirements
+- `PUT` must be idempotent.
+- Last-write-wins by `updated_at`.
+- If `block_id` is not found in the current chapter revision: fallback to `block_position` (nearest valid block).
+- If no position is saved: return `404` or `null` (to be agreed upon upfront).
 
-### Опционально (не MVP)
-- `POST /api/books/:bookId/reading-position/batch` для throttled массовых обновлений.
-- Версионирование главы/блоков (`content_version`) для надёжного восстановления после переимпорта.
+### Optional (post-MVP)
+- `POST /api/books/:bookId/reading-position/batch` for throttled bulk updates.
+- Chapter/block versioning (`content_version`) for reliable restoration after re-import.
 
-## 4) Номера страниц: рекомендация для MVP
+---
 
-- Для MVP лучше **не делать абсолютные номера страниц** (`Page 37 of 412`), потому что:
-- Количество страниц зависит от языка, шрифта, размера экрана, safe area.
-- При прогрессивном/мозаичном переводе нельзя стабильно и дёшево предсчитать весь `total pages`.
-- Риск UX-ошибок выше, чем ценность на старте.
+## 4) Page Numbers: MVP Recommendation
 
-Рекомендую в MVP:
-- Показывать главу + относительный прогресс:
-- `Chapter 3`
-- `Block 128 / 642` (или `%` по blocks в главе)
-- Номера страниц добавить позже, когда будет:
-- либо полный перевод главы,
-- либо фоновая предвёрстка всей главы в выбранной конфигурации (lang + font + viewport).
+Absolute page numbers (`Page 37 of 412`) are **not recommended for MVP** because:
+- Page count depends on language, font, screen size, and safe area insets.
+- With progressive/mosaic translation, total page count cannot be computed reliably or cheaply.
+- The risk of UX errors outweighs the value at this stage.
 
-## 5) План приведения к целевому состоянию
+**Recommended for MVP:**
+- Show chapter + relative progress:
+  - `Chapter 3`
+  - `Block 128 / 642` (or `%` of blocks in the chapter)
+- Add page numbers later, once either:
+  - Full chapter translation is available, or
+  - Background pre-layout of the full chapter is supported for a given config (lang + font + viewport).
 
-### Этап 0: зафиксировать контракты (быстро)
-- Утвердить backend endpoint для `reading-position`.
-- Утвердить источник истины для перевода:
-- либо `GET /content?lang` возвращает уже готовую локаль,
-- либо фронт делает lazy translate через `/translate`.
-- Запретить двусмысленность в контракте.
+---
 
-### Этап 1: Anchor-first прогресс
-- Добавить client-модель:
-- `readingPosition[bookId] = { chapterId, blockId, blockPosition, updatedAt }`.
-- Обновлять anchor при каждом успешном page turn (throttle/debounce).
-- Синкать anchor на backend.
-- На входе в ридер: сначала восстановить anchor, потом строить страницу от него.
+## 5) Roadmap to Target State
 
-### Этап 2: Пагинатор
-- Реализовать `paginateBlocks(blocks, startAnchor, layoutConfig)`:
-- Вход: `blocks`, viewport height/width, typography settings.
-- Выход: массив страниц с `topBlockId` + список видимых блоков/фрагментов.
-- Пока можно сделать без сложного text-fragment split внутри одного абзаца (если блок не влезает, переносим целиком), потом улучшить.
+### Phase 0: Lock Down Contracts (quick)
+- Agree on the backend `reading-position` endpoint.
+- Agree on the translation source of truth:
+  - Either `GET /content?lang` returns the fully localized content,
+  - Or the frontend handles lazy translation via `/translate`.
+- Eliminate ambiguity in the contract.
 
-### Этап 3: Жесты и тап-зоны
-- Добавить слой взаимодействия поверх страницы:
-- central safe zone для drag/swipe (без крайних системных зон).
-- near-edge tap zones для `prev/next`.
-- Условия:
-- не перехватывать жесты в input/menu overlay,
-- не ломать системный back gesture iOS.
+### Phase 1: Anchor-First Progress
+- Add a client model: `readingPosition[bookId] = { chapterId, blockId, blockPosition, updatedAt }`.
+- Update the anchor on every successful page turn (throttled/debounced).
+- Sync anchor to backend.
+- On reader entry: restore anchor first, then build the page from it.
 
-### Этап 4: Смена языка без потери места
-- Перед переключением: зафиксировать текущий `anchorBlock`.
-- После получения/обновления блоков нового языка:
-- найти тот же `blockId` (или fallback по `position`),
-- перестроить страницы,
-- открыть страницу, где этот блок вверху.
+### Phase 2: Paginator
+- Implement `paginateBlocks(blocks, startAnchor, layoutConfig)`:
+  - Input: `blocks`, viewport height/width, typography settings.
+  - Output: array of pages, each with a `topBlockId` + list of visible blocks/fragments.
+- For now, avoid complex text-fragment splitting within a paragraph (if a block doesn't fit, carry it over whole); refine later.
 
-### Этап 5: Полировка и наблюдаемость
-- Метрики:
-- latency page-turn,
-- translation queue latency,
-- restore success rate по anchor.
-- Логи ошибок для кейсов `anchor not found`.
+### Phase 3: Gestures & Tap Zones
+- Add an interaction layer over the page:
+  - Central safe zone for drag/swipe (avoiding system edge zones).
+  - Near-edge tap zones for `prev/next`.
+- Constraints:
+  - Do not intercept gestures inside input fields or menu overlays.
+  - Do not break the iOS system back gesture.
 
-## 6) Риски и решения
+### Phase 4: Language Switch Without Losing Position
+- Before switching: capture the current `anchorBlock`.
+- After receiving/updating blocks for the new language:
+  - Find the same `blockId` (or fall back by `position`).
+  - Rebuild pages.
+  - Open the page where that block is at the top.
 
-- Риск: конфликт двух стратегий перевода (`GET /content?lang` vs viewport translate).
-- Решение: единый контракт и feature-flag режима.
+### Phase 5: Polish & Observability
+- Metrics: page-turn latency, translation queue latency, anchor restore success rate.
+- Error logging for `anchor not found` cases.
 
-- Риск: тяжелая предвёрстка на больших главах.
-- Решение: инкрементальная пагинация от anchor (windowed), не считать всю главу сразу.
+---
 
-- Риск: прыжки позиции при асинхронном приходе переводов.
-- Решение: фиксировать `anchorBlock` как source of truth и пересобирать страницы детерминированно.
+## 6) Risks & Mitigations
 
-## 7) Проверка готовности (Definition of Done)
+- **Risk:** Conflict between two translation strategies (`GET /content?lang` vs. viewport translate).
+  **Mitigation:** Single contract + feature flag for the mode.
 
-- Ридер открывает книгу на сохранённом `anchorBlock`.
-- Перелистывание работает drag/tap, без конфликта с edge system gestures.
-- При смене языка пользователь остаётся на том же logical месте (`anchorBlock`), даже если номер страницы визуально меняется.
-- Позиция сохраняется на backend и восстанавливается на другом устройстве/сессии.
-- При частичном переводе ридер остаётся стабильным, без ложных page numbers.
+- **Risk:** Heavy pre-layout cost on large chapters.
+  **Mitigation:** Incremental pagination from anchor (windowed) — do not compute the full chapter at once.
+
+- **Risk:** Position jumps when translations arrive asynchronously.
+  **Mitigation:** Lock `anchorBlock` as source of truth and rebuild pages deterministically.
+
+---
+
+## 7) Definition of Done
+
+- Reader opens a book at the saved `anchorBlock`.
+- Page turning works via drag and tap, without conflicting with system edge gestures.
+- On language switch, the user stays at the same logical position (`anchorBlock`), even if the visual page number changes.
+- Position is saved to the backend and restored across devices/sessions.
+- With partial translation, the reader remains stable with no spurious page numbers.
