@@ -1,6 +1,4 @@
-// Always routes through local Next.js API routes.
-// To connect to a real backend, set NEXT_PUBLIC_API_URL in .env — the API routes will proxy automatically.
-const API_URL = ''
+const API_URL = process.env.NEXT_PUBLIC_API_URL || ''
 
 export interface ApiBook {
   id: string
