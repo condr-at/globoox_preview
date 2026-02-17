@@ -33,6 +33,13 @@ interface ReadingProgress {
   };
 }
 
+export interface ReadingAnchor {
+  chapterId: string;
+  blockId: string;
+  blockPosition: number;
+  updatedAt: string;
+}
+
 interface AppState {
   // Reader settings
   settings: ReaderSettings;
@@ -48,6 +55,11 @@ interface AppState {
   progress: ReadingProgress;
   updateProgress: (bookId: string, chapter: number, progress: number) => void;
   getProgress: (bookId: string) => { chapter: number; progress: number } | null;
+
+  // Block-level reading anchor (per book)
+  readingAnchors: Record<string, ReadingAnchor>;
+  setAnchor: (bookId: string, anchor: ReadingAnchor) => void;
+  getAnchor: (bookId: string) => ReadingAnchor | null;
 
   // Translation state
   isTranslatingByBook: Record<string, boolean>;
@@ -108,6 +120,16 @@ export const useAppStore = create<AppState>()(
         return { chapter: progress.chapter, progress: progress.progress };
       },
 
+      // Block-level reading anchors
+      readingAnchors: {},
+
+      setAnchor: (bookId, anchor) =>
+        set((state) => ({
+          readingAnchors: { ...state.readingAnchors, [bookId]: anchor }
+        })),
+
+      getAnchor: (bookId) => get().readingAnchors[bookId] ?? null,
+
       // Translation state (scoped per book to avoid cross-book animation bleed)
       isTranslatingByBook: {},
       setIsTranslatingForBook: (bookId, value) =>
@@ -124,6 +146,7 @@ export const useAppStore = create<AppState>()(
         settings: state.settings,
         perBookLanguages: state.perBookLanguages,
         progress: state.progress,
+        readingAnchors: state.readingAnchors,
       }),
     }
   )
