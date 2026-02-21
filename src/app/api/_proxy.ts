@@ -31,6 +31,19 @@ export async function proxyToBackend(request: Request): Promise<NextResponse | n
 
   try {
     const res = await fetch(targetUrl, { method: request.method, headers, body })
+    const contentType = res.headers.get('content-type') ?? ''
+
+    // Pass NDJSON streaming responses through without buffering
+    if (contentType.includes('ndjson') || contentType.includes('event-stream')) {
+      const response = new NextResponse(res.body, { status: res.status })
+      response.headers.set('Content-Type', contentType)
+      response.headers.set('Cache-Control', 'no-cache')
+      response.headers.set('X-Accel-Buffering', 'no')
+      response.headers.set('x-data-source', 'backend')
+      response.headers.set('x-authenticated', session ? 'true' : 'false')
+      return response
+    }
+
     const data = await res.json().catch(() => null)
     const response = NextResponse.json(data ?? {}, { status: res.status })
     response.headers.set('x-data-source', 'backend')

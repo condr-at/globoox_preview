@@ -75,6 +75,15 @@ export type ContentBlock =
 export interface TranslateRequest {
   lang: string
   blockIds: string[]
+  anchorBlockId?: string | null
+  direction?: 'up' | 'down'
+}
+
+export interface TranslatedBlockResult {
+  blockId: string
+  status: 'ok' | 'error'
+  cache: 'hit' | 'miss'
+  translatedText: string
 }
 
 export interface ReadingPosition {
@@ -210,11 +219,89 @@ export function fetchContent(chapterId: string, lang?: string): Promise<ContentB
   return request<ContentBlock[]>(`/api/chapters/${chapterId}/content${params}`)
 }
 
-export function translateBlocks(chapterId: string, lang: string, blockIds: string[]): Promise<ContentBlock[]> {
+export function translateBlocks(
+  chapterId: string,
+  lang: string,
+  blockIds: string[],
+  signal?: AbortSignal,
+): Promise<ContentBlock[]> {
   return request<ContentBlock[]>(`/api/chapters/${chapterId}/translate`, {
     method: 'POST',
     body: JSON.stringify({ lang: lang.toUpperCase(), blockIds }),
+    signal,
   })
+}
+
+/**
+ * Stream block translations one-by-one as they resolve on the server.
+ * Calls onBlock for each block result as it arrives (NDJSON stream).
+ * Falls back to parsing a plain JSON array if the server does not stream.
+ */
+export async function translateBlocksStreaming(
+  chapterId: string,
+  lang: string,
+  blockIds: string[],
+  anchorBlockId: string | null,
+  direction: 'up' | 'down',
+  onBlock: (result: TranslatedBlockResult) => void,
+  signal?: AbortSignal,
+): Promise<void> {
+  const res = await fetch(`${API_URL}/api/chapters/${chapterId}/translate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ lang: lang.toUpperCase(), blockIds, anchorBlockId, direction }),
+    signal,
+  })
+
+  if (!res.ok) {
+    const errBody = await res.json().catch(() => ({}))
+    throw new Error((errBody as any).message || `Request failed: ${res.status}`)
+  }
+
+  if (!res.body) throw new Error('No response body')
+
+  const contentType = res.headers.get('content-type') ?? ''
+
+  if (contentType.includes('ndjson')) {
+    // Parse NDJSON line-by-line as data arrives
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ''
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() ?? '' // keep incomplete last line
+        for (const line of lines) {
+          const trimmed = line.trim()
+          if (!trimmed) continue
+          try {
+            onBlock(JSON.parse(trimmed) as TranslatedBlockResult)
+          } catch {
+            // skip malformed lines
+          }
+        }
+      }
+      // Handle any remaining buffered content
+      if (buffer.trim()) {
+        try { onBlock(JSON.parse(buffer.trim()) as TranslatedBlockResult) } catch { /* ignore */ }
+      }
+    } finally {
+      reader.releaseLock()
+    }
+  } else {
+    // Fallback: plain JSON array (older server version)
+    const data = await res.json() as ContentBlock[]
+    for (const block of data) {
+      let translatedText = ''
+      if ('text' in block && typeof (block as any).text === 'string') translatedText = (block as any).text
+      else if ('items' in block && Array.isArray((block as any).items)) translatedText = (block as any).items.join('\n')
+      onBlock({ blockId: block.id, status: 'ok', cache: 'miss', translatedText })
+    }
+  }
 }
 
 export function updateBookLanguage(bookId: string, lang: string): Promise<ApiBook> {

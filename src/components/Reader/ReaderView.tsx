@@ -20,6 +20,10 @@ import ContentBlockRenderer from './ContentBlockRenderer';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 
+// Source of a navigation event. Any source other than manual_scroll is a "jump"
+// that aborts in-flight prefetch requests and updates readingAnchor immediately.
+type NavigationSource = 'toc' | 'search' | 'slider' | 'link' | 'restore_anchor' | 'manual_scroll'
+
 interface ReaderViewProps {
     bookId: string;
     title: string;
@@ -78,7 +82,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
         });
     }, []);
 
-    const { getRefCallback, isTranslatingAny } = useViewportTranslation({
+    const { getRefCallback, isTranslatingAny, abortAll, enqueueBlocks, enqueueBlocksImmediate } = useViewportTranslation({
         chapterId: currentChapter?.id ?? null,
         lang: activeLang.toUpperCase(),
         blocks: displayBlocks,
@@ -86,6 +90,11 @@ export default function ReaderView({ bookId, title, availableLanguages, original
         onBlocksTranslated: handleBlocksTranslated,
     });
     void isTranslatingAny; // used by AppleIntelligenceGlow indirectly
+
+    // Computed once here, also used by the prefetch effect below
+    const isSourceLang = originalLanguage
+        ? originalLanguage.toUpperCase() === activeLang.toUpperCase()
+        : false;
 
     // Clear translation glow when content finishes loading
     const wasLoadingRef = useRef(false);
@@ -123,6 +132,33 @@ export default function ReaderView({ bookId, title, availableLanguages, original
     const [currentPageIdx, setCurrentPageIdx] = useState(0);
     const [pagesReady, setPagesReady] = useState(false);
     const [remoteAnchorReady, setRemoteAnchorReady] = useState(false);
+
+    // On every page change: translate current page immediately (HIGH PRIORITY), prefetch next pages (LOW PRIORITY)
+    // Extend prefetch window up to 10 pages ahead to ensure continuous translation pipeline
+    const PREFETCH_PAGES_AHEAD = 10;
+    
+    useEffect(() => {
+        if (!pagesReady || isSourceLang) return;
+        const currentIds = pages[currentPageIdx] ?? [];
+        
+        // Current page blocks get HIGH priority - translate immediately
+        if (currentIds.length > 0) {
+            console.log(JSON.stringify({ event: 'translate_current_page', pageIdx: currentPageIdx, blockCount: currentIds.length }));
+            enqueueBlocksImmediate(currentIds);
+        }
+        
+        // Prefetch next N pages (LOW priority) - ensures we always have a translation pipeline
+        const prefetchIds: string[] = [];
+        for (let i = 1; i <= PREFETCH_PAGES_AHEAD; i++) {
+            const pageIds = pages[currentPageIdx + i] ?? [];
+            prefetchIds.push(...pageIds);
+        }
+        
+        if (prefetchIds.length > 0) {
+            console.log(JSON.stringify({ event: 'prefetch_enqueue', pageIdx: currentPageIdx, pagesAhead: PREFETCH_PAGES_AHEAD, totalBlocks: prefetchIds.length }));
+            enqueueBlocks(prefetchIds);
+        }
+    }, [currentPageIdx, pagesReady, pages, enqueueBlocks, enqueueBlocksImmediate, isSourceLang]);
 
     // Measure the available height for content after the header
     useEffect(() => {
@@ -316,7 +352,24 @@ export default function ReaderView({ bookId, title, availableLanguages, original
         const anchorBlockId = pages[idx][0];
         const block = displayBlocks.find((b) => b.id === anchorBlockId);
         if (block) saveAnchor(block.id, block.position);
-    }, [pages, displayBlocks, saveAnchor]);
+        
+        // Directly trigger prefetch for upcoming pages on every navigation
+        if (!isSourceLang && pagesReady) {
+            const prefetchIds: string[] = [];
+            for (let i = 0; i <= PREFETCH_PAGES_AHEAD; i++) {
+                const pageIds = pages[idx + i] ?? [];
+                prefetchIds.push(...pageIds);
+            }
+            if (prefetchIds.length > 0) {
+                // Current page (idx) as high priority, rest as prefetch
+                const currentPageIds = pages[idx] ?? [];
+                const futurePageIds = prefetchIds.filter(id => !currentPageIds.includes(id));
+                
+                if (currentPageIds.length > 0) enqueueBlocksImmediate(currentPageIds);
+                if (futurePageIds.length > 0) enqueueBlocks(futurePageIds);
+            }
+        }
+    }, [pages, displayBlocks, saveAnchor, isSourceLang, pagesReady, enqueueBlocksImmediate, enqueueBlocks]);
 
     const goToNextPage = useCallback(() => {
         if (currentPageIdx < pages.length - 1) {
@@ -333,6 +386,49 @@ export default function ReaderView({ bookId, title, availableLanguages, original
             goToChapter(currentChapterIndex - 1);
         }
     }, [currentPageIdx, prevChapter, currentChapterIndex, goToPage, goToChapter]);
+
+    // ─── Navigation intent API ────────────────────────────────────────────────
+    // Single entry point for all navigation events. Any source other than
+    // manual_scroll is a "jump": abort prefetch, set anchor, go to page.
+    const navigateTo = useCallback((blockId: string, source: NavigationSource) => {
+        if (source === 'manual_scroll') return; // handled organically by saveAnchor
+
+        // 1. Abort all in-flight and queued prefetch (translation) requests
+        abortAll();
+
+        // 2. Set readingAnchor immediately so it's available to the scheduler (Task 1.2)
+        if (blockId && currentChapter) {
+            const block = displayBlocks.find((b) => b.id === blockId);
+            if (block) {
+                storeSetAnchor(bookId, {
+                    chapterId: currentChapter.id,
+                    blockId: block.id,
+                    blockPosition: block.position,
+                    updatedAt: new Date().toISOString(),
+                });
+            }
+        }
+
+        // 3. Navigate to the page containing blockId (hand-off to scheduler — Task 1.2)
+        if (!blockId || !pagesReady) return;
+        const pageIdx = findPageForBlock(pages, blockId);
+        if (pageIdx >= 0) {
+            setCurrentPageIdx(pageIdx);
+            return;
+        }
+        // Fallback: find nearest page by block position
+        const block = displayBlocks.find((b) => b.id === blockId);
+        if (block) {
+            const byPos = findPageByBlockPosition(pages, displayBlocks, block.position);
+            setCurrentPageIdx(Math.max(0, byPos));
+        }
+    }, [abortAll, currentChapter, displayBlocks, bookId, storeSetAnchor, pages, pagesReady]);
+
+    // TOC selects chapters (not blocks). Abort prefetch immediately, then switch chapter.
+    const handleSelectChapterFromToc = useCallback((chapterIndex: number) => {
+        navigateTo('', 'toc'); // abort + mark as jump; no in-chapter blockId yet
+        goToChapter(chapterIndex);
+    }, [navigateTo, goToChapter]);
 
     // ─── Language switch (lock anchor before, restore after) ─────────────────
     const handleLanguageChange = (lang: Language) => {
@@ -433,7 +529,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
                                 chapters: chapters.map((c) => ({ number: c.index, title: c.title })),
                             }}
                             currentChapter={currentChapterIndex}
-                            onSelectChapter={goToChapter}
+                            onSelectChapter={handleSelectChapterFromToc}
                             disabled={false}
                         />
                     </div>
