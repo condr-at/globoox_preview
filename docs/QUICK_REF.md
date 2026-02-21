@@ -67,6 +67,8 @@ const API = 'https://globooks.onrender.com'
 // Books
 GET  ${API}/api/books
 GET  ${API}/api/books/{id}/chapters
+GET  ${API}/api/books/{id}/reading-position
+PUT  ${API}/api/books/{id}/reading-position
 
 // Chapters
 GET  ${API}/api/chapters/{id}/content?lang=XX

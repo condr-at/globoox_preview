@@ -7,8 +7,8 @@
 | Page-based layout | No | Currently a long scroll through the entire chapter |
 | Drag/swipe page turning | No | No gesture handlers implemented |
 | Tap on screen edges | No | Tap zones not implemented |
-| Block-level progress (`anchorBlock`) | No | Only chapter + % is saved |
-| Server-side progress saving | No | Endpoint missing |
+| Block-level progress (`anchorBlock`) | Yes | `chapter_id + block_id + block_position` is saved |
+| Server-side progress saving | Yes | `GET/PUT /api/books/:bookId/reading-position` |
 | Language switch without losing block anchor | No | Language changes, but block anchor is not preserved |
 | Progressive translation | Yes | `IntersectionObserver` + `POST /translate` |
 
@@ -59,23 +59,54 @@
   - The visual page number may change — this is expected behavior.
 
 ### Backend work needed
-- Endpoint to read/write reading position (minimum: block anchor).
-- Should accept and return not just `blockId`, but also `chapterId` + `blockPosition` (for resilience if `blockId` has changed).
+- Endpoint is available: `GET/PUT /api/books/:bookId/reading-position`.
+- Keep contract aligned across backend + frontend docs and include conflict/guest behavior.
 
 ---
 
 ## 3) What to Request from Backend
 
-### MVP Minimum
+### Current Contract
 - `PUT /api/books/:bookId/reading-position`
   - Body:
 ```json
 {
   "chapter_id": "ch-...",
+  "block_id": "cb-...", 
+  "block_position": 123, 
+  "lang": "EN", 
+  "updated_at_client": "2026-02-17T12:00:00Z"
+}
+```
+  - `chapter_id` is required.
+  - `block_id`, `block_position`, `lang`, `updated_at_client` are optional.
+  - Guest response:
+```json
+{
+  "success": true,
+  "persisted": false
+}
+```
+  - Stale-client response:
+```json
+{
+  "success": true,
+  "persisted": false,
+  "reason": "stale_client"
+}
+```
+  - Success response:
+```json
+{
+  "success": true,
+  "persisted": true,
+  "book_id": "book-...",
+  "chapter_id": "ch-...",
   "block_id": "cb-...",
   "block_position": 123,
-  "lang": "EN",
-  "updated_at_client": "2026-02-17T12:00:00Z"
+  "content_version": 642,
+  "total_blocks": 8400,
+  "updated_at": "2026-02-17T12:00:05Z"
 }
 ```
 - `GET /api/books/:bookId/reading-position`
@@ -90,16 +121,16 @@
   "updated_at": "2026-02-17T12:00:05Z"
 }
 ```
+  - For guests, returns the same shape with `null` values.
 
 ### Contract Requirements
 - `PUT` must be idempotent.
-- Last-write-wins by `updated_at`.
+- Last-write-wins by `updated_at` / `updated_at_client`.
 - If `block_id` is not found in the current chapter revision: fallback to `block_position` (nearest valid block).
-- If no position is saved: return `404` or `null` (to be agreed upon upfront).
+- If saved position is beyond chapter content, auto-resolve to first valid block.
 
 ### Optional (post-MVP)
 - `POST /api/books/:bookId/reading-position/batch` for throttled bulk updates.
-- Chapter/block versioning (`content_version`) for reliable restoration after re-import.
 
 ---
 

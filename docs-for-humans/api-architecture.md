@@ -1,5 +1,7 @@
 # API Architecture: Globoox
 
+ЕСТЬ ВСЕГДА АКТУАЛЬНАЯ АПИ ДОКА ТУТ https://globooks-jo00.onrender.com/api/docs
+
 ## TL;DR (коротко и понятно)
 
 **Что это?** Документ описывает, как приложение работает с данными — книги, главы, контент, переводы.
@@ -202,6 +204,85 @@
 - Уже переведённые блоки возвращаются из кэша мгновенно
 - `image` и `hr` — возвращаются без изменений
 - `available_languages` книги обновляется автоматически
+
+---
+
+### Позиция чтения
+
+#### `GET /api/books/{bookId}/reading-position`
+Возвращает сохраненную позицию чтения пользователя для книги.
+
+**Auth:** требует пользовательскую сессию. Для гостя возвращаются `null`-значения.
+
+**Response:**
+```json
+{
+  "book_id": "book-...",
+  "chapter_id": "ch-...",
+  "block_id": "cb-...",
+  "block_position": 123,
+  "lang": "EN",
+  "updated_at": "2026-02-17T12:00:05Z"
+}
+```
+
+**Поведение:**
+- Если `block_id` удален, backend валидирует и переключает на ближайший блок по `block_position`.
+- Если сохраненная позиция вышла за контент главы, backend автоматически резолвит на первый валидный блок.
+
+#### `PUT /api/books/{bookId}/reading-position`
+Сохраняет/обновляет позицию чтения пользователя.
+
+**Request body:**
+```json
+{
+  "chapter_id": "ch-...",
+  "block_id": "cb-...",
+  "block_position": 123,
+  "lang": "EN",
+  "updated_at_client": "2026-02-17T12:00:00Z"
+}
+```
+
+**Поля:**
+- `chapter_id` — обязательно.
+- `block_id`, `block_position`, `lang`, `updated_at_client` — опционально.
+
+**Response (success):**
+```json
+{
+  "success": true,
+  "persisted": true,
+  "book_id": "book-...",
+  "chapter_id": "ch-...",
+  "block_id": "cb-...",
+  "block_position": 123,
+  "content_version": 642,
+  "total_blocks": 8400,
+  "updated_at": "2026-02-17T12:00:05Z"
+}
+```
+
+**Response (guest):**
+```json
+{
+  "success": true,
+  "persisted": false
+}
+```
+
+**Response (stale client):**
+```json
+{
+  "success": true,
+  "persisted": false,
+  "reason": "stale_client"
+}
+```
+
+**Поведение:**
+- Conflict resolution: last-write-wins. Если `updated_at_client` старее серверной записи, запись пропускается.
+- Dev mode: допускается `user_id` override в body (только для разработки).
 
 ---
 
