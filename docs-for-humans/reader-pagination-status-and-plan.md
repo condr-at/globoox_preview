@@ -7,10 +7,12 @@
 | Page-based layout | No | Currently a long scroll through the entire chapter |
 | Drag/swipe page turning | No | No gesture handlers implemented |
 | Tap on screen edges | No | Tap zones not implemented |
-| Block-level progress (`anchorBlock`) | Yes | `chapter_id + block_id + block_position` is saved |
-| Server-side progress saving | Yes | `GET/PUT /api/books/:bookId/reading-position` |
-| Language switch without losing block anchor | No | Language changes, but block anchor is not preserved |
+| Block-level progress (`anchorBlock`) | Partial | Saved in Zustand (`readingAnchors`), but NOT used in Library for progress display |
+| Server-side progress saving | Partial | `GET/PUT /api/books/:bookId/reading-position` called from Reader only; Library uses local `lastRead` |
+| Language switch without losing block anchor | Partial | Anchor is preserved in Reader, but Library doesn't reflect server `updated_at` |
 | Progressive translation | Yes | `IntersectionObserver` + `POST /translate` |
+| Block-based progress in Library | No | Library shows chapter-based %, not `block_position / total_blocks` |
+| Continue Reading by server time | No | Sorted by local `lastRead`, not server `updated_at` |
 
 ### Reader UX
 - The current reader is a vertically scrolling single-chapter view, not a paginated mode.
@@ -24,10 +26,11 @@
 - Pagination (splitting content into viewport-sized pages) is not implemented.
 
 ### Progress Saving
-- Progress is saved locally only via Zustand (`persist` to local storage).
-- Progress format: `bookId -> { chapter, progress%, lastRead }`.
-- No block-level reading anchor (`blockId`/`position`) is saved.
-- No server-side endpoint for reading position exists.
+- Progress is saved locally via Zustand (`persist` to local storage).
+- Progress format: `bookId -> { chapter, progress%, lastRead }` (chapter-based %).
+- Block-level anchor (`blockId`/`position`) IS saved in Zustand (`readingAnchors`), but **NOT used in Library**.
+- Server-side endpoint `GET/PUT /api/books/:bookId/reading-position` EXISTS but is only called from Reader, not Library.
+- Library shows chapter-based progress and sorts "Continue Reading" by local `lastRead`, not server `updated_at`.
 
 ### Language & Translation
 - On language switch, `PATCH /api/books/:id/language` is called (saves `selected_language` for the book).
@@ -160,11 +163,19 @@ Absolute page numbers (`Page 37 of 412`) are **not recommended for MVP** because
   - Or the frontend handles lazy translation via `/translate`.
 - Eliminate ambiguity in the contract.
 
-### Phase 1: Anchor-First Progress
+### Phase 1: Anchor-First Progress + Library Sync
+
+**Reader:**
 - Add a client model: `readingPosition[bookId] = { chapterId, blockId, blockPosition, updatedAt }`.
 - Update the anchor on every successful page turn (throttled/debounced).
-- Sync anchor to backend.
+- Sync anchor to backend via `PUT /api/books/:bookId/reading-position`.
 - On reader entry: restore anchor first, then build the page from it.
+
+**Library (NEW):**
+- Fetch `GET /api/books/:bookId/reading-position` for each book (with caching).
+- Calculate progress as `block_position / total_blocks * 100` (not chapter-based).
+- Sort "Continue Reading" by server `updated_at` (fallback to local `lastRead`).
+- Reconcile local Zustand store with server data on mount.
 
 ### Phase 2: Paginator
 - Implement `paginateBlocks(blocks, startAnchor, layoutConfig)`:
@@ -208,8 +219,16 @@ Absolute page numbers (`Page 37 of 412`) are **not recommended for MVP** because
 
 ## 7) Definition of Done
 
+**Reader:**
 - Reader opens a book at the saved `anchorBlock`.
 - Page turning works via drag and tap, without conflicting with system edge gestures.
 - On language switch, the user stays at the same logical position (`anchorBlock`), even if the visual page number changes.
 - Position is saved to the backend and restored across devices/sessions.
+
+**Library:**
+- Progress bar shows block-based % (`block_position / total_blocks * 100`).
+- "Continue Reading" sorted by server `updated_at`.
+- Local Zustand store reconciled with server data on mount.
+
+**General:**
 - With partial translation, the reader remains stable with no spurious page numbers.
