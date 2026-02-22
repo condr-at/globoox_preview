@@ -16,7 +16,7 @@ interface UseViewportTranslationOptions {
 const DEBOUNCE_MS = 0 // No debounce - translate immediately
 const DEBOUNCE_MS_IMMEDIATE = 0 // No debounce for high-priority blocks
 const ROOT_MARGIN = '50% 0px'
-const MAX_BATCH_SIZE = 20 // Larger batches for faster prefetch
+const MAX_BATCH_SIZE = 10 // Smaller batches to reduce duplicate requests and improve responsiveness
 
 // Block types that don't need translation
 const SKIP_TYPES = new Set(['image', 'hr'])
@@ -425,9 +425,18 @@ export function useViewportTranslation({
   const enqueueBlocksImmediate = useCallback((ids: string[]) => {
     let newCount = 0
     for (const id of ids) {
-      const wasNew = !translatedIds.current.has(id) && !inflightIds.current.has(id)
-      enqueueBlock(id, true) // high priority
-      if (wasNew) newCount++
+      // Check ALL tracking sets to avoid duplicates
+      const wasNew = !translatedIds.current.has(id) && 
+                     !inflightIds.current.has(id) && 
+                     !pendingIds.current.has(id) && 
+                     !queuedIds.current.has(id) && 
+                     !highPriorityPendingIds.current.has(id) && 
+                     !highPriorityQueuedIds.current.has(id)
+      
+      if (wasNew) {
+        enqueueBlock(id, true) // high priority
+        newCount++
+      }
     }
     if (ids.length > 0) {
       console.log(JSON.stringify({ event: 'enqueue_blocks_immediate', chapterId: chapterIdRef.current, lang: langRef.current, requested: ids.length, newlyEnqueued: newCount, alreadyHandled: ids.length - newCount, priority: 'high' }))
