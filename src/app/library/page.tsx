@@ -45,36 +45,45 @@ export default function LibraryPage() {
   // Fetch reading positions for all books (authenticated users only)
   const fetchAllProgress = useCallback(async (bookIds: string[]) => {
     if (!isAuthenticated || bookIds.length === 0) return;
-    
+
     setProgressLoading(true);
     const results = await Promise.allSettled(
       bookIds.map(id => fetchReadingPosition(id))
     );
-    
+
     const progressMap: Record<string, BookReadingProgress> = {};
     results.forEach((result, idx) => {
       if (result.status === 'fulfilled') {
         const data = result.value;
-        // Convert API response to BookReadingProgress
-        progressMap[bookIds[idx]] = {
+        const bookId = bookIds[idx];
+        // Use server value if present, otherwise fallback to local store (Fix #5)
+        const totalBlocks = data.total_blocks || progress[bookId]?.totalBlocks || 0;
+
+        progressMap[bookId] = {
           book_id: data.book_id,
           chapter_id: data.chapter_id,
           block_id: data.block_id,
           block_position: data.block_position,
-          total_blocks: 0, // Will be updated from PUT response in Reader
+          total_blocks: totalBlocks,
           content_version: 0,
           updated_at: data.updated_at,
         };
       }
     });
-    
+
     setProgressData(progressMap);
     setProgressLoading(false);
-  }, [isAuthenticated]);
+  }, [isAuthenticated, progress]);
 
   // Fetch progress after books are loaded
   // Note: We use a ref to avoid the set-state-in-effect warning
   const hasFetchedRef = useRef(false);
+
+  // Reset fetch state on mount to ensure fresh data when returning to Library (Fix #4)
+  useEffect(() => {
+    hasFetchedRef.current = false;
+  }, []);
+
   useEffect(() => {
     if (books.length > 0 && !hasFetchedRef.current) {
       hasFetchedRef.current = true;

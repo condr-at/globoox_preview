@@ -114,6 +114,7 @@ export interface ReadingPosition {
   chapter_id: string | null
   block_id: string | null
   block_position: number | null
+  total_blocks?: number | null
   lang: string | null
   updated_at: string | null
 }

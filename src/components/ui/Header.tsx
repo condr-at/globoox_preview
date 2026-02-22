@@ -24,15 +24,19 @@ export default function Header() {
         <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-t pb-[env(safe-area-inset-bottom)]">
             <div className="container max-w-2xl mx-auto flex items-center justify-around h-14">
                 {/* Store — disabled, coming soon */}
-                <div className="flex-1 flex flex-col items-center justify-center gap-0.5 h-full relative cursor-not-allowed select-none">
+                <Button
+                    variant="ghost"
+                    disabled
+                    className="flex-1 flex-col gap-0.5 h-full rounded-none opacity-40 cursor-not-allowed select-none px-3"
+                >
                     <div className="relative">
-                        <ShoppingBag className="w-6 h-6 text-muted-foreground opacity-40" strokeWidth={1.5} />
-                        <span className="absolute -top-0.5 -right-3 text-[8px] font-semibold text-white leading-none px-1 py-0.5 rounded-full bg-primary">
+                        <ShoppingBag className="w-6 h-6" strokeWidth={1.5} />
+                        <span className="absolute -top-0.5 -right-3 text-[8px] font-semibold text-white leading-none px-1 py-0.5 rounded-full bg-primary opacity-100">
                             soon
                         </span>
                     </div>
-                    <span className="text-[10px] font-medium text-muted-foreground opacity-40">Store</span>
-                </div>
+                    <span className="text-[10px] font-medium">Store</span>
+                </Button>
 
                 {/* Library — center, main tab */}
                 <Button

@@ -110,16 +110,20 @@ export const useAppStore = create<AppState>()(
       progress: {},
 
       updateProgress: (bookId, chapter, progress) =>
-        set((state) => ({
-          progress: {
-            ...state.progress,
-            [bookId]: {
-              chapter,
-              progress,
-              lastRead: new Date().toISOString()
+        set((state) => {
+          const existing = state.progress[bookId] || {};
+          return {
+            progress: {
+              ...state.progress,
+              [bookId]: {
+                ...existing,
+                chapter,
+                progress,
+                lastRead: new Date().toISOString()
+              }
             }
-          }
-        })),
+          };
+        }),
 
       getProgress: (bookId) => {
         const progress = get().progress[bookId];

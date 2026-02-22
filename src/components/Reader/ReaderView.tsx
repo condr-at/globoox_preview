@@ -399,6 +399,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
     // ─── Anchor save (throttled ~1 s) ────────────────────────────────────────
     const lastSavedAnchorAt = useRef(0);
     const pendingAnchorTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const lastAnchorRef = useRef<ReadingAnchor | null>(null);
 
     const persistAnchor = useCallback((anchor: ReadingAnchor) => {
         storeSetAnchor(bookId, anchor);
@@ -432,6 +433,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
             blockPosition,
             updatedAt: new Date().toISOString(),
         };
+        lastAnchorRef.current = anchor;
         const now = Date.now();
         const elapsed = now - lastSavedAnchorAt.current;
 
@@ -449,10 +451,17 @@ export default function ReaderView({ bookId, title, availableLanguages, original
     }, [currentChapter, persistAnchor]);
 
     useEffect(() => {
+        const handleBeforeUnload = () => {
+            if (pendingAnchorTimer.current && lastAnchorRef.current) {
+                persistAnchor(lastAnchorRef.current);
+            }
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
         return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
             if (pendingAnchorTimer.current) clearTimeout(pendingAnchorTimer.current);
         };
-    }, []);
+    }, [persistAnchor]);
 
     // ─── Page navigation ─────────────────────────────────────────────────────
     const prevChapter = currentChapterIndex > 1 ? chapters[currentChapterIndex - 2] : null;
@@ -549,7 +558,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
             if (block) {
                 storeSetAnchor(bookId, {
                     chapterId: currentChapter.id,
-                    blockId: block.id,
+                    blockId: block.parentId ?? block.id,
                     blockPosition: block.position,
                     updatedAt: new Date().toISOString(),
                 });
