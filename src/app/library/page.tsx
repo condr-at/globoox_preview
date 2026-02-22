@@ -9,6 +9,7 @@ import { useAppStore } from '@/lib/store';
 import { useBooks } from '@/lib/useBooks';
 import { useAuth } from '@/lib/hooks/useAuth';
 import GoogleOneTap from '@/components/GoogleOneTap';
+import { trackBookOpened } from '@/lib/amplitude';
 
 const FALLBACK_COVER = '/covers/great-gatsby.jpg';
 const FALLBACK_AUTHOR = 'Unknown author';
@@ -83,6 +84,7 @@ export default function LibraryPage() {
                 onHide={hideBook}
                 onDelete={removeBook}
                 hideLabel="Hide"
+                onOpen={() => trackBookOpened({ book_id: lastBook.id, title: lastBook.title, source: 'library' })}
               />
             </div>
           </section>
@@ -111,6 +113,7 @@ export default function LibraryPage() {
                   onHide={hideBook}
                   onDelete={removeBook}
                   hideLabel="Hide"
+                  onOpen={() => trackBookOpened({ book_id: book.id, title: book.title, source: 'library' })}
                 />
               ))}
             </div>

@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { createClient } from '@/lib/supabase/client';
 import { getSiteUrl } from '@/lib/supabase/utils';
+import { trackUserSignedUp } from '@/lib/amplitude';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 export default function RegisterPage() {
@@ -85,6 +86,7 @@ function RegisterForm() {
       return;
     }
 
+    trackUserSignedUp('email');
     setMessage('Account created. Redirecting to your library...');
     setRedirecting(true);
     setLoading(false);
@@ -105,6 +107,8 @@ function RegisterForm() {
     if (error) {
       setError(error.message);
       setLoading(false);
+    } else {
+      trackUserSignedUp('google');
     }
   };
 

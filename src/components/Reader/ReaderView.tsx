@@ -12,6 +12,13 @@ import { usePageGestures } from '@/lib/hooks/usePageGestures';
 import { computePages, findPageForBlock, findPageByBlockPosition } from '@/lib/paginatorUtils';
 import { ContentBlock } from '@/lib/api';
 import { useAuth } from '@/lib/hooks/useAuth';
+import {
+  trackReadingSessionStarted,
+  trackReadingSessionEnded,
+  trackChapterCompleted,
+  trackBookFinished,
+  trackLanguageSwitched,
+} from '@/lib/amplitude';
 import ReaderActionsMenu from './ReaderActionsMenu';
 import TranslationGlow from './TranslationGlow';
 import AppleIntelligenceGlow from './AppleIntelligenceGlow';
@@ -83,6 +90,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
     }, []);
 
     const { getRefCallback, isTranslatingAny, abortAll, enqueueBlocks, enqueueBlocksImmediate } = useViewportTranslation({
+        bookId,
         chapterId: currentChapter?.id ?? null,
         lang: activeLang.toUpperCase(),
         blocks: displayBlocks,
@@ -114,6 +122,54 @@ export default function ReaderView({ bookId, title, availableLanguages, original
     useEffect(() => {
         setIsTranslatingForBook(bookId, false);
     }, [bookId, setIsTranslatingForBook]);
+
+    // ─── Reading session tracking ─────────────────────────────────────────────
+    const sessionStartRef = useRef(Date.now());
+    const pagesReadRef = useRef(0);
+    const chaptersNavigatedRef = useRef(0);
+
+    // Fire session_started once on mount, session_ended on unmount
+    useEffect(() => {
+        trackReadingSessionStarted({
+            book_id: bookId,
+            chapter_index: currentChapterIndex,
+            language: activeLang,
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    useEffect(() => {
+        return () => {
+            trackReadingSessionEnded({
+                book_id: bookId,
+                duration_seconds: Math.round((Date.now() - sessionStartRef.current) / 1000),
+                pages_read: pagesReadRef.current,
+                chapters_navigated: chaptersNavigatedRef.current,
+            });
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // Track chapter navigation (fire chapter_completed when moving forward)
+    const initChapterTrackingRef = useRef(false);
+    const prevChapterIdxRef = useRef(currentChapterIndex);
+    useEffect(() => {
+        if (!chapters.length) return;
+        if (!initChapterTrackingRef.current) {
+            initChapterTrackingRef.current = true;
+            prevChapterIdxRef.current = currentChapterIndex;
+            return;
+        }
+        if (currentChapterIndex > prevChapterIdxRef.current) {
+            chaptersNavigatedRef.current += 1;
+            trackChapterCompleted({
+                book_id: bookId,
+                chapter_index: prevChapterIdxRef.current,
+                total_chapters: chapters.length,
+            });
+        }
+        prevChapterIdxRef.current = currentChapterIndex;
+    }, [currentChapterIndex, chapters.length, bookId]);
 
     // Track chapter-level reading progress
     useEffect(() => {
@@ -348,6 +404,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
 
     const goToPage = useCallback((idx: number) => {
         if (idx < 0 || idx >= pages.length) return;
+        pagesReadRef.current += 1;
         setCurrentPageIdx(idx);
         const anchorBlockId = pages[idx][0];
         const block = displayBlocks.find((b) => b.id === anchorBlockId);
@@ -432,6 +489,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
 
     // ─── Language switch (lock anchor before, restore after) ─────────────────
     const handleLanguageChange = (lang: Language) => {
+        trackLanguageSwitched({ book_id: bookId, from_language: activeLang, to_language: lang });
         // Lock the current anchor so we can restore it after the language reloads
         if (pages.length > 0 && currentChapter) {
             const anchorBlockId = pages[currentPageIdx]?.[0];
@@ -485,6 +543,18 @@ export default function ReaderView({ bookId, title, availableLanguages, original
         () => displayBlocks.filter((b) => currentPageBlockIds.has(b.id)),
         [displayBlocks, currentPageBlockIds]
     );
+
+    // ─── Book finished detection ──────────────────────────────────────────────
+    const bookFinishedTrackedRef = useRef(false);
+    useEffect(() => {
+        if (!pagesReady || pages.length === 0 || chapters.length === 0) return;
+        if (currentChapterIndex === chapters.length && currentPageIdx === pages.length - 1) {
+            if (!bookFinishedTrackedRef.current) {
+                bookFinishedTrackedRef.current = true;
+                trackBookFinished({ book_id: bookId, total_chapters: chapters.length });
+            }
+        }
+    }, [currentChapterIndex, currentPageIdx, chapters.length, pages.length, pagesReady, bookId]);
 
     // ─── Block-level progress ─────────────────────────────────────────────────
     const blockProgressPct = useMemo(() => {

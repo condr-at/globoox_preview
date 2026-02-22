@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { createClient } from '@/lib/supabase/client';
 import { getSiteUrl } from '@/lib/supabase/utils';
+import { trackUserLoggedIn } from '@/lib/amplitude';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 export default function AuthPage() {
@@ -56,6 +57,7 @@ function AuthForm() {
       setError(error.message);
       setLoading(false);
     } else {
+      trackUserLoggedIn('email');
       router.push(nextUrl);
     }
   };
@@ -74,6 +76,8 @@ function AuthForm() {
     if (error) {
       setError(error.message);
       setLoading(false);
+    } else {
+      trackUserLoggedIn('google');
     }
   };
 

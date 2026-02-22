@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Settings, Type, X } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
+import { trackFontSizeChanged } from '@/lib/amplitude';
 
 interface ReaderSettingsProps {
     open?: boolean;
@@ -21,6 +22,7 @@ export default function ReaderSettings({
 
     const [mounted, setMounted] = useState(false);
     const { settings, setFontSize } = useAppStore();
+    const fontSizeBeforeRef = useRef(settings.fontSize);
 
     useEffect(() => {
         setMounted(true);
@@ -61,6 +63,18 @@ export default function ReaderSettings({
                             max="32"
                             value={settings.fontSize}
                             onChange={(e) => setFontSize(Number(e.target.value))}
+                            onMouseUp={() => {
+                                if (settings.fontSize !== fontSizeBeforeRef.current) {
+                                    trackFontSizeChanged({ font_size: settings.fontSize, previous_font_size: fontSizeBeforeRef.current });
+                                    fontSizeBeforeRef.current = settings.fontSize;
+                                }
+                            }}
+                            onTouchEnd={() => {
+                                if (settings.fontSize !== fontSizeBeforeRef.current) {
+                                    trackFontSizeChanged({ font_size: settings.fontSize, previous_font_size: fontSizeBeforeRef.current });
+                                    fontSizeBeforeRef.current = settings.fontSize;
+                                }
+                            }}
                             className="flex-1 h-[4px] bg-[var(--fill-tertiary)] rounded-full appearance-none cursor-pointer
                                 [&::-webkit-slider-thumb]:appearance-none
                                 [&::-webkit-slider-thumb]:w-[24px]

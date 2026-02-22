@@ -2,8 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ContentBlock, TranslatedBlockResult, translateBlocksStreaming } from '@/lib/api'
+import { trackTranslationBatch } from '@/lib/amplitude'
 
 interface UseViewportTranslationOptions {
+  bookId: string
   chapterId: string | null
   lang: string
   blocks: ContentBlock[]
@@ -32,12 +34,15 @@ function applyTranslation(block: ContentBlock, translatedText: string): ContentB
 }
 
 export function useViewportTranslation({
+  bookId,
   chapterId,
   lang,
   blocks,
   sourceLanguage,
   onBlocksTranslated,
 }: UseViewportTranslationOptions) {
+  const bookIdRef = useRef(bookId)
+  bookIdRef.current = bookId
   const [isTranslatingAny, setIsTranslatingAny] = useState(false)
 
   // Tracking sets (use refs to avoid re-renders)
@@ -212,6 +217,17 @@ export function useViewportTranslation({
 
       const durationMs = Math.round(performance.now() - flushStart)
       console.log(JSON.stringify({ event: 'flush_done', chapterId: chapterIdRef.current, lang: langRef.current, batchSize: ids.length, hits, misses, errors, durationMs }))
+      if (hits + misses > 0) {
+        trackTranslationBatch({
+          book_id: bookIdRef.current,
+          chapter_id: chapterIdRef.current ?? '',
+          language: langRef.current,
+          block_count: ids.length,
+          cache_hits: hits,
+          cache_misses: misses,
+          duration_ms: durationMs,
+        })
+      }
 
       // Move queued IDs to pending (maintain priority)
       if (highPriorityQueuedIds.current.size > 0) {

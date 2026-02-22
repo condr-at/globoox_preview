@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import { X, Upload, Loader2, CheckCircle } from 'lucide-react';
 import { parseEpub } from '@/lib/hooks/useEpubParser';
 import { uploadBook } from '@/lib/api';
+import { trackBookUploadStarted, trackBookUploaded, trackBookUploadFailed } from '@/lib/amplitude';
 
 interface UploadBookModalProps {
   isOpen: boolean;
@@ -41,6 +42,9 @@ export default function UploadBookModal({ isOpen, onClose, onUploaded }: UploadB
     setMessage('Parsing EPUB file...');
     setError(null);
 
+    const fileSizeKb = Math.round(file.size / 1024);
+    trackBookUploadStarted({ file_size_kb: fileSizeKb });
+
     try {
       // Parse the EPUB
       const parsed = await parseEpub(file);
@@ -69,6 +73,14 @@ export default function UploadBookModal({ isOpen, onClose, onUploaded }: UploadB
         })),
       });
 
+      trackBookUploaded({
+        title: parsed.title,
+        author: parsed.author,
+        language: parsed.language ?? 'unknown',
+        chapter_count: parsed.chapters.filter(ch => ch.blocks.length > 0).length,
+        file_size_kb: fileSizeKb,
+      });
+
       setProgress(100);
       setMessage('Book uploaded successfully!');
 
@@ -78,6 +90,7 @@ export default function UploadBookModal({ isOpen, onClose, onUploaded }: UploadB
       }, 1500);
     } catch (err: any) {
       console.error('Upload error:', err);
+      trackBookUploadFailed({ error: err.message || 'Upload failed', file_size_kb: fileSizeKb });
       setError(err.message || 'Upload failed');
       setUploading(false);
     }
