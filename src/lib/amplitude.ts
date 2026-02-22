@@ -1,9 +1,20 @@
+interface AmplitudeIdentify {
+  set: (key: string, value: string | number | boolean) => AmplitudeIdentify
+  setOnce: (key: string, value: string | number | boolean) => AmplitudeIdentify
+  add: (key: string, value: number) => AmplitudeIdentify
+  unset: (key: string) => AmplitudeIdentify
+}
+
 declare global {
   interface Window {
     amplitude?: {
       track: (eventName: string, eventProperties?: Record<string, unknown>) => void
       init: (apiKey: string, options?: Record<string, unknown>) => void
       add: (plugin: unknown) => void
+      setUserId: (userId: string | null) => void
+      reset: () => void
+      identify: (identifyObj: AmplitudeIdentify) => void
+      Identify: new () => AmplitudeIdentify
     }
   }
 }
@@ -30,6 +41,75 @@ export function trackEvent(eventName: string, properties?: Record<string, unknow
   if (typeof window !== 'undefined' && window.amplitude) {
     window.amplitude.track(eventName, properties)
   }
+}
+
+// ─── User Identity ─────────────────────────────────────────────────────────────
+
+/**
+ * Call after login / on session restore.
+ * Links all future events to the authenticated user ID in Amplitude,
+ * merging with any prior anonymous events from the same device.
+ */
+export function identifyUser(userId: string, email?: string) {
+  if (typeof window === 'undefined' || !window.amplitude) return
+  window.amplitude.setUserId(userId)
+  if (email && window.amplitude.Identify) {
+    const ev = new window.amplitude.Identify()
+    ev.set('email', email)
+    window.amplitude.identify(ev)
+  }
+}
+
+/**
+ * Call on logout. Resets user ID and device ID so post-logout
+ * activity is not attributed to the previous user.
+ */
+export function resetUser() {
+  if (typeof window === 'undefined' || !window.amplitude) return
+  window.amplitude.reset()
+}
+
+// ─── First-Visit UTM Capture ───────────────────────────────────────────────────
+
+const FIRST_UTM_KEY = 'globoox_first_utm'
+const UTM_PARAMS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'] as const
+
+/**
+ * Reads UTM params from the current URL on the very first visit and stores
+ * them as permanent Amplitude user properties (`first_utm_*`).
+ * Uses localStorage so the capture happens only once per browser,
+ * regardless of how many times the user visits.
+ * Call this on app mount before any auth state is resolved.
+ */
+export function captureFirstVisitUtm() {
+  if (typeof window === 'undefined' || !window.amplitude) return
+  if (localStorage.getItem(FIRST_UTM_KEY)) return   // Already captured
+
+  const params = new URLSearchParams(window.location.search)
+  const utms: Partial<Record<typeof UTM_PARAMS[number], string>> = {}
+  for (const key of UTM_PARAMS) {
+    const val = params.get(key)?.trim()
+    if (val) utms[key] = val
+  }
+
+  // Always persist the first landing page, even without UTMs
+  localStorage.setItem(FIRST_UTM_KEY, JSON.stringify({
+    ...utms,
+    landing_page: window.location.pathname,
+    captured_at: new Date().toISOString(),
+  }))
+
+  if (!window.amplitude.Identify) return
+
+  const ev = new window.amplitude.Identify()
+  // setOnce means these are never overwritten on subsequent visits
+  ev.setOnce('first_landing_page', window.location.pathname)
+  if (utms.utm_source)   ev.setOnce('first_utm_source',   utms.utm_source)
+  if (utms.utm_medium)   ev.setOnce('first_utm_medium',   utms.utm_medium)
+  if (utms.utm_campaign) ev.setOnce('first_utm_campaign', utms.utm_campaign)
+  if (utms.utm_content)  ev.setOnce('first_utm_content',  utms.utm_content)
+  if (utms.utm_term)     ev.setOnce('first_utm_term',     utms.utm_term)
+  window.amplitude.identify(ev)
 }
 
 // ─── User Acquisition & Auth ──────────────────────────────────────────────────

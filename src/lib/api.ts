@@ -2,7 +2,9 @@ import { trackApiRequest } from './amplitude'
 
 // In browser we must call local Next.js API routes (/api/*), so auth can be injected by proxy.
 // Direct backend calls are allowed only during server-side execution.
-const API_URL = typeof window === 'undefined' ? (process.env.NEXT_PUBLIC_API_URL || '') : ''
+// Browser: '' (empty) → calls /api/* routes which proxy to backend
+// Server: API_URL or NEXT_PUBLIC_API_URL → direct backend calls (for SSR/SSG)
+const API_URL = typeof window === 'undefined' ? (process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || '') : ''
 
 export interface ApiBook {
   id: string
@@ -85,6 +87,23 @@ export interface TranslatedBlockResult {
   cache: 'hit' | 'miss'
   translatedText: string
 }
+
+export interface TranslateDoneEvent {
+  event: 'translate_done'
+  chapterId: string
+  lang: string
+  hits: number
+  misses: number
+  errors: number
+  llmCalls: number
+  totalDurationMs: number
+  tokensIn: number
+  tokensOut: number
+  retries: number
+  fallbacks: number
+}
+
+export type TranslateStreamMessage = TranslatedBlockResult | TranslateDoneEvent
 
 export interface ReadingPosition {
   book_id: string
@@ -235,6 +254,7 @@ export function translateBlocks(
 /**
  * Stream block translations one-by-one as they resolve on the server.
  * Calls onBlock for each block result as it arrives (NDJSON stream).
+ * Calls onDone when translation is complete with summary metrics.
  * Falls back to parsing a plain JSON array if the server does not stream.
  */
 export async function translateBlocksStreaming(
@@ -245,6 +265,7 @@ export async function translateBlocksStreaming(
   direction: 'up' | 'down',
   onBlock: (result: TranslatedBlockResult) => void,
   signal?: AbortSignal,
+  onDone?: (event: TranslateDoneEvent) => void,
 ): Promise<void> {
   const res = await fetch(`${API_URL}/api/chapters/${chapterId}/translate`, {
     method: 'POST',
@@ -279,7 +300,14 @@ export async function translateBlocksStreaming(
           const trimmed = line.trim()
           if (!trimmed) continue
           try {
-            onBlock(JSON.parse(trimmed) as TranslatedBlockResult)
+            const message = JSON.parse(trimmed) as TranslateStreamMessage
+            if ('event' in message && message.event === 'translate_done') {
+              // This is the final summary event
+              if (onDone) onDone(message)
+            } else {
+              // This is a block translation result
+              onBlock(message as TranslatedBlockResult)
+            }
           } catch {
             // skip malformed lines
           }
@@ -287,7 +315,14 @@ export async function translateBlocksStreaming(
       }
       // Handle any remaining buffered content
       if (buffer.trim()) {
-        try { onBlock(JSON.parse(buffer.trim()) as TranslatedBlockResult) } catch { /* ignore */ }
+        try {
+          const message = JSON.parse(buffer.trim()) as TranslateStreamMessage
+          if ('event' in message && message.event === 'translate_done') {
+            if (onDone) onDone(message)
+          } else {
+            onBlock(message as TranslatedBlockResult)
+          }
+        } catch { /* ignore */ }
       }
     } finally {
       reader.releaseLock()

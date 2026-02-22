@@ -179,6 +179,79 @@ Optional breakdown:
 
 ---
 
+## Dashboard 3: UTM Acquisition Segmentation
+
+**Goal:** Understand which acquisition channels drive the most engaged users.
+
+### How to create
+
+Go to **Dashboards → Create Dashboard → "Acquisition"**.
+
+All charts in this dashboard use the **user property** `first_utm_source` (and other `first_utm_*` properties) as a segmentation dimension. These are set as permanent user properties on first visit via `amplitude.Identify.setOnce()` — meaning they never change even if a user later visits from a different channel.
+
+### User Properties Available
+
+| Property | Set by | Description |
+|----------|--------|-------------|
+| `first_utm_source` | `captureFirstVisitUtm()` | e.g. `google`, `facebook`, `newsletter` |
+| `first_utm_medium` | `captureFirstVisitUtm()` | e.g. `cpc`, `email`, `social` |
+| `first_utm_campaign` | `captureFirstVisitUtm()` | e.g. `summer_promo` |
+| `first_utm_content` | `captureFirstVisitUtm()` | Ad variant / creative |
+| `first_utm_term` | `captureFirstVisitUtm()` | Paid keyword |
+| `first_landing_page` | `captureFirstVisitUtm()` | URL path on first visit |
+| `email` | `identifyUser()` | User email (set on login) |
+
+> **Note:** Users without UTM params on first visit will have these properties unset. In Amplitude charts, unset = `(none)` — this represents direct/organic traffic.
+
+---
+
+### Chart 1 — Signups by Acquisition Channel
+
+**Type:** Bar Chart
+**Event:** `user_signed_up`
+**Group by:** User property → `first_utm_source`
+**Date range:** Last 90 days
+
+---
+
+### Chart 2 — Retention by Channel (Comparison)
+
+**Type:** Retention Analysis
+**Starting event:** `reading_session_started`
+**Returning event:** `reading_session_started`
+**Segment 1:** User property `first_utm_source = 'google'`
+**Segment 2:** User property `first_utm_source = 'facebook'`
+**Segment 3:** No UTM (direct) — `first_utm_source` does not exist
+**Date range:** Last 60 days
+
+> Lets you compare Day-7 retention of paid vs. organic users.
+
+---
+
+### Chart 3 — Activation Rate by Channel
+
+**Type:** Funnel
+**Steps:**
+1. `user_signed_up`
+2. `book_uploaded` (first book = activation)
+
+**Group by:** User property → `first_utm_source`
+**Date range:** Last 30 days
+
+---
+
+### Chart 4 — Revenue-Proxy by Channel (Translation Volume)
+
+**Type:** Bar Chart (Stacked)
+**Event:** `translation_batch_sent`
+**Metric:** PROPSUM(`block_count`) — total blocks translated per channel
+**Group by:** User property → `first_utm_medium`
+**Date range:** Last 30 days
+
+> Higher translation volume = more engaged users. Use this to evaluate channel quality beyond signups.
+
+---
+
 ## Cohort Definitions (for Retention & DAU)
 
 Create these cohorts in **Audiences → Cohorts** for reuse across dashboards:
@@ -200,8 +273,10 @@ Create these cohorts in **Audiences → Cohorts** for reuse across dashboards:
    - `chapter_index`, `total_chapters`, `file_size_kb`, `font_size` → Number
    - `language`, `from_language`, `to_language`, `method`, `source` → String
 
-2. **User properties:** If you want per-user metrics (books uploaded per user, chapters per user), set Amplitude user properties on `user_signed_up` using `amplitude.setUserProperties()`. Add this to `amplitude.ts` if needed.
+2. **User identity:** `AmplitudeProvider` sets `amplitude.setUserId(supabase_user_id)` on login and calls `amplitude.reset()` on logout. This ensures "Unique Users" in charts = real accounts, not device IDs. It also merges pre-login anonymous events with the identified user.
 
-3. **Session replay:** Already enabled at 100% sample rate in `layout.tsx`. Use it to watch rage-click or funnel drop-off sessions in context.
+3. **UTM user properties:** Verify the `first_utm_*` properties exist in **Data → User Properties** after the first UTM-tagged visit. They should appear with type String.
 
-4. **Slack / email alerts:** Set up monitors on `book_upload_failed` error spikes and `reading_session_ended` duration drops via **Amplitude Monitoring**.
+4. **Session replay:** Already enabled at 100% sample rate in `layout.tsx`. Use it to watch rage-click or funnel drop-off sessions in context.
+
+5. **Slack / email alerts:** Set up monitors on `book_upload_failed` error spikes and `reading_session_ended` duration drops via **Amplitude Monitoring**.

@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { ContentBlock, TranslatedBlockResult, translateBlocksStreaming } from '@/lib/api'
+import { ContentBlock, TranslatedBlockResult, TranslateDoneEvent, translateBlocksStreaming } from '@/lib/api'
 import { trackTranslationBatch } from '@/lib/amplitude'
 
 interface UseViewportTranslationOptions {
@@ -202,6 +202,10 @@ export function useViewportTranslation({
           }
         },
         controller.signal,
+        (doneEvent) => {
+          // Server sent translate_done event with final metrics
+          console.log(JSON.stringify(doneEvent))
+        },
       )
       abortControllerRef.current = null
     } catch (err) {

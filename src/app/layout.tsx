@@ -3,6 +3,7 @@ import Script from 'next/script';
 import './globals.css';
 import Header from '@/components/ui/Header';
 import { ThemeProvider } from '@/components/theme-provider';
+import AmplitudeProvider from '@/components/AmplitudeProvider';
 
 export const viewport: Viewport = {
   themeColor: [
@@ -59,6 +60,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <AmplitudeProvider />
           <div className="min-h-screen">
             <main className="pb-[calc(60px+env(safe-area-inset-bottom))]">
               {children}

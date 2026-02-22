@@ -19,6 +19,7 @@ npm install                    # Install deps
 # Create .env.local with:
 # NEXT_PUBLIC_SUPABASE_URL=...
 # NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+# API_URL=https://globooks.onrender.com  # Backend API endpoint
 npm run dev                    # http://localhost:3000
 ```
 
@@ -29,6 +30,7 @@ npm run dev                    # http://localhost:3000
 | Hydration error | Mark component with 'use client' |
 | shadcn missing | Run `npx shadcn@latest add <component>` |
 | API errors | Verify backend is running, check CORS |
+| 503 Backend not configured | Set `API_URL` in `.env.local` |
 
 ## 📂 Key Structure
 ```
@@ -69,19 +71,31 @@ public/            → Static assets, covers
 - **next-themes** for dark mode
 
 ## API Integration
-All API calls go to parent Nuxt backend:
+All API calls go through Next.js API routes which proxy to the backend:
+
+**Architecture:**
+```
+Browser → /api/* (Next.js routes) → Backend API (with auth injection)
+Server-side → Direct backend calls (SSR/SSG)
+```
+
+**Environment Variables:**
+- `API_URL` - Backend API endpoint (server-side only, recommended)
+- `NEXT_PUBLIC_API_URL` - Alternative (exposed to browser, fallback)
+
+**Example:**
+```env
+API_URL=https://globooks.onrender.com
+```
+
+**API Routes:**
 ```typescript
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://globooks.onrender.com'
+// Client calls Next.js routes (relative paths)
+GET /api/books
+GET /api/books/{id}/chapters
+GET /api/chapters/{id}/content?lang=XX
+POST /api/chapters/{id}/translate
 
-// Books
-GET ${API_BASE}/api/books
-GET ${API_BASE}/api/books/{id}/chapters
-
-// Chapters
-GET ${API_BASE}/api/chapters/{id}/content?lang=XX
-POST ${API_BASE}/api/chapters/{id}/translate
-
-// Translation
-POST ${API_BASE}/api/translate
-POST ${API_BASE}/api/detect-language
+// Next.js routes proxy to backend with auth headers
+// Backend: ${API_URL}/api/books, etc.
 ```
