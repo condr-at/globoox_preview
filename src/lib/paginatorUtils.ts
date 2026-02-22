@@ -183,7 +183,11 @@ export function computePages(
     // Heading keep-with-next logic:
     // If it's a heading and it fits, check if next block fits too
     if (block.type === 'heading' && i < blocks.length - 1) {
-      const nextH = blockHeights.get(blocks[i + 1].id) ?? 48
+      const nextBlock = blocks[i + 1]
+      let nextH = blockHeights.get(nextBlock.id) ?? 48
+      if (nextBlock.type === 'paragraph' && containerRef) {
+        nextH = Math.min(nextH, 60)
+      }
       if (currentHeight + h + nextH > effectiveHeight && currentPage.length > 0) {
         // Start new page early to avoid orphaned heading
         pages.push(currentPage)
@@ -267,9 +271,21 @@ export function computePages(
           currentPage = []
           currentHeight = 0
         } else {
-          // We don't bother recalculating partial height accurately, assume it took all
-          // But since restText is empty, it means we consumed it all.
-          currentHeight = effectiveHeight
+          const temp = document.createElement('p')
+          const mbClass = isLastPart ? 'mb-5' : 'mb-0'
+          temp.className = `${mbClass} leading-relaxed`
+          if (fontSize) temp.style.fontSize = `${fontSize}px`
+          temp.setAttribute('lang', lang)
+          temp.style.hyphens = 'auto'
+          temp.style.setProperty('-webkit-hyphens', 'auto')
+          temp.style.position = 'absolute'
+          temp.style.visibility = 'hidden'
+          temp.style.width = '100%'
+          containerRef.appendChild(temp)
+          const finalH = measureTextHeight(firstText, temp)
+          containerRef.removeChild(temp)
+
+          currentHeight += finalH
         }
 
         remainingText = restText
