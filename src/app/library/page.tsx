@@ -9,7 +9,7 @@ import { useAppStore } from '@/lib/store';
 import { useBooks } from '@/lib/useBooks';
 import { useAuth } from '@/lib/hooks/useAuth';
 import GoogleOneTap from '@/components/GoogleOneTap';
-import { trackBookOpened } from '@/lib/amplitude';
+import { trackBookOpened } from '@/lib/posthog';
 
 const FALLBACK_COVER = '/covers/great-gatsby.jpg';
 const FALLBACK_AUTHOR = 'Unknown author';

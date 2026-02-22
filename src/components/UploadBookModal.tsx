@@ -4,7 +4,7 @@ import { useState, useRef } from 'react';
 import { X, Upload, Loader2, CheckCircle } from 'lucide-react';
 import { parseEpub } from '@/lib/hooks/useEpubParser';
 import { uploadBook } from '@/lib/api';
-import { trackBookUploadStarted, trackBookUploaded, trackBookUploadFailed } from '@/lib/amplitude';
+import { trackBookUploadStarted, trackBookUploaded, trackBookUploadFailed } from '@/lib/posthog';
 
 interface UploadBookModalProps {
   isOpen: boolean;

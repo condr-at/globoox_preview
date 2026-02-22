@@ -1,4 +1,4 @@
-import { trackApiRequest } from './amplitude'
+import { trackApiRequest } from './posthog'
 
 // In browser we must call local Next.js API routes (/api/*), so auth can be injected by proxy.
 // Direct backend calls are allowed only during server-side execution.

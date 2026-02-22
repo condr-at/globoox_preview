@@ -18,7 +18,7 @@ import {
   trackChapterCompleted,
   trackBookFinished,
   trackLanguageSwitched,
-} from '@/lib/amplitude';
+} from '@/lib/posthog';
 import ReaderActionsMenu from './ReaderActionsMenu';
 import TranslationGlow from './TranslationGlow';
 import AppleIntelligenceGlow from './AppleIntelligenceGlow';

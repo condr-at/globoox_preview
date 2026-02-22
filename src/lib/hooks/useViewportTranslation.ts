@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ContentBlock, TranslatedBlockResult, TranslateDoneEvent, translateBlocksStreaming } from '@/lib/api'
-import { trackTranslationBatch } from '@/lib/amplitude'
+import { trackTranslationBatch } from '@/lib/posthog'
 
 interface UseViewportTranslationOptions {
   bookId: string

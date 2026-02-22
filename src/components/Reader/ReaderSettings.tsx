@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Settings, Type, X } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
-import { trackFontSizeChanged } from '@/lib/amplitude';
+import { trackFontSizeChanged } from '@/lib/posthog';
 
 interface ReaderSettingsProps {
     open?: boolean;

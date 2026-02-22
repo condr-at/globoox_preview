@@ -2,21 +2,15 @@
 
 import { useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { identifyUser, resetUser, captureFirstVisitUtm } from '@/lib/amplitude';
+import { identifyUser, resetUser } from '@/lib/posthog';
 
 /**
  * Mounts once in the root layout.
- * - Captures first-visit UTM params as permanent user properties.
- * - Syncs Supabase auth state → Amplitude user ID so that
- *   "unique users" in Amplitude correspond to real accounts,
- *   not anonymous device IDs.
+ * Syncs Supabase auth state → PostHog identity so that
+ * "unique users" in PostHog correspond to real accounts.
  */
-export default function AmplitudeProvider() {
+export default function PostHogProvider() {
   useEffect(() => {
-    // UTM capture runs before auth resolves so anonymous pre-login
-    // events are already tagged with the acquisition channel.
-    captureFirstVisitUtm();
-
     const supabase = createClient();
 
     // Identify already-logged-in user on page load / hard refresh
@@ -26,7 +20,7 @@ export default function AmplitudeProvider() {
       }
     });
 
-    // Keep Amplitude in sync as auth state changes during the session
+    // Keep PostHog in sync as auth state changes during the session
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
         identifyUser(session.user.id, session.user.email ?? undefined);
