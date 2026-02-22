@@ -45,8 +45,6 @@ function RegisterForm() {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
-  const passwordStrength = getPasswordStrength(password);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -54,11 +52,6 @@ function RegisterForm() {
 
     if (password !== confirmPassword) {
       setError('Passwords do not match.');
-      return;
-    }
-
-    if (passwordStrength.level === 'weak') {
-      setError('Use a stronger password.');
       return;
     }
 
@@ -172,20 +165,6 @@ function RegisterForm() {
                     {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                   </Button>
                 </div>
-                <div className="space-y-1">
-                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                    <div
-                      className={`h-full rounded-full transition-all ${passwordStrength.barClass}`}
-                      style={{ width: passwordStrength.width }}
-                    />
-                  </div>
-                  <p className={`text-xs ${passwordStrength.textClass}`}>
-                    Password strength: {passwordStrength.label}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Use 8+ characters with uppercase, lowercase, number, and symbol.
-                  </p>
-                </div>
               </div>
               <div className="space-y-2">
                 <label htmlFor="confirmPassword" className="text-sm font-medium">
@@ -250,49 +229,3 @@ function RegisterForm() {
   );
 }
 
-function getPasswordStrength(password: string) {
-  if (!password) {
-    return {
-      level: 'empty',
-      label: 'Enter password',
-      width: '0%',
-      barClass: 'bg-muted',
-      textClass: 'text-muted-foreground',
-    };
-  }
-
-  let score = 0;
-  if (password.length >= 8) score += 1;
-  if (/[A-Z]/.test(password)) score += 1;
-  if (/[a-z]/.test(password)) score += 1;
-  if (/\d/.test(password)) score += 1;
-  if (/[^A-Za-z0-9]/.test(password)) score += 1;
-
-  if (score <= 2) {
-    return {
-      level: 'weak',
-      label: 'Weak',
-      width: '33%',
-      barClass: 'bg-destructive',
-      textClass: 'text-destructive',
-    };
-  }
-
-  if (score <= 4) {
-    return {
-      level: 'medium',
-      label: 'Medium',
-      width: '66%',
-      barClass: 'bg-amber-500',
-      textClass: 'text-amber-600',
-    };
-  }
-
-  return {
-    level: 'strong',
-    label: 'Strong',
-    width: '100%',
-    barClass: 'bg-emerald-500',
-    textClass: 'text-emerald-600',
-  };
-}
