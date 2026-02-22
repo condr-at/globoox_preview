@@ -9,7 +9,7 @@ import { useChapters } from '@/lib/hooks/useChapters';
 import { useChapterContent } from '@/lib/hooks/useChapterContent';
 import { useViewportTranslation } from '@/lib/hooks/useViewportTranslation';
 import { usePageGestures } from '@/lib/hooks/usePageGestures';
-import { computePages, findPageForBlock, findPageByBlockPosition } from '@/lib/paginatorUtils';
+import { computePages, findPageForBlock, findPageByBlockPosition, normalizeBlocks } from '@/lib/paginatorUtils';
 import { ContentBlock } from '@/lib/api';
 import { useAuth } from '@/lib/hooks/useAuth';
 import {
@@ -186,6 +186,8 @@ export default function ReaderView({ bookId, title, availableLanguages, original
 
     const [pageHeight, setPageHeight] = useState(0);
     const [pages, setPages] = useState<string[][]>([]);
+    const [paginatedBlocks, setPaginatedBlocks] = useState<ContentBlock[]>([]);
+    const fragmentMapRef = useRef<Map<string, string>>(new Map());
     const [currentPageIdx, setCurrentPageIdx] = useState(0);
     // pagesReady: blocks have been measured and pages computed
     // visiblePagesReady: pages ready AND initial anchor has been applied (no flash to page 1)
@@ -196,24 +198,24 @@ export default function ReaderView({ bookId, title, availableLanguages, original
     // On every page change: translate current page immediately (HIGH PRIORITY), prefetch next pages (LOW PRIORITY)
     // Extend prefetch window up to 10 pages ahead to ensure continuous translation pipeline
     const PREFETCH_PAGES_AHEAD = 10;
-    
+
     useEffect(() => {
         if (!pagesReady || isSourceLang) return;
         const currentIds = pages[currentPageIdx] ?? [];
-        
+
         // Current page blocks get HIGH priority - translate immediately
         if (currentIds.length > 0) {
             console.log(JSON.stringify({ event: 'translate_current_page', pageIdx: currentPageIdx, blockCount: currentIds.length }));
             enqueueBlocksImmediate(currentIds);
         }
-        
+
         // Prefetch next N pages (LOW priority) - ensures we always have a translation pipeline
         const prefetchIds: string[] = [];
         for (let i = 1; i <= PREFETCH_PAGES_AHEAD; i++) {
             const pageIds = pages[currentPageIdx + i] ?? [];
             prefetchIds.push(...pageIds);
         }
-        
+
         if (prefetchIds.length > 0) {
             console.log(JSON.stringify({ event: 'prefetch_enqueue', pageIdx: currentPageIdx, pagesAhead: PREFETCH_PAGES_AHEAD, totalBlocks: prefetchIds.length }));
             enqueueBlocks(prefetchIds);
@@ -231,24 +233,55 @@ export default function ReaderView({ bookId, title, availableLanguages, original
         return () => ro.disconnect();
     }, []);
 
-    // Recompute pages only when block structure or page height changes (not on translation merges)
+    // Normalized blocks split lists into items but keep paragraphs intact
+    const normalizedBlocks = useMemo(() => normalizeBlocks(displayBlocks), [displayBlocks]);
+
+    // Recompute pages only when block structure or page height changes
     const blockStructureKey = useMemo(
-        () => `${displayBlocks.map((b) => b.id).join(',')}__${pageHeight}__${settings.fontSize}`,
-        [displayBlocks, pageHeight, settings.fontSize]
+        () => `${normalizedBlocks.map((b) => b.id).join(',')}__${pageHeight}__${settings.fontSize}__${activeLang}`,
+        [normalizedBlocks, pageHeight, settings.fontSize, activeLang]
     );
     const prevBlockStructureKey = useRef('');
 
     useEffect(() => {
         if (blockStructureKey === prevBlockStructureKey.current) return;
-        if (pageHeight === 0 || displayBlocks.length === 0) return;
-        prevBlockStructureKey.current = blockStructureKey;
+        if (pageHeight === 0 || normalizedBlocks.length === 0) return;
 
-        const heights = new Map<string, number>();
-        blockMeasureRefs.current.forEach((el, id) => heights.set(id, el.offsetHeight));
-        const computed = computePages(displayBlocks, heights, pageHeight);
-        setPages(computed);
-        setPagesReady(true);
-    });
+        let cancelled = false;
+
+        async function measureAndCompute() {
+            // Ensure fonts are loaded before measuring
+            if (document.fonts && document.fonts.ready) {
+                await document.fonts.ready;
+            }
+            if (cancelled) return;
+
+            prevBlockStructureKey.current = blockStructureKey;
+
+            const heights = new Map<string, number>();
+            blockMeasureRefs.current.forEach((el, id) => heights.set(id, el.offsetHeight));
+
+            const computed = computePages(
+                normalizedBlocks,
+                heights,
+                pageHeight,
+                measureContainerRef.current,
+                settings.fontSize,
+                activeLang
+            );
+
+            setPages(computed.pages);
+            setPaginatedBlocks(computed.finalBlocks);
+            fragmentMapRef.current = computed.fragmentMap;
+            setPagesReady(true);
+        }
+
+        measureAndCompute();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [blockStructureKey, pageHeight, normalizedBlocks, settings.fontSize, activeLang]);
 
     // ─── Anchor restore ──────────────────────────────────────────────────────
     // Flag: have we done the initial anchor restore for this chapter load?
@@ -322,7 +355,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
         const targetBlockId = pendingAnchorBlockId.current;
         if (targetBlockId !== null) {
             pendingAnchorBlockId.current = null;
-            const idx = findPageForBlock(pages, targetBlockId);
+            const idx = findPageForBlock(pages, targetBlockId, fragmentMapRef.current);
             if (idx >= 0) {
                 setCurrentPageIdx(idx);
                 setVisiblePagesReady(true);
@@ -331,7 +364,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
             // Fallback: by position
             const block = displayBlocks.find((b) => b.id === targetBlockId);
             if (block) {
-                const byPos = findPageByBlockPosition(pages, displayBlocks, block.position);
+                const byPos = findPageByBlockPosition(pages, paginatedBlocks, block.position);
                 setCurrentPageIdx(Math.max(0, byPos));
             }
             setVisiblePagesReady(true);
@@ -343,13 +376,13 @@ export default function ReaderView({ bookId, title, availableLanguages, original
             anchorRestoredRef.current = true;
             const anchor = getAnchor(bookId);
             if (anchor && anchor.chapterId === (currentChapter?.id ?? '')) {
-                const idx = findPageForBlock(pages, anchor.blockId);
+                const idx = findPageForBlock(pages, anchor.blockId, fragmentMapRef.current);
                 if (idx >= 0) {
                     setCurrentPageIdx(idx);
                     setVisiblePagesReady(true);
                     return;
                 }
-                const byPos = findPageByBlockPosition(pages, displayBlocks, anchor.blockPosition);
+                const byPos = findPageByBlockPosition(pages, paginatedBlocks, anchor.blockPosition);
                 setCurrentPageIdx(Math.max(0, byPos));
             }
         }
@@ -424,8 +457,8 @@ export default function ReaderView({ bookId, title, availableLanguages, original
     ), [pagesReady, pages, currentPageIdx]);
 
     const currentPageBlocks = useMemo(
-        () => displayBlocks.filter((b) => currentPageBlockIds.has(b.id)),
-        [displayBlocks, currentPageBlockIds]
+        () => paginatedBlocks.filter((b) => currentPageBlockIds.has(b.id)),
+        [paginatedBlocks, currentPageBlockIds]
     );
 
     const currentPageBlocksRef = useRef<ContentBlock[]>([]);
@@ -440,7 +473,8 @@ export default function ReaderView({ bookId, title, availableLanguages, original
             // Save current anchor before switching chapters
             if (currentPageBlocksRef.current.length > 0) {
                 const currentBlock = currentPageBlocksRef.current[0];
-                saveAnchor(currentBlock.id, currentBlock.position);
+                const blockId = currentBlock.parentId ?? currentBlock.id;
+                saveAnchor(blockId, currentBlock.position);
             }
 
             anchorRestoredRef.current = false;
@@ -456,9 +490,9 @@ export default function ReaderView({ bookId, title, availableLanguages, original
         pagesReadRef.current += 1;
         setCurrentPageIdx(idx);
         const anchorBlockId = pages[idx][0];
-        const block = displayBlocks.find((b) => b.id === anchorBlockId);
-        if (block) saveAnchor(block.id, block.position);
-        
+        const block = paginatedBlocks.find((b) => b.id === anchorBlockId);
+        if (block) saveAnchor(block.parentId ?? block.id, block.position);
+
         // Directly trigger prefetch for upcoming pages on every navigation
         if (!isSourceLang && pagesReady) {
             const prefetchIds: string[] = [];
@@ -470,7 +504,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
                 // Current page (idx) as high priority, rest as prefetch
                 const currentPageIds = pages[idx] ?? [];
                 const futurePageIds = prefetchIds.filter(id => !currentPageIds.includes(id));
-                
+
                 if (currentPageIds.length > 0) enqueueBlocksImmediate(currentPageIds);
                 if (futurePageIds.length > 0) enqueueBlocks(futurePageIds);
             }
@@ -517,7 +551,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
 
         // 3. Navigate to the page containing blockId (hand-off to scheduler — Task 1.2)
         if (!blockId || !pagesReady) return;
-        const pageIdx = findPageForBlock(pages, blockId);
+        const pageIdx = findPageForBlock(pages, blockId, fragmentMapRef.current);
         if (pageIdx >= 0) {
             setCurrentPageIdx(pageIdx);
             return;
@@ -525,7 +559,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
         // Fallback: find nearest page by block position
         const block = displayBlocks.find((b) => b.id === blockId);
         if (block) {
-            const byPos = findPageByBlockPosition(pages, displayBlocks, block.position);
+            const byPos = findPageByBlockPosition(pages, paginatedBlocks, block.position);
             setCurrentPageIdx(Math.max(0, byPos));
         }
     }, [abortAll, currentChapter, displayBlocks, bookId, storeSetAnchor, pages, pagesReady]);
@@ -542,11 +576,11 @@ export default function ReaderView({ bookId, title, availableLanguages, original
         // Lock the current anchor so we can restore it after the language reloads
         if (pages.length > 0 && currentChapter) {
             const anchorBlockId = pages[currentPageIdx]?.[0];
-            const block = displayBlocks.find((b) => b.id === anchorBlockId);
+            const block = paginatedBlocks.find((b) => b.id === anchorBlockId);
             if (block) {
                 const anchor: ReadingAnchor = {
                     chapterId: currentChapter.id,
-                    blockId: block.id,
+                    blockId: block.parentId ?? block.id,
                     blockPosition: block.position,
                     updatedAt: new Date().toISOString(),
                 };
@@ -597,12 +631,12 @@ export default function ReaderView({ bookId, title, availableLanguages, original
 
     // ─── Block-level progress ─────────────────────────────────────────────────
     const blockProgressPct = useMemo(() => {
-        if (!pagesReady || pages.length === 0 || displayBlocks.length === 0) return 0;
+        if (!pagesReady || pages.length === 0 || paginatedBlocks.length === 0) return 0;
         const anchorId = pages[currentPageIdx]?.[0];
-        const anchorIdx = displayBlocks.findIndex((b) => b.id === anchorId);
+        const anchorIdx = paginatedBlocks.findIndex((b) => b.id === anchorId);
         if (anchorIdx < 0) return 0;
-        return Math.round((anchorIdx / displayBlocks.length) * 100);
-    }, [pagesReady, pages, currentPageIdx, displayBlocks]);
+        return Math.round((anchorIdx / paginatedBlocks.length) * 100);
+    }, [pagesReady, pages, currentPageIdx, paginatedBlocks]);
 
     const isLoading = chaptersLoading || contentLoading;
 
@@ -659,7 +693,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
                     style={{ position: 'fixed', top: '-9999px', left: 0, right: 0, visibility: 'hidden', pointerEvents: 'none', zIndex: -1 }}
                     aria-hidden="true"
                 >
-                    {displayBlocks.map((block) => (
+                    {normalizedBlocks.map((block) => (
                         <div
                             key={block.id}
                             ref={(el) => {
@@ -690,7 +724,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
                             <p className="text-sm text-destructive py-8 text-center">{contentError}</p>
                         ) : (
                             currentPageBlocks.map((block) => (
-                                <div key={block.id} ref={getRefCallback(block.id, block.type)}>
+                                <div key={block.id} ref={getRefCallback(block.parentId ?? block.id, block.type)}>
                                     <ContentBlockRenderer block={block} fontSize={settings.fontSize} />
                                 </div>
                             ))

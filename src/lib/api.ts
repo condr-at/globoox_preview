@@ -31,6 +31,10 @@ export interface ApiChapter {
 interface BaseBlock {
   id: string
   position: number
+  parentId?: string
+  partIndex?: number
+  isFirstPart?: boolean
+  isLastPart?: boolean
 }
 
 export interface ParagraphBlock extends BaseBlock {

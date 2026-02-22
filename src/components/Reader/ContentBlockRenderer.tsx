@@ -31,13 +31,23 @@ export default function ContentBlockRenderer({ block, fontSize }: ContentBlockRe
       block.level === 1
         ? 'text-xl font-bold mb-5 mt-8'
         : block.level === 2
-        ? 'text-lg font-semibold mb-4 mt-6'
-        : 'text-base font-semibold mb-3 mt-5'
+          ? 'text-lg font-semibold mb-4 mt-6'
+          : 'text-base font-semibold mb-3 mt-5'
     return <Tag className={className} style={style}>{block.text}</Tag>
   }
 
   if (block.type === 'paragraph') {
-    return <p className="mb-5 leading-relaxed" style={style}>{block.text}</p>
+    const isFirst = block.isFirstPart ?? true;
+    const isLast = block.isLastPart ?? true;
+    const mbClass = isLast ? 'mb-5' : 'mb-0';
+    return (
+      <p
+        className={`${mbClass} leading-relaxed`}
+        style={{ ...style, hyphens: 'auto', WebkitHyphens: 'auto' }}
+      >
+        {block.text}
+      </p>
+    )
   }
 
   if (block.type === 'quote') {
@@ -51,10 +61,14 @@ export default function ContentBlockRenderer({ block, fontSize }: ContentBlockRe
   if (block.type === 'list') {
     const Tag = block.ordered ? 'ol' : 'ul'
     const listClass = block.ordered ? 'list-decimal' : 'list-disc'
+    const isLast = block.isLastPart ?? true;
+    const mbClass = isLast ? 'mb-5' : 'mb-0';
+    const startProp = block.ordered && block.partIndex !== undefined ? block.partIndex + 1 : undefined;
+
     return (
-      <Tag className={`${listClass} pl-6 mb-5 space-y-1`} style={style}>
+      <Tag className={`${listClass} pl-6 ${mbClass} space-y-1`} style={style} start={startProp}>
         {block.items.map((item, i) => (
-          <li key={i} className="leading-relaxed">{item}</li>
+          <li key={i} className="leading-relaxed" style={{ hyphens: 'auto', WebkitHyphens: 'auto' }}>{item}</li>
         ))}
       </Tag>
     )

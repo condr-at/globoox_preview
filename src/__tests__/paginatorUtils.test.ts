@@ -16,18 +16,18 @@ function makeHeights(blocks: ContentBlock[], height: number): Map<string, number
 
 describe('computePages', () => {
   it('returns empty array for empty blocks', () => {
-    expect(computePages([], new Map(), 800)).toEqual([])
+    expect(computePages([], new Map(), 800, null, 16, 'en').pages).toEqual([])
   })
 
   it('returns empty array when pageHeight is zero', () => {
     const blocks = [makeBlock('a', 0)]
-    expect(computePages(blocks, makeHeights(blocks, 100), 0)).toEqual([])
+    expect(computePages(blocks, makeHeights(blocks, 100), 0, null, 16, 'en').pages).toEqual([])
   })
 
   it('fits multiple blocks onto one page', () => {
     const blocks = [makeBlock('a', 0), makeBlock('b', 1), makeBlock('c', 2)]
     // each block = 100px, page = 500px → all fit on one page
-    const pages = computePages(blocks, makeHeights(blocks, 100), 500)
+    const { pages } = computePages(blocks, makeHeights(blocks, 100), 500, null, 16, 'en')
     expect(pages).toHaveLength(1)
     expect(pages[0]).toEqual(['a', 'b', 'c'])
   })
@@ -36,7 +36,7 @@ describe('computePages', () => {
     const blocks = [makeBlock('a', 0), makeBlock('b', 1), makeBlock('c', 2), makeBlock('d', 3)]
     // each block = 300px, page = 500px → at most 1 per page after first
     // a (300) + b (300) = 600 > 500 → page break before b
-    const pages = computePages(blocks, makeHeights(blocks, 300), 500)
+    const { pages } = computePages(blocks, makeHeights(blocks, 300), 500, null, 16, 'en')
     expect(pages).toHaveLength(4)
     expect(pages[0]).toEqual(['a'])
     expect(pages[1]).toEqual(['b'])
@@ -45,7 +45,7 @@ describe('computePages', () => {
   it('keeps at least one block per page even if it overflows', () => {
     const blocks = [makeBlock('big', 0)]
     // block is taller than page — must still create one page
-    const pages = computePages(blocks, makeHeights(blocks, 2000), 800)
+    const { pages } = computePages(blocks, makeHeights(blocks, 2000), 800, null, 16, 'en')
     expect(pages).toHaveLength(1)
     expect(pages[0]).toEqual(['big'])
   })
@@ -53,14 +53,14 @@ describe('computePages', () => {
   it('uses fallback height (80) for blocks missing from height map', () => {
     const blocks = [makeBlock('a', 0), makeBlock('b', 1)]
     // no heights in map — fallback 80 each, page = 200 → both fit
-    const pages = computePages(blocks, new Map(), 200)
+    const { pages } = computePages(blocks, new Map(), 200, null, 16, 'en')
     expect(pages).toHaveLength(1)
   })
 
   it('packs blocks that exactly fill the page without overflow', () => {
     const blocks = [makeBlock('a', 0), makeBlock('b', 1)]
     // each 200px, page = 400px → both fit exactly
-    const pages = computePages(blocks, makeHeights(blocks, 200), 400)
+    const { pages } = computePages(blocks, makeHeights(blocks, 200), 400, null, 16, 'en')
     expect(pages).toHaveLength(1)
     expect(pages[0]).toEqual(['a', 'b'])
   })
@@ -132,14 +132,14 @@ describe('language switch anchor retention', () => {
     const heights = makeHeights(blocks, 100)
     const pageHeight = 350 // ~3 blocks per page
 
-    const pages = computePages(blocks, heights, pageHeight)
+    const { pages } = computePages(blocks, heights, pageHeight, null, 16, 'en')
 
     // Suppose user is on page 2 — anchor block is the first block of page 2
     const anchorBlockId = pages[2][0]
 
     // After language switch, blocks reload with same IDs but different text
     // Heights stay similar — re-paginate
-    const newPages = computePages(blocks, heights, pageHeight)
+    const { pages: newPages } = computePages(blocks, heights, pageHeight, null, 16, 'en')
 
     const restoredPage = findPageForBlock(newPages, anchorBlockId)
     expect(restoredPage).toBe(2)
@@ -150,14 +150,14 @@ describe('language switch anchor retention', () => {
     const heights = makeHeights(oldBlocks, 100)
     const pageHeight = 350
 
-    const oldPages = computePages(oldBlocks, heights, pageHeight)
+    const { pages: oldPages } = computePages(oldBlocks, heights, pageHeight, null, 16, 'en')
     const anchorBlock = oldBlocks[oldPages[1][0] ? oldBlocks.findIndex((b) => b.id === oldPages[1][0]) : 0]
     const anchorPosition = anchorBlock?.position ?? 0
 
     // New blocks have different IDs (e.g. re-import) but same positions
     const newBlocks = Array.from({ length: 10 }, (_, i) => makeBlock(`new${i}`, i * 10))
     const newHeights = makeHeights(newBlocks, 100)
-    const newPages = computePages(newBlocks, newHeights, pageHeight)
+    const { pages: newPages } = computePages(newBlocks, newHeights, pageHeight, null, 16, 'en')
 
     // blockId lookup fails → fallback to position
     const byId = findPageForBlock(newPages, anchorBlock?.id ?? '')
