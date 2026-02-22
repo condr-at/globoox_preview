@@ -592,7 +592,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
                     updatedAt: new Date().toISOString(),
                 };
                 persistAnchor(anchor);
-                pendingAnchorBlockId.current = block.id;
+                pendingAnchorBlockId.current = block.parentId ?? block.id;
             }
         }
 
@@ -715,7 +715,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
 
                 {/* Visible page */}
                 <TranslationGlow>
-                    <div className="container max-w-2xl mx-auto px-4 h-full overflow-hidden">
+                    <div className="container max-w-2xl mx-auto px-4 h-full overflow-hidden" lang={activeLang}>
                         {isLoading || !visiblePagesReady ? (
                             <>
                                 <Skeleton className="h-7 w-64 mb-5" />

@@ -243,8 +243,12 @@ export function computePages(
           continue // retry splitting remaining text on new page
         }
 
-        const firstText = split.firstPart.trim() || remainingText // fallback to all if it didn't split somehow and page is empty
-        const restText = split.firstPart.trim() ? split.restPart.trim() : ''
+        // If nothing fits even on an empty page, force at least one word to avoid infinite loop
+        const forcedFirstWord = !split.firstPart.trim()
+        const firstText = split.firstPart.trim() || remainingText.split(/\s+/).slice(0, 1).join(' ')
+        const restText = forcedFirstWord
+          ? remainingText.split(/\s+/).slice(1).join(' ')
+          : split.restPart.trim()
 
         const fragmentId = `${block.id}-part-${partIndex}`
         const isFirstPart = (block.isFirstPart ?? true) && partIndex === 0
