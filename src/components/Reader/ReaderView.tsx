@@ -697,10 +697,18 @@ export default function ReaderView({ bookId, title, availableLanguages, original
         .map((l) => l.toLowerCase())
         .filter((l): l is Language => ['en', 'fr', 'es', 'de', 'ru'].includes(l));
 
+    // ─── Chrome visibility (header + footer toggle) ───────────────────────────
+    const [chromeVisible, setChromeVisible] = useState(true);
+
+    const toggleChrome = useCallback(() => {
+        setChromeVisible((v) => !v);
+    }, []);
+
     // ─── Gesture handler ──────────────────────────────────────────────────────
     const gestures = usePageGestures({
         onPrev: goToPrevPage,
         onNext: goToNextPage,
+        onToggleChrome: toggleChrome,
         enabled: !isTranslating && pagesReady,
     });
 
@@ -729,11 +737,18 @@ export default function ReaderView({ bookId, title, availableLanguages, original
 
     // ─── Render ───────────────────────────────────────────────────────────────
     return (
-        <div className="h-dvh flex flex-col bg-background overflow-hidden">
+        <div className="bg-background" style={{ position: 'fixed', inset: 0, overflow: 'hidden', overscrollBehavior: 'none' } as React.CSSProperties}>
             <AppleIntelligenceGlow bookId={bookId} />
 
-            {/* Fixed header — unchanged from original */}
-            <header className="fixed top-0 left-0 right-0 z-40 bg-background/80 backdrop-blur-xl border-b pt-[calc(env(safe-area-inset-top)+16px)]">
+            {/* ── Header (fixed, slides out upward) ── */}
+            <header
+                className="fixed left-0 right-0 z-40 bg-background/80 backdrop-blur-xl border-b transition-transform duration-300 ease-in-out"
+                style={{
+                    top: 0,
+                    paddingTop: 'calc(env(safe-area-inset-top) + 16px)',
+                    transform: chromeVisible ? 'translateY(0)' : 'translateY(-100%)',
+                }}
+            >
                 <div className="flex items-center justify-between h-11 px-4">
                     <Button variant="ghost" size="icon" asChild className="text-[var(--system-blue)] -ml-2 flex-shrink-0">
                         <Link href="/library">
@@ -766,11 +781,19 @@ export default function ReaderView({ bookId, title, availableLanguages, original
                 </div>
             </header>
 
-            {/* ── Content area: fills all space between header and progress bar ── */}
+            {/* ── Content area: fixed, full screen, constant height ── */}
             <div
-                className="flex-1 overflow-hidden"
-                style={{ paddingTop: 'calc(44px + env(safe-area-inset-top) + 16px)' }}
                 ref={contentAreaRef}
+                style={{
+                    position: 'fixed',
+                    inset: 0,
+                    paddingTop: 'calc(env(safe-area-inset-top) + 16px + 44px)',
+                    paddingBottom: 'calc(env(safe-area-inset-bottom) + 40px)',
+                    overflow: 'hidden',
+                    touchAction: 'none',
+                    overscrollBehavior: 'none',
+                    WebkitOverflowScrolling: 'auto',
+                } as React.CSSProperties}
                 {...gestures}
             >
                 {/* Hidden measurement container — same content width, off-screen */}
@@ -830,10 +853,14 @@ export default function ReaderView({ bookId, title, availableLanguages, original
                 </TranslationGlow>
             </div>
 
-            {/* ── Progress bar ── */}
+            {/* ── Footer / progress bar (fixed, slides out downward) ── */}
             <div
-                className="flex-shrink-0 flex items-center justify-center md:justify-between px-4 h-10 border-t border-border/20 text-xs text-muted-foreground"
-                style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+                className="fixed left-0 right-0 z-40 flex items-center justify-center md:justify-between px-4 h-10 border-t border-border/20 text-xs text-muted-foreground bg-background/80 backdrop-blur-xl transition-transform duration-300 ease-in-out"
+                style={{
+                    bottom: 0,
+                    paddingBottom: 'env(safe-area-inset-bottom)',
+                    transform: chromeVisible ? 'translateY(0)' : 'translateY(100%)',
+                }}
             >
                 <Button
                     variant="ghost"
