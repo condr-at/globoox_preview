@@ -11,7 +11,7 @@ interface ReaderActionsMenuProps {
   book: {
     id: string;
     languages: Language[];
-    chapters: { number: number; title: string }[];
+    chapters: { number: number; title: string; depth?: number }[];
   };
   currentChapter: number;
   onSelectChapter: (num: number) => void;

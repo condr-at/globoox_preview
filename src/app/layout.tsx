@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import Header from '@/components/ui/Header';
 import { ThemeProvider } from '@/components/theme-provider';
+import PostHogProvider from '@/components/PostHogProvider';
 
 export const viewport: Viewport = {
   themeColor: [
@@ -49,8 +50,9 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <PostHogProvider />
           <div className="min-h-screen">
-            <main className="pb-[calc(60px+env(safe-area-inset-bottom))]">
+            <main>
               {children}
             </main>
           </div>

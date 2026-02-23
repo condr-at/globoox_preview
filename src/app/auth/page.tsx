@@ -3,13 +3,15 @@
 import { Suspense, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { GoogleIcon } from '@/components/icons/GoogleIcon';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { createClient } from '@/lib/supabase/client';
+import { getSiteUrl } from '@/lib/supabase/utils';
+import { trackUserLoggedIn } from '@/lib/posthog';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 export default function AuthPage() {
@@ -34,11 +36,13 @@ function AuthForm() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(
     searchParams.get('error') ? 'Authentication failed. Please try again.' : null
   );
   const [message, setMessage] = useState<string | null>(null);
+  const nextUrl = searchParams.get('next') || '/library';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,7 +57,8 @@ function AuthForm() {
       setError(error.message);
       setLoading(false);
     } else {
-      router.push('/library');
+      trackUserLoggedIn('email');
+      router.push(nextUrl);
     }
   };
 
@@ -61,15 +66,18 @@ function AuthForm() {
     setLoading(true);
     setError(null);
     const supabase = getSupabase();
+    const siteUrl = getSiteUrl();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${siteUrl}/auth/callback?next=${encodeURIComponent(nextUrl)}`,
       },
     });
     if (error) {
       setError(error.message);
       setLoading(false);
+    } else {
+      trackUserLoggedIn('google');
     }
   };
 
@@ -121,16 +129,30 @@ function AuthForm() {
                       Forgot password?
                     </Link>
                   </div>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    disabled={loading}
-                    minLength={6}
-                  />
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      disabled={loading}
+                      minLength={6}
+                      className="pr-11"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-1 top-1 h-8 w-8 text-muted-foreground"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      disabled={loading}
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                    </Button>
+                  </div>
                 </div>
                 <Button type="submit" className="h-10 w-full" disabled={loading}>
                   {loading ? <Loader2 className="size-4 animate-spin" /> : 'Sign in'}

@@ -19,6 +19,7 @@ interface BookCardProps {
   onHide?: (id: string) => void;
   onDelete?: (id: string) => void;
   hideLabel?: string;
+  onOpen?: () => void;
 }
 
 export default function BookCard({
@@ -30,6 +31,7 @@ export default function BookCard({
   onHide,
   onDelete,
   hideLabel,
+  onOpen,
 }: BookCardProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const hasActions = Boolean(onHide || onDelete);
@@ -56,6 +58,8 @@ export default function BookCard({
           onClick={(event) => {
             if (isMenuOpen) {
               event.preventDefault();
+            } else {
+              onOpen?.();
             }
           }}
         >

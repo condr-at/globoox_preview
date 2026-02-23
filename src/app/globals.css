@@ -557,9 +557,32 @@ body {
   margin-bottom: 1.5em;
 }
 
+/* Reader page hyphens — activated by lang attribute on the container */
+[lang] p,
+[lang] li,
+[lang] blockquote {
+  hyphens: auto;
+  -webkit-hyphens: auto;
+  overflow-wrap: break-word;
+}
+
 /* ============================================
    Loading States
    ============================================ */
+
+/* Animated blur for pending translation blocks */
+@keyframes pulse-text {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+.animate-pulse-text {
+  animation: pulse-text 1.2s ease-in-out infinite;
+}
 
 .skeleton {
   background: linear-gradient(

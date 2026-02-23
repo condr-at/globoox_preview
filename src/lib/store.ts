@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 export type Language = 'en' | 'fr' | 'es' | 'de' | 'ru';
-export type LocalizedText = string | Partial<Record<Language, string>>;
 
 export const languageNames: Record<Language, string> = {
   en: 'English',
@@ -20,22 +19,6 @@ export const languageFlags: Record<Language, string> = {
   ru: '🇷🇺'
 };
 
-export interface CustomChapter {
-  number: number;
-  title: LocalizedText;
-  content: Record<Language, string>;
-}
-
-export interface CustomBook {
-  id: string;
-  title: string;
-  author: string;
-  cover: string;
-  languages: Language[];
-  chapters: CustomChapter[];
-  isCustom?: boolean;
-}
-
 interface ReaderSettings {
   fontSize: number;
   theme: 'dark' | 'light';
@@ -44,10 +27,19 @@ interface ReaderSettings {
 
 interface ReadingProgress {
   [bookId: string]: {
-    chapter: number;
-    progress: number;
+    blockPosition?: number;
+    totalBlocks?: number;
     lastRead: string;
+    serverUpdatedAt?: string;
   };
+}
+
+export interface ReadingAnchor {
+  chapterId: string;
+  blockId: string;
+  blockPosition: number;
+  sentenceIndex: number;
+  updatedAt: string;
 }
 
 interface AppState {
@@ -57,22 +49,27 @@ interface AppState {
   setTheme: (theme: 'dark' | 'light') => void;
   setLanguage: (language: Language) => void;
 
-  // Reading progress
-  progress: ReadingProgress;
-  updateProgress: (bookId: string, chapter: number, progress: number) => void;
-  getProgress: (bookId: string) => { chapter: number; progress: number } | null;
+  // Per-book language preferences
+  perBookLanguages: Record<string, Language>;
+  setBookLanguage: (bookId: string, lang: Language) => void;
 
-  // Library state
-  customBooks: CustomBook[];
-  hiddenBookIds: string[];
-  addCustomBook: (book: CustomBook) => void;
-  hideBook: (bookId: string) => void;
-  unhideBook: (bookId: string) => void;
-  deleteBook: (bookId: string) => void;
+  // Reading progress (block-based)
+  progress: ReadingProgress;
+  updateProgress: (bookId: string, blockPosition: number, totalBlocks: number) => void;
+  getProgress: (bookId: string) => { blockPosition?: number; totalBlocks?: number } | null;
+  updateServerProgress: (
+    bookId: string,
+    data: { blockPosition?: number; totalBlocks?: number; serverUpdatedAt: string }
+  ) => void;
+
+  // Block-level reading anchor (per book)
+  readingAnchors: Record<string, ReadingAnchor>;
+  setAnchor: (bookId: string, anchor: ReadingAnchor) => void;
+  getAnchor: (bookId: string) => ReadingAnchor | null;
 
   // Translation state
-  isTranslating: boolean;
-  setIsTranslating: (value: boolean) => void;
+  isTranslatingByBook: Record<string, boolean>;
+  setIsTranslatingForBook: (bookId: string, value: boolean) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -100,62 +97,84 @@ export const useAppStore = create<AppState>()(
           settings: { ...state.settings, language }
         })),
 
-      // Reading progress
+      // Per-book language preferences
+      perBookLanguages: {},
+
+      setBookLanguage: (bookId, lang) =>
+        set((state) => ({
+          perBookLanguages: { ...state.perBookLanguages, [bookId]: lang }
+        })),
+
+      // Reading progress (block-based)
       progress: {},
 
-      updateProgress: (bookId, chapter, progress) =>
-        set((state) => ({
-          progress: {
-            ...state.progress,
-            [bookId]: {
-              chapter,
-              progress,
-              lastRead: new Date().toISOString()
+      updateProgress: (bookId, blockPosition, totalBlocks) =>
+        set((state) => {
+          const existing = state.progress[bookId] || {};
+          return {
+            progress: {
+              ...state.progress,
+              [bookId]: {
+                ...existing,
+                blockPosition,
+                totalBlocks,
+                lastRead: new Date().toISOString()
+              }
             }
-          }
-        })),
+          };
+        }),
 
       getProgress: (bookId) => {
         const progress = get().progress[bookId];
         if (!progress) return null;
-        return { chapter: progress.chapter, progress: progress.progress };
+        return { blockPosition: progress.blockPosition, totalBlocks: progress.totalBlocks };
       },
 
-      // Library state
-      customBooks: [],
-      hiddenBookIds: [],
-      addCustomBook: (book) =>
-        set((state) => ({
-          customBooks: [book, ...state.customBooks.filter((b) => b.id !== book.id)],
-          hiddenBookIds: state.hiddenBookIds.filter((id) => id !== book.id)
-        })),
-      hideBook: (bookId) =>
-        set((state) => ({
-          hiddenBookIds: state.hiddenBookIds.includes(bookId)
-            ? state.hiddenBookIds
-            : [...state.hiddenBookIds, bookId]
-        })),
-      unhideBook: (bookId) =>
-        set((state) => ({
-          hiddenBookIds: state.hiddenBookIds.filter((id) => id !== bookId)
-        })),
-      deleteBook: (bookId) =>
+      updateServerProgress: (bookId, data) =>
         set((state) => {
-          const nextProgress = { ...state.progress };
-          delete nextProgress[bookId];
+          const existing = state.progress[bookId] || { lastRead: new Date().toISOString() };
           return {
-            customBooks: state.customBooks.filter((b) => b.id !== bookId),
-            hiddenBookIds: state.hiddenBookIds.filter((id) => id !== bookId),
-            progress: nextProgress
+            progress: {
+              ...state.progress,
+              [bookId]: {
+                ...existing,
+                blockPosition: data.blockPosition ?? existing.blockPosition,
+                totalBlocks: data.totalBlocks ?? existing.totalBlocks,
+                serverUpdatedAt: data.serverUpdatedAt,
+                lastRead: new Date().toISOString(),
+              }
+            }
           };
         }),
 
-      // Translation state
-      isTranslating: false,
-      setIsTranslating: (value) => set({ isTranslating: value })
+      // Block-level reading anchors
+      readingAnchors: {},
+
+      setAnchor: (bookId, anchor) =>
+        set((state) => ({
+          readingAnchors: { ...state.readingAnchors, [bookId]: anchor }
+        })),
+
+      getAnchor: (bookId) => get().readingAnchors[bookId] ?? null,
+
+      // Translation state (scoped per book to avoid cross-book animation bleed)
+      isTranslatingByBook: {},
+      setIsTranslatingForBook: (bookId, value) =>
+        set((state) => ({
+          isTranslatingByBook: {
+            ...state.isTranslatingByBook,
+            [bookId]: value,
+          },
+        }))
     }),
     {
-      name: 'globoox-preview-storage'
+      name: 'globoox-preview-storage',
+      partialize: (state) => ({
+        settings: state.settings,
+        perBookLanguages: state.perBookLanguages,
+        progress: state.progress,
+        readingAnchors: state.readingAnchors,
+      }),
     }
   )
 );

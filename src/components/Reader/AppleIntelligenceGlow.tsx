@@ -70,8 +70,12 @@ function interpolateColors(colors: string[], t: number): { r: number; g: number;
   };
 }
 
-export default function AppleIntelligenceGlow() {
-  const { isTranslating } = useAppStore();
+interface AppleIntelligenceGlowProps {
+  bookId: string;
+}
+
+export default function AppleIntelligenceGlow({ bookId }: AppleIntelligenceGlowProps) {
+  const isTranslating = useAppStore((state) => state.isTranslatingByBook[bookId] ?? false);
   const [mounted, setMounted] = useState(false);
   const [visible, setVisible] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -108,7 +112,7 @@ export default function AppleIntelligenceGlow() {
     };
   }, []);
 
-  const drawGlow = useCallback(() => {
+  const drawGlow = useCallback(function drawGlowFrame() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -262,7 +266,7 @@ export default function AppleIntelligenceGlow() {
       }
     });
 
-    animationRef.current = requestAnimationFrame(drawGlow);
+    animationRef.current = requestAnimationFrame(drawGlowFrame);
   }, []);
 
   useEffect(() => {

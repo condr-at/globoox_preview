@@ -52,7 +52,7 @@ export default function ProfilePage() {
     const avatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
 
     return (
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen bg-background pb-[calc(60px+env(safe-area-inset-bottom))]">
             {/* Header */}
             <header className="pt-[env(safe-area-inset-top)] sticky top-0 z-10 bg-background/80 backdrop-blur-xl border-b">
                 <div className="container max-w-2xl mx-auto px-4 sm:px-6">
