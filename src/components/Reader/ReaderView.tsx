@@ -30,6 +30,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 // Source of a navigation event. Any source other than manual_scroll is a "jump"
 // that aborts in-flight prefetch requests and updates readingAnchor immediately.
 type NavigationSource = 'toc' | 'search' | 'slider' | 'link' | 'restore_anchor' | 'manual_scroll'
+const LAST_PAGE_SENTINEL = '__LAST_PAGE__';
 
 interface ReaderViewProps {
     bookId: string;
@@ -393,6 +394,13 @@ export default function ReaderView({ bookId, title, availableLanguages, original
         // If there's a pending anchor (from language switch), use it
         const targetBlockId = pendingAnchorBlockId.current;
         if (targetBlockId !== null) {
+            if (targetBlockId === LAST_PAGE_SENTINEL) {
+                pendingAnchorBlockId.current = null;
+                pendingAnchorSentenceIndex.current = 0;
+                setCurrentPageIdx(Math.max(0, pages.length - 1));
+                setVisiblePagesReady(true);
+                return;
+            }
             const targetSentenceIndex = pendingAnchorSentenceIndex.current;
             pendingAnchorBlockId.current = null;
             pendingAnchorSentenceIndex.current = 0;
@@ -582,6 +590,8 @@ export default function ReaderView({ bookId, title, availableLanguages, original
         if (currentPageIdx > 0) {
             goToPage(currentPageIdx - 1);
         } else if (prevChapter) {
+            pendingAnchorBlockId.current = LAST_PAGE_SENTINEL;
+            pendingAnchorSentenceIndex.current = 0;
             goToChapter(currentChapterIndex - 1);
         }
     }, [currentPageIdx, prevChapter, currentChapterIndex, goToPage, goToChapter]);
