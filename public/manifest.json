@@ -1,7 +1,7 @@
 {
     "name": "Globoox Preview",
     "short_name": "Globoox",
-    "description": "Reading app that translates any book with AI",
+    "description": "Reading app that translates ebooks into your language with AI.",
     "start_url": "/",
     "display": "standalone",
     "background_color": "#000000",
