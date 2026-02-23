@@ -114,6 +114,7 @@ export interface ReadingPosition {
   chapter_id: string | null
   block_id: string | null
   block_position: number | null
+  sentence_index?: number | null
   total_blocks?: number | null
   lang: string | null
   updated_at: string | null
@@ -123,6 +124,7 @@ export interface SaveReadingPositionRequest {
   chapter_id: string
   block_id?: string | null
   block_position?: number | null
+  sentence_index?: number | null
   lang?: string | null
   updated_at_client?: string
 }

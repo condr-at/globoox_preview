@@ -9,7 +9,7 @@ import { useChapters } from '@/lib/hooks/useChapters';
 import { useChapterContent } from '@/lib/hooks/useChapterContent';
 import { useViewportTranslation } from '@/lib/hooks/useViewportTranslation';
 import { usePageGestures } from '@/lib/hooks/usePageGestures';
-import { computePages, findPageForBlock, findPageByBlockPosition, normalizeBlocks } from '@/lib/paginatorUtils';
+import { computePages, findPageForBlock, findPageForBlockAndSentence, findPageByBlockPosition, normalizeBlocks } from '@/lib/paginatorUtils';
 import { ContentBlock } from '@/lib/api';
 import { useAuth } from '@/lib/hooks/useAuth';
 import {
@@ -291,14 +291,12 @@ export default function ReaderView({ bookId, title, availableLanguages, original
     }, [blockStructureKey, pageHeight, normalizedBlocks, settings.fontSize, activeLang]);
 
     // ─── Anchor restore ──────────────────────────────────────────────────────
-    // Flag: have we done the initial anchor restore for this chapter load?
-    const anchorRestoredRef = useRef(false);
-    // Set by language-switch handler: blockId to jump to on next page recompute
+    // Set by language-switch handler: blockId + sentenceIndex to jump to on next page recompute
     const pendingAnchorBlockId = useRef<string | null>(null);
+    const pendingAnchorSentenceIndex = useRef<number>(0);
 
-    // Reset anchor restore flag when chapter changes
+    // Reset pagination state when chapter changes
     useEffect(() => {
-        anchorRestoredRef.current = false;
         setPagesReady(false);
         setVisiblePagesReady(false);
         setPages([]);
@@ -337,6 +335,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
                         chapterId,
                         blockId: remote.block_id,
                         blockPosition: remote.block_position,
+                        sentenceIndex: remote.sentence_index ?? 0,
                         updatedAt: remote.updated_at ?? new Date().toISOString(),
                     });
                 }
@@ -361,8 +360,10 @@ export default function ReaderView({ bookId, title, availableLanguages, original
         // If there's a pending anchor (from language switch), use it
         const targetBlockId = pendingAnchorBlockId.current;
         if (targetBlockId !== null) {
+            const targetSentenceIndex = pendingAnchorSentenceIndex.current;
             pendingAnchorBlockId.current = null;
-            const idx = findPageForBlock(pages, targetBlockId, fragmentMapRef.current);
+            pendingAnchorSentenceIndex.current = 0;
+            const idx = findPageForBlockAndSentence(pages, paginatedBlocks, targetBlockId, targetSentenceIndex, fragmentMapRef.current);
             if (idx >= 0) {
                 setCurrentPageIdx(idx);
                 setVisiblePagesReady(true);
@@ -378,20 +379,17 @@ export default function ReaderView({ bookId, title, availableLanguages, original
             return;
         }
 
-        // Initial load: restore from saved anchor (only once per chapter load)
-        if (!anchorRestoredRef.current) {
-            anchorRestoredRef.current = true;
-            const anchor = getAnchor(bookId);
-            if (anchor && anchor.chapterId === (currentChapter?.id ?? '')) {
-                const idx = findPageForBlock(pages, anchor.blockId, fragmentMapRef.current);
-                if (idx >= 0) {
-                    setCurrentPageIdx(idx);
-                    setVisiblePagesReady(true);
-                    return;
-                }
-                const byPos = findPageByBlockPosition(pages, paginatedBlocks, anchor.blockPosition);
-                setCurrentPageIdx(Math.max(0, byPos));
+        // Initial load: restore from saved anchor
+        const anchor = getAnchor(bookId);
+        if (anchor && anchor.chapterId === (currentChapter?.id ?? '')) {
+            const idx = findPageForBlockAndSentence(pages, paginatedBlocks, anchor.blockId, anchor.sentenceIndex ?? 0, fragmentMapRef.current);
+            if (idx >= 0) {
+                setCurrentPageIdx(idx);
+                setVisiblePagesReady(true);
+                return;
             }
+            const byPos = findPageByBlockPosition(pages, paginatedBlocks, anchor.blockPosition);
+            setCurrentPageIdx(Math.max(0, byPos));
         }
         setVisiblePagesReady(true);
     }, [remoteAnchorReady, pagesReady, pages, bookId, currentChapter?.id, displayBlocks, getAnchor]);
@@ -409,6 +407,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
             chapter_id: anchor.chapterId,
             block_id: anchor.blockId,
             block_position: anchor.blockPosition,
+            sentence_index: anchor.sentenceIndex,
             lang: activeLang.toUpperCase(),
             updated_at_client: anchor.updatedAt,
         }).then((response) => {
@@ -425,12 +424,13 @@ export default function ReaderView({ bookId, title, availableLanguages, original
         });
     }, [bookId, storeSetAnchor, isAuthenticated, activeLang, updateServerProgress]);
 
-    const saveAnchor = useCallback((blockId: string, blockPosition: number) => {
+    const saveAnchor = useCallback((blockId: string, blockPosition: number, sentenceIndex = 0) => {
         if (!currentChapter) return;
         const anchor: ReadingAnchor = {
             chapterId: currentChapter.id,
             blockId,
             blockPosition,
+            sentenceIndex,
             updatedAt: new Date().toISOString(),
         };
         lastAnchorRef.current = anchor;
@@ -490,10 +490,9 @@ export default function ReaderView({ bookId, title, availableLanguages, original
             if (currentPageBlocksRef.current.length > 0) {
                 const currentBlock = currentPageBlocksRef.current[0];
                 const blockId = currentBlock.parentId ?? currentBlock.id;
-                saveAnchor(blockId, currentBlock.position);
+                saveAnchor(blockId, currentBlock.position, (currentBlock as any).sentenceIndex ?? 0);
             }
 
-            anchorRestoredRef.current = false;
             setCurrentPageIdx(0);
             setPagesReady(false);
             setPages([]);
@@ -507,7 +506,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
         setCurrentPageIdx(idx);
         const anchorBlockId = pages[idx][0];
         const block = paginatedBlocks.find((b) => b.id === anchorBlockId);
-        if (block) saveAnchor(block.parentId ?? block.id, block.position);
+        if (block) saveAnchor(block.parentId ?? block.id, block.position, (block as any).sentenceIndex ?? 0);
 
         // Directly trigger prefetch for upcoming pages on every navigation
         if (!isSourceLang && pagesReady) {
@@ -560,6 +559,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
                     chapterId: currentChapter.id,
                     blockId: block.parentId ?? block.id,
                     blockPosition: block.position,
+                    sentenceIndex: (block as any).sentenceIndex ?? 0,
                     updatedAt: new Date().toISOString(),
                 });
             }
@@ -594,21 +594,23 @@ export default function ReaderView({ bookId, title, availableLanguages, original
             const anchorBlockId = pages[currentPageIdx]?.[0];
             const block = paginatedBlocks.find((b) => b.id === anchorBlockId);
             if (block) {
+                const sentenceIndex = (block as any).sentenceIndex ?? 0;
                 const anchor: ReadingAnchor = {
                     chapterId: currentChapter.id,
                     blockId: block.parentId ?? block.id,
                     blockPosition: block.position,
+                    sentenceIndex,
                     updatedAt: new Date().toISOString(),
                 };
                 persistAnchor(anchor);
                 pendingAnchorBlockId.current = block.parentId ?? block.id;
+                pendingAnchorSentenceIndex.current = sentenceIndex;
             }
         }
 
         const previousLang = activeLang;
         setPendingLang(lang);
         setIsTranslatingForBook(bookId, true);
-        anchorRestoredRef.current = false; // allow restore after new blocks load
 
         updateBookLanguage(bookId, lang)
             .then(() => {

@@ -40,6 +40,7 @@ export interface ReadingAnchor {
   chapterId: string;
   blockId: string;
   blockPosition: number;
+  sentenceIndex: number;
   updatedAt: string;
 }
 
