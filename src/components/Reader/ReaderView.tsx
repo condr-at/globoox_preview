@@ -411,7 +411,32 @@ export default function ReaderView({ bookId, title, availableLanguages, original
             lang: activeLang.toUpperCase(),
             updated_at_client: anchor.updatedAt,
         }).then((response) => {
-            // Update store with server data if available
+            if (response.persisted && response.updated_at) {
+                // Sync anchor timestamp with server so subsequent PUTs are never stale
+                storeSetAnchor(bookId, { ...anchor, updatedAt: response.updated_at });
+                if (lastAnchorRef.current?.blockId === anchor.blockId) {
+                    lastAnchorRef.current = { ...anchor, updatedAt: response.updated_at };
+                }
+            } else if (response.reason === 'stale_client') {
+                // Server has a newer position than us. Fetch it and update store + anchor
+                // so subsequent PUTs use the correct updated_at baseline.
+                fetchReadingPosition(bookId).then((remote) => {
+                    if (remote.block_id && remote.block_position != null && remote.updated_at) {
+                        const synced: ReadingAnchor = {
+                            chapterId: remote.chapter_id ?? anchor.chapterId,
+                            blockId: remote.block_id,
+                            blockPosition: remote.block_position,
+                            sentenceIndex: remote.sentence_index ?? 0,
+                            updatedAt: remote.updated_at,
+                        };
+                        storeSetAnchor(bookId, synced);
+                        // Only reset lastAnchorRef if user hasn't moved since the stale PUT
+                        if (lastAnchorRef.current?.blockId === anchor.blockId) {
+                            lastAnchorRef.current = synced;
+                        }
+                    }
+                }).catch(() => { /* silently ignore */ });
+            }
             if (response.total_blocks) {
                 updateServerProgress(bookId, {
                     blockPosition: anchor.blockPosition,

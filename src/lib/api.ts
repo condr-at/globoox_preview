@@ -421,6 +421,9 @@ export function saveReadingPosition(
         expiresAt: Date.now() + POSITION_CACHE_TTL_MS,
       })
     }
+    // stale_client: server rejected our write because it has a newer position.
+    // Cache is already invalidated (deleted before the PUT). The next
+    // fetchReadingPosition will do a real GET and get the authoritative position.
     return response
   })
 }
