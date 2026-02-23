@@ -44,8 +44,6 @@ export default function ReaderView({ bookId, title, availableLanguages, original
     const { isAuthenticated, loading: authLoading } = useAuth();
     const {
         settings,
-        updateProgress,
-        getProgress,
         setBookLanguage,
         setIsTranslatingForBook,
         setAnchor: storeSetAnchor,
@@ -54,7 +52,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
     } = useAppStore();
     const isTranslating = useAppStore((state) => state.isTranslatingByBook[bookId] ?? false);
 
-    const [currentChapterIndex, setCurrentChapterIndex] = useState(() => getProgress(bookId)?.chapter ?? 1);
+    const [currentChapterIndex, setCurrentChapterIndex] = useState(1);
     const [pendingLang, setPendingLang] = useState<Language | null>(null);
 
     const resolvedServerLang = useMemo<Language>(() => {
@@ -186,15 +184,9 @@ export default function ReaderView({ bookId, title, availableLanguages, original
         prevChapterIdxRef.current = currentChapterIndex;
     }, [currentChapterIndex, chapters.length, bookId]);
 
-    // Track chapter-level reading progress
-    useEffect(() => {
-        if (!chapters.length) return;
-        const progressPct = (currentChapterIndex / chapters.length) * 100;
-        updateProgress(bookId, currentChapterIndex, progressPct);
-    }, [currentChapterIndex, chapters.length, bookId, updateProgress]);
-
     // ─── Pagination state ────────────────────────────────────────────────────
     const contentAreaRef = useRef<HTMLDivElement>(null);
+    const pageViewportRef = useRef<HTMLDivElement>(null);
     const measureContainerRef = useRef<HTMLDivElement>(null);
     const blockMeasureRefs = useRef<Map<string, HTMLElement>>(new Map());
 
@@ -259,18 +251,14 @@ export default function ReaderView({ bookId, title, availableLanguages, original
 
     // Measure the available height for content after the header
     useEffect(() => {
-        if (!contentAreaRef.current) return;
+        if (!pageViewportRef.current) return;
         const updateHeight = () => {
-            if (contentAreaRef.current) {
-                const el = contentAreaRef.current;
-                const style = window.getComputedStyle(el);
-                const pt = parseFloat(style.paddingTop) || 0;
-                const pb = parseFloat(style.paddingBottom) || 0;
-                setPageHeight(el.clientHeight - pt - pb);
+            if (pageViewportRef.current) {
+                setPageHeight(pageViewportRef.current.clientHeight);
             }
         };
         const ro = new ResizeObserver(updateHeight);
-        ro.observe(contentAreaRef.current);
+        ro.observe(pageViewportRef.current);
         updateHeight();
         return () => ro.disconnect();
     }, []);
@@ -712,6 +700,32 @@ export default function ReaderView({ bookId, title, availableLanguages, original
         enabled: !isTranslating && pagesReady,
     });
 
+    // ─── Keyboard navigation (ArrowLeft / ArrowRight) ───────────────────────
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (isTranslating || !pagesReady) return;
+            if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+            const target = e.target;
+            if (target instanceof Element) {
+                const tag = target.tagName.toLowerCase();
+                const isTypingField = tag === 'input' || tag === 'textarea' || tag === 'select';
+                if (isTypingField || target.closest('[contenteditable="true"]')) return;
+            }
+
+            if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                goToPrevPage();
+            } else if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                goToNextPage();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [goToNextPage, goToPrevPage, isTranslating, pagesReady]);
+
     // ─── Book finished detection ──────────────────────────────────────────────
     const bookFinishedTrackedRef = useRef(false);
     useEffect(() => {
@@ -787,8 +801,6 @@ export default function ReaderView({ bookId, title, availableLanguages, original
                 style={{
                     position: 'fixed',
                     inset: 0,
-                    paddingTop: 'calc(env(safe-area-inset-top) + 16px + 44px)',
-                    paddingBottom: 'calc(env(safe-area-inset-bottom) + 40px)',
                     overflow: 'hidden',
                     touchAction: 'none',
                     overscrollBehavior: 'none',
@@ -796,61 +808,73 @@ export default function ReaderView({ bookId, title, availableLanguages, original
                 } as React.CSSProperties}
                 {...gestures}
             >
-                {/* Hidden measurement container — same content width, off-screen */}
                 <div
-                    ref={measureContainerRef}
-                    className="container max-w-2xl mx-auto px-4"
-                    style={{ position: 'fixed', top: '-9999px', left: 0, right: 0, visibility: 'hidden', pointerEvents: 'none', zIndex: -1 }}
-                    aria-hidden="true"
+                    ref={pageViewportRef}
+                    style={{
+                        position: 'absolute',
+                        left: 0,
+                        right: 0,
+                        top: 'calc(env(safe-area-inset-top) + 16px + 44px)',
+                        bottom: 'calc(env(safe-area-inset-bottom) + 40px)',
+                        overflow: 'hidden',
+                    }}
                 >
-                    {normalizedBlocks.map((block) => (
-                        <div
-                            key={block.id}
-                            ref={(el) => {
-                                if (el) blockMeasureRefs.current.set(block.id, el);
-                                else blockMeasureRefs.current.delete(block.id);
-                            }}
-                        >
-                            <ContentBlockRenderer block={block} fontSize={settings.fontSize} coverUrl={coverUrl} />
-                        </div>
-                    ))}
-                </div>
-
-                {/* Visible page */}
-                <TranslationGlow>
-                    <div className="container max-w-2xl mx-auto px-4 h-full overflow-hidden" lang={activeLang}>
-                        {isLoading || !visiblePagesReady ? (
-                            <>
-                                <Skeleton className="h-7 w-64 mb-5" />
-                                <div className="space-y-5">
-                                    {[100, 95, 88, 100, 72, 100, 90, 85, 100, 60, 100, 92].map((width, i) => (
-                                        <Skeleton key={i} className="h-5" style={{ width: `${width}%` }} />
-                                    ))}
-                                </div>
-                            </>
-                        ) : chaptersError ? (
-                            <p className="text-sm text-destructive py-8 text-center">{chaptersError}</p>
-                        ) : contentError ? (
-                            <p className="text-sm text-destructive py-8 text-center">{contentError}</p>
-                        ) : (
-                            (() => {
-                                // Find the first pending block to show "Translating..." label only on it
-                                let firstPendingFound = false;
-                                return currentPageBlocks.map((block) => {
-                                    const blockId = block.parentId ?? block.id;
-                                    const isPending = block.is_pending || pendingBlockIds.has(blockId);
-                                    const showTranslatingLabel = isPending && !firstPendingFound;
-                                    if (isPending && !firstPendingFound) firstPendingFound = true;
-                                    return (
-                                        <div key={block.id} ref={getRefCallback(blockId, block.type)}>
-                                            <ContentBlockRenderer block={block} fontSize={settings.fontSize} isPending={isPending} showTranslatingLabel={showTranslatingLabel} coverUrl={coverUrl} />
-                                        </div>
-                                    );
-                                });
-                            })()
-                        )}
+                    {/* Hidden measurement container — same content width, off-screen */}
+                    <div
+                        ref={measureContainerRef}
+                        className="container max-w-2xl mx-auto px-4"
+                        style={{ position: 'fixed', top: '-9999px', left: 0, right: 0, visibility: 'hidden', pointerEvents: 'none', zIndex: -1 }}
+                        aria-hidden="true"
+                    >
+                        {normalizedBlocks.map((block) => (
+                            <div
+                                key={block.id}
+                                ref={(el) => {
+                                    if (el) blockMeasureRefs.current.set(block.id, el);
+                                    else blockMeasureRefs.current.delete(block.id);
+                                }}
+                            >
+                                <ContentBlockRenderer block={block} fontSize={settings.fontSize} coverUrl={coverUrl} />
+                            </div>
+                        ))}
                     </div>
-                </TranslationGlow>
+
+                    {/* Visible page */}
+                    <TranslationGlow>
+                        <div className="container max-w-2xl mx-auto px-4 h-full overflow-hidden" lang={activeLang}>
+                            {isLoading || !visiblePagesReady ? (
+                                <>
+                                    <Skeleton className="h-7 w-64 mb-5" />
+                                    <div className="space-y-5">
+                                        {[100, 95, 88, 100, 72, 100, 90, 85, 100, 60, 100, 92].map((width, i) => (
+                                            <Skeleton key={i} className="h-5" style={{ width: `${width}%` }} />
+                                        ))}
+                                    </div>
+                                </>
+                            ) : chaptersError ? (
+                                <p className="text-sm text-destructive py-8 text-center">{chaptersError}</p>
+                            ) : contentError ? (
+                                <p className="text-sm text-destructive py-8 text-center">{contentError}</p>
+                            ) : (
+                                (() => {
+                                    // Find the first pending block to show "Translating..." label only on it
+                                    let firstPendingFound = false;
+                                    return currentPageBlocks.map((block) => {
+                                        const blockId = block.parentId ?? block.id;
+                                        const isPending = block.is_pending || pendingBlockIds.has(blockId);
+                                        const showTranslatingLabel = isPending && !firstPendingFound;
+                                        if (isPending && !firstPendingFound) firstPendingFound = true;
+                                        return (
+                                            <div key={block.id} ref={getRefCallback(blockId, block.type)}>
+                                                <ContentBlockRenderer block={block} fontSize={settings.fontSize} isPending={isPending} showTranslatingLabel={showTranslatingLabel} coverUrl={coverUrl} />
+                                            </div>
+                                        );
+                                    });
+                                })()
+                            )}
+                        </div>
+                    </TranslationGlow>
+                </div>
             </div>
 
             {/* ── Footer / progress bar (fixed, slides out downward) ── */}

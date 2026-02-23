@@ -9,9 +9,9 @@ interface TranslationGlowProps {
 
 export default function TranslationGlow({ children }: TranslationGlowProps) {
     return (
-        <div className="relative">
+        <div className="relative h-full">
             {/* Content */}
-            <div>
+            <div className="h-full">
                 {children}
             </div>
         </div>

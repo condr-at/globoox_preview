@@ -27,11 +27,9 @@ interface ReaderSettings {
 
 interface ReadingProgress {
   [bookId: string]: {
-    chapter: number;
-    progress: number;
-    lastRead: string;
+    blockPosition?: number;
     totalBlocks?: number;
-    blockProgress?: number;
+    lastRead: string;
     serverUpdatedAt?: string;
   };
 }
@@ -55,10 +53,10 @@ interface AppState {
   perBookLanguages: Record<string, Language>;
   setBookLanguage: (bookId: string, lang: Language) => void;
 
-  // Reading progress
+  // Reading progress (block-based)
   progress: ReadingProgress;
-  updateProgress: (bookId: string, chapter: number, progress: number) => void;
-  getProgress: (bookId: string) => { chapter: number; progress: number } | null;
+  updateProgress: (bookId: string, blockPosition: number, totalBlocks: number) => void;
+  getProgress: (bookId: string) => { blockPosition?: number; totalBlocks?: number } | null;
   updateServerProgress: (
     bookId: string,
     data: { blockPosition?: number; totalBlocks?: number; serverUpdatedAt: string }
@@ -107,10 +105,10 @@ export const useAppStore = create<AppState>()(
           perBookLanguages: { ...state.perBookLanguages, [bookId]: lang }
         })),
 
-      // Reading progress
+      // Reading progress (block-based)
       progress: {},
 
-      updateProgress: (bookId, chapter, progress) =>
+      updateProgress: (bookId, blockPosition, totalBlocks) =>
         set((state) => {
           const existing = state.progress[bookId] || {};
           return {
@@ -118,8 +116,8 @@ export const useAppStore = create<AppState>()(
               ...state.progress,
               [bookId]: {
                 ...existing,
-                chapter,
-                progress,
+                blockPosition,
+                totalBlocks,
                 lastRead: new Date().toISOString()
               }
             }
@@ -129,23 +127,21 @@ export const useAppStore = create<AppState>()(
       getProgress: (bookId) => {
         const progress = get().progress[bookId];
         if (!progress) return null;
-        return { chapter: progress.chapter, progress: progress.progress };
+        return { blockPosition: progress.blockPosition, totalBlocks: progress.totalBlocks };
       },
 
       updateServerProgress: (bookId, data) =>
         set((state) => {
-          const existing = state.progress[bookId] || { chapter: 0, progress: 0, lastRead: new Date().toISOString() };
-          const blockProgress = data.blockPosition != null && data.totalBlocks
-            ? Math.round((data.blockPosition / data.totalBlocks) * 100)
-            : existing.blockProgress;
+          const existing = state.progress[bookId] || { lastRead: new Date().toISOString() };
           return {
             progress: {
               ...state.progress,
               [bookId]: {
                 ...existing,
+                blockPosition: data.blockPosition ?? existing.blockPosition,
                 totalBlocks: data.totalBlocks ?? existing.totalBlocks,
-                blockProgress,
                 serverUpdatedAt: data.serverUpdatedAt,
+                lastRead: new Date().toISOString(),
               }
             }
           };

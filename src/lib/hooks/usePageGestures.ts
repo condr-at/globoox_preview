@@ -29,6 +29,25 @@ const IOS_SYSTEM_EDGE = 20
 
 export function usePageGestures({ onPrev, onNext, onToggleChrome, enabled = true }: UsePageGesturesOptions) {
   const touchStart = useRef<TouchPoint | null>(null)
+  const isInteractiveTarget = useCallback((target: EventTarget | null) => {
+    if (!(target instanceof Element)) return false
+    return Boolean(
+      target.closest('a, button, input, textarea, select, label, [role="button"], [data-no-page-click]')
+    )
+  }, [])
+
+  const handleTapZoneAction = useCallback((x: number, screenW: number) => {
+    // Left zone (30%): prev page — skip iOS system back-gesture strip
+    if (x > IOS_SYSTEM_EDGE && x > EDGE_SAFE_PX && x < screenW * LEFT_ZONE) {
+      onPrev()
+    // Right zone (30%): next page
+    } else if (x > screenW * RIGHT_ZONE && x < screenW - EDGE_SAFE_PX) {
+      onNext()
+    // Center zone (40%): toggle chrome
+    } else if (x >= screenW * LEFT_ZONE && x <= screenW * RIGHT_ZONE) {
+      onToggleChrome()
+    }
+  }, [onNext, onPrev, onToggleChrome])
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     if (!enabled) return
@@ -62,18 +81,7 @@ export function usePageGestures({ onPrev, onNext, onToggleChrome, enabled = true
     const isTap = Math.abs(dx) < TAP_THRESHOLD && Math.abs(dy) < TAP_THRESHOLD
 
     if (isTap) {
-      const x = t.clientX
-
-      // Left zone (30%): prev page — skip iOS system back-gesture strip
-      if (x > IOS_SYSTEM_EDGE && x > EDGE_SAFE_PX && x < screenW * LEFT_ZONE) {
-        onPrev()
-      // Right zone (30%): next page
-      } else if (x > screenW * RIGHT_ZONE && x < screenW - EDGE_SAFE_PX) {
-        onNext()
-      // Center zone (40%): toggle chrome
-      } else if (x >= screenW * LEFT_ZONE && x <= screenW * RIGHT_ZONE) {
-        onToggleChrome()
-      }
+      handleTapZoneAction(t.clientX, screenW)
       return
     }
 
@@ -88,11 +96,17 @@ export function usePageGestures({ onPrev, onNext, onToggleChrome, enabled = true
       if (dx > 0) onPrev()   // swipe right → previous
       else onNext()           // swipe left  → next
     }
-  }, [enabled, onPrev, onNext, onToggleChrome])
+  }, [enabled, onPrev, onNext, handleTapZoneAction])
+
+  const handleClick = useCallback((e: React.MouseEvent) => {
+    if (!enabled || isInteractiveTarget(e.target)) return
+    handleTapZoneAction(e.clientX, window.innerWidth)
+  }, [enabled, handleTapZoneAction, isInteractiveTarget])
 
   return {
     onTouchStart: handleTouchStart,
     onTouchMove: handleTouchMove,
     onTouchEnd: handleTouchEnd,
+    onClick: handleClick,
   }
 }

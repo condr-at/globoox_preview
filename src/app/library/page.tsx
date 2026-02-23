@@ -93,19 +93,18 @@ export default function LibraryPage() {
 
   // Get block-based progress for a book
   const getBookProgress = useCallback((book: ApiBook) => {
-    const localProgress = progress[book.id];
-    const serverProgress = progressData[book.id];
+    const local = progress[book.id];
+    const server = progressData[book.id];
 
-    // Use total_blocks from the Zustand store (written by PUT /reading-position responses in the Reader)
-    const storedTotalBlocks = localProgress?.totalBlocks;
-    const blockPosition = serverProgress?.block_position;
+    // Priority: server data, fallback to local
+    const blockPosition = server?.block_position ?? local?.blockPosition;
+    const totalBlocks = server?.total_blocks ?? local?.totalBlocks;
 
-    if (storedTotalBlocks && storedTotalBlocks > 0 && blockPosition != null) {
-      return Math.min(100, Math.round((blockPosition / storedTotalBlocks) * 100));
+    if (totalBlocks && totalBlocks > 0 && blockPosition != null) {
+      return Math.min(100, Math.round((blockPosition / totalBlocks) * 100));
     }
 
-    // Fallback to local chapter-based progress
-    return localProgress?.progress || 0;
+    return 0;
   }, [progress, progressData]);
 
   // Get last read entry sorted by server updated_at
