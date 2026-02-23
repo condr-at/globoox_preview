@@ -51,6 +51,7 @@ export default function ReaderPage({ params }: ReaderPageProps) {
       availableLanguages={book.available_languages}
       originalLanguage={book.original_language}
       serverLanguage={book.selected_language}
+      coverUrl={book.cover_url}
     />
   );
 }

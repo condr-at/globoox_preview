@@ -217,7 +217,7 @@ export default function LibraryPage() {
       <UploadBookModal
         isOpen={isUploadOpen}
         onClose={() => setIsUploadOpen(false)}
-        onUploaded={() => refresh()}
+        onUploaded={() => refresh(true)}
       />
 
       <SignInToUploadModal

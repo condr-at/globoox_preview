@@ -37,9 +37,10 @@ interface ReaderViewProps {
     availableLanguages: string[];
     originalLanguage?: string | null;
     serverLanguage?: string | null;
+    coverUrl?: string | null;
 }
 
-export default function ReaderView({ bookId, title, availableLanguages, originalLanguage, serverLanguage }: ReaderViewProps) {
+export default function ReaderView({ bookId, title, availableLanguages, originalLanguage, serverLanguage, coverUrl }: ReaderViewProps) {
     const { isAuthenticated, loading: authLoading } = useAuth();
     const {
         settings,
@@ -787,7 +788,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
                                 else blockMeasureRefs.current.delete(block.id);
                             }}
                         >
-                            <ContentBlockRenderer block={block} fontSize={settings.fontSize} />
+                            <ContentBlockRenderer block={block} fontSize={settings.fontSize} coverUrl={coverUrl} />
                         </div>
                     ))}
                 </div>
@@ -819,7 +820,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
                                     if (isPending && !firstPendingFound) firstPendingFound = true;
                                     return (
                                         <div key={block.id} ref={getRefCallback(blockId, block.type)}>
-                                            <ContentBlockRenderer block={block} fontSize={settings.fontSize} isPending={isPending} showTranslatingLabel={showTranslatingLabel} />
+                                            <ContentBlockRenderer block={block} fontSize={settings.fontSize} isPending={isPending} showTranslatingLabel={showTranslatingLabel} coverUrl={coverUrl} />
                                         </div>
                                     );
                                 });

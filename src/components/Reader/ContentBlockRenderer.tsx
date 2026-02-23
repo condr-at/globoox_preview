@@ -5,6 +5,7 @@ interface ContentBlockRendererProps {
   fontSize?: number
   isPending?: boolean // True if translation is pending (from API or local request)
   showTranslatingLabel?: boolean // True only for the first pending block to show "Translating..." text
+  coverUrl?: string | null // Book cover URL to use for images with relative paths
 }
 
 // Wrapper component for pending translation overlay
@@ -27,7 +28,7 @@ function PendingWrapper({ children, isPending, showLabel }: { children: React.Re
   );
 }
 
-export default function ContentBlockRenderer({ block, fontSize, isPending, showTranslatingLabel }: ContentBlockRendererProps) {
+export default function ContentBlockRenderer({ block, fontSize, isPending, showTranslatingLabel, coverUrl }: ContentBlockRendererProps) {
   const style = fontSize ? { fontSize: `${fontSize}px` } : undefined
 
   if (block.type === 'hr') {
@@ -35,9 +36,18 @@ export default function ContentBlockRenderer({ block, fontSize, isPending, showT
   }
 
   if (block.type === 'image') {
+    // Use coverUrl for relative image paths (EPUB internal paths like "images/xxx.jpg")
+    let imageSrc = block.src
+    if (imageSrc && !imageSrc.startsWith('http://') && !imageSrc.startsWith('https://') && !imageSrc.startsWith('data:')) {
+      // Relative path - use book's coverUrl if available
+      if (coverUrl) {
+        imageSrc = coverUrl
+      }
+    }
+    
     return (
       <figure className="my-5">
-        <img src={block.src} alt={block.alt} className="w-full rounded-md" />
+        <img src={imageSrc} alt={block.alt} className="w-full rounded-md" />
         {block.caption && (
           <figcaption className="text-sm text-muted-foreground text-center mt-2">
             {block.caption}

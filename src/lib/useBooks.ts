@@ -19,20 +19,25 @@ export function useBooks() {
   const [error, setError] = useState<string | null>(null)
   const [isStale, setIsStale] = useState(false)
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (force = false) => {
     const cached = booksCache.get('all')
     const now = Date.now()
 
-    // Return fresh cache immediately
-    if (cached && now - cached.fetchedAt < STALE_TIME_MS) {
+    // Return fresh cache immediately (unless force refresh)
+    if (!force && cached && now - cached.fetchedAt < STALE_TIME_MS) {
       setBooks(cached.data)
       setIsStale(false)
       setLoading(false)
       return
     }
 
+    // Invalidate cache on force refresh
+    if (force) {
+      booksCache.delete('all')
+    }
+
     // Show stale data while revalidating
-    if (cached) {
+    if (cached && !force) {
       setBooks(cached.data)
       setIsStale(true)
     }
