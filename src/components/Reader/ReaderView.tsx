@@ -703,11 +703,13 @@ export default function ReaderView({ bookId, title, availableLanguages, original
     }, []);
 
     // ─── Gesture handler ──────────────────────────────────────────────────────
+    const allowInternalScroll = true;
     const gestures = usePageGestures({
         onPrev: goToPrevPage,
         onNext: goToNextPage,
         onToggleChrome: toggleChrome,
         enabled: !isTranslating && pagesReady,
+        preserveScroll: allowInternalScroll,
     });
 
     // ─── Keyboard navigation (ArrowLeft / ArrowRight) ───────────────────────
@@ -812,7 +814,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
                     position: 'fixed',
                     inset: 0,
                     overflow: 'hidden',
-                    touchAction: 'none',
+                    touchAction: allowInternalScroll ? 'pan-y' : 'none',
                     overscrollBehavior: 'none',
                     WebkitOverflowScrolling: 'auto',
                 } as React.CSSProperties}
@@ -826,7 +828,9 @@ export default function ReaderView({ bookId, title, availableLanguages, original
                         right: 0,
                         top: 'calc(env(safe-area-inset-top) + 16px + 44px)',
                         bottom: 'calc(env(safe-area-inset-bottom) + 40px)',
-                        overflow: 'hidden',
+                        overflowY: allowInternalScroll ? 'auto' : 'hidden',
+                        overflowX: 'hidden',
+                        WebkitOverflowScrolling: 'touch',
                     }}
                 >
                     {/* Hidden measurement container — same content width, off-screen */}
@@ -851,7 +855,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
 
                     {/* Visible page */}
                     <TranslationGlow>
-                        <div className="container max-w-2xl mx-auto px-4 h-full overflow-hidden" lang={activeLang}>
+                        <div className="container max-w-2xl mx-auto px-4 h-full" lang={activeLang}>
                             {isLoading || !visiblePagesReady ? (
                                 <>
                                     <Skeleton className="h-7 w-64 mb-5" />

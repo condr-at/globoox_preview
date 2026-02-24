@@ -8,6 +8,8 @@ interface UsePageGesturesOptions {
   onToggleChrome: () => void
   /** Disable all gesture handling (e.g. when overlays are open) */
   enabled?: boolean
+  /** Keep native scrolling enabled while still handling tap/swipe zones */
+  preserveScroll?: boolean
 }
 
 interface TouchPoint { x: number; y: number }
@@ -27,8 +29,9 @@ const DRAG_SAFE_MAX = 0.85
 // px from the very left edge reserved for the iOS system back gesture
 const IOS_SYSTEM_EDGE = 20
 
-export function usePageGestures({ onPrev, onNext, onToggleChrome, enabled = true }: UsePageGesturesOptions) {
+export function usePageGestures({ onPrev, onNext, onToggleChrome, enabled = true, preserveScroll = false }: UsePageGesturesOptions) {
   const touchStart = useRef<TouchPoint | null>(null)
+  const lastTouchAtRef = useRef(0)
   const isInteractiveTarget = useCallback((target: EventTarget | null) => {
     if (!(target instanceof Element)) return false
     return Boolean(
@@ -51,21 +54,21 @@ export function usePageGestures({ onPrev, onNext, onToggleChrome, enabled = true
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     if (!enabled) return
-    // Prevent browser from doing anything with this touch (kills bounce/rubber-band)
-    e.preventDefault()
+    lastTouchAtRef.current = Date.now()
+    if (!preserveScroll) e.preventDefault()
     const t = e.touches[0]
     touchStart.current = { x: t.clientX, y: t.clientY }
-  }, [enabled])
+  }, [enabled, preserveScroll])
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     if (!enabled) return
-    // Kill rubber-band / overscroll on every move
-    e.preventDefault()
-  }, [enabled])
+    if (!preserveScroll) e.preventDefault()
+  }, [enabled, preserveScroll])
 
   const handleTouchEnd = useCallback((e: React.TouchEvent) => {
     if (!enabled || !touchStart.current) return
-    e.preventDefault()
+    lastTouchAtRef.current = Date.now()
+    if (!preserveScroll) e.preventDefault()
 
     const t = e.changedTouches[0]
     const start = touchStart.current
@@ -96,9 +99,11 @@ export function usePageGestures({ onPrev, onNext, onToggleChrome, enabled = true
       if (dx > 0) onPrev()   // swipe right → previous
       else onNext()           // swipe left  → next
     }
-  }, [enabled, onPrev, onNext, handleTapZoneAction])
+  }, [enabled, onPrev, onNext, handleTapZoneAction, preserveScroll])
 
   const handleClick = useCallback((e: React.MouseEvent) => {
+    // Ignore synthetic click that can follow touchend on mobile.
+    if (Date.now() - lastTouchAtRef.current < 450) return
     if (!enabled || isInteractiveTarget(e.target)) return
     handleTapZoneAction(e.clientX, window.innerWidth)
   }, [enabled, handleTapZoneAction, isInteractiveTarget])
