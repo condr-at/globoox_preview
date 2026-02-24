@@ -77,7 +77,7 @@ export const useAppStore = create<AppState>()(
     (set, get) => ({
       // Default settings
       settings: {
-        fontSize: 18,
+        fontSize: 16,
         theme: 'dark',
         language: 'en'
       },

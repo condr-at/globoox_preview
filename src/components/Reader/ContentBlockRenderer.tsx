@@ -32,7 +32,7 @@ export default function ContentBlockRenderer({ block, fontSize, isPending, showT
   const style = fontSize ? { fontSize: `${fontSize}px` } : undefined
 
   if (block.type === 'hr') {
-    return <hr className="my-6 border-border" />
+    return <hr className="my-5 border-border" />
   }
 
   if (block.type === 'image') {
@@ -46,10 +46,10 @@ export default function ContentBlockRenderer({ block, fontSize, isPending, showT
     }
     
     return (
-      <figure className="my-5">
+      <figure className="my-4">
         <img src={imageSrc} alt={block.alt} className="w-full rounded-md" />
         {block.caption && (
-          <figcaption className="text-sm text-muted-foreground text-center mt-2">
+          <figcaption className="text-xs text-muted-foreground text-center mt-1">
             {block.caption}
           </figcaption>
         )}
@@ -61,10 +61,10 @@ export default function ContentBlockRenderer({ block, fontSize, isPending, showT
     const Tag = `h${block.level}` as 'h1' | 'h2' | 'h3'
     const baseClassName =
       block.level === 1
-        ? 'text-xl font-bold mb-5 mt-8'
+        ? 'text-xxl font-bold mb-3 mt-6'
         : block.level === 2
-          ? 'text-lg font-semibold mb-4 mt-6'
-          : 'text-base font-semibold mb-3 mt-5'
+          ? 'text-xl font-semibold mb-2 mt-5'
+          : 'text-lg font-semibold mb-2 mt-4'
     return (
       <PendingWrapper isPending={isPending} showLabel={showTranslatingLabel}>
         <Tag className={baseClassName} style={style}>{block.text}</Tag>
@@ -75,7 +75,7 @@ export default function ContentBlockRenderer({ block, fontSize, isPending, showT
   if (block.type === 'paragraph') {
     const isFirst = block.isFirstPart ?? true;
     const isLast = block.isLastPart ?? true;
-    const mbClass = isLast ? 'mb-5' : 'mb-0';
+    const mbClass = isLast ? 'mb-2' : 'mb-0';
     return (
       <PendingWrapper isPending={isPending} showLabel={showTranslatingLabel}>
         <p
@@ -91,7 +91,7 @@ export default function ContentBlockRenderer({ block, fontSize, isPending, showT
   if (block.type === 'quote') {
     return (
       <PendingWrapper isPending={isPending} showLabel={showTranslatingLabel}>
-        <blockquote className="border-l-4 border-primary pl-4 my-5 italic text-muted-foreground" style={style}>
+        <blockquote className="border-l-1 border-primary pl-3 my-4 italic text-foreground/80" style={style}>
           {block.text}
         </blockquote>
       </PendingWrapper>
@@ -102,7 +102,7 @@ export default function ContentBlockRenderer({ block, fontSize, isPending, showT
     const Tag = block.ordered ? 'ol' : 'ul'
     const listClass = block.ordered ? 'list-decimal' : 'list-disc'
     const isLast = block.isLastPart ?? true;
-    const mbClass = isLast ? 'mb-5' : 'mb-0';
+    const mbClass = isLast ? 'mb-3' : 'mb-1';
     const startProp = block.ordered && block.partIndex !== undefined ? block.partIndex + 1 : undefined;
 
     return (
