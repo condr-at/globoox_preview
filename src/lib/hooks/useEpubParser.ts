@@ -1,6 +1,7 @@
 'use client';
 
 import ePub, { Book, NavItem } from 'epubjs';
+import * as Sentry from '@sentry/nextjs';
 
 export interface ParsedBlock {
   type: 'paragraph' | 'heading' | 'quote' | 'list' | 'image' | 'hr';
@@ -160,6 +161,12 @@ export async function parseEpub(file: File): Promise<ParsedEpub> {
     }
   } catch (e) {
     console.warn('Could not extract cover:', e);
+    Sentry.addBreadcrumb({
+      category: 'epub',
+      message: 'Cover extraction failed',
+      data: { error: e instanceof Error ? e.message : String(e) },
+      level: 'warning',
+    });
   }
 
   // Step 1: Flatten TOC into array with hierarchy info (fast, no I/O)
@@ -240,7 +247,12 @@ export async function parseEpub(file: File): Promise<ParsedEpub> {
             section.unload();
           }
         } catch (err) {
-          // Skip failed chapters silently
+          Sentry.addBreadcrumb({
+            category: 'epub',
+            message: 'Chapter parse failed',
+            data: { href: entry.href, index: idx },
+            level: 'warning',
+          });
         }
 
         chapters[idx] = {
@@ -253,6 +265,21 @@ export async function parseEpub(file: File): Promise<ParsedEpub> {
         };
       })
     );
+  }
+
+  const totalBlocks = chapters.reduce((sum, ch) => sum + ch.blocks.length, 0);
+  if (totalBlocks === 0) {
+    Sentry.captureMessage('EPUB parsed with 0 content blocks', {
+      level: 'warning',
+      contexts: {
+        epub: {
+          fileName: file.name,
+          fileSize: file.size,
+          chapterCount: chapters.length,
+          title: metadata.title,
+        },
+      },
+    });
   }
 
   return {

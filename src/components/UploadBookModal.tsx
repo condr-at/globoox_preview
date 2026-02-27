@@ -5,6 +5,8 @@ import { X, Upload, Loader2, CheckCircle, FileText } from 'lucide-react';
 import { parseEpub } from '@/lib/hooks/useEpubParser';
 import { uploadBook } from '@/lib/api';
 import { trackBookUploadStarted, trackBookUploaded, trackBookUploadFailed } from '@/lib/posthog';
+import * as Sentry from '@sentry/nextjs';
+import { createClient } from '@/lib/supabase/client';
 
 interface UploadBookModalProps {
   isOpen: boolean;
@@ -46,21 +48,72 @@ export default function UploadBookModal({ isOpen, onClose, onUploaded }: UploadB
     trackBookUploadStarted({ file_size_kb: fileSizeKb });
 
     try {
+      Sentry.addBreadcrumb({
+        category: 'upload',
+        message: 'upload.started',
+        data: { fileName: file.name, fileSize: file.size },
+        level: 'info',
+      });
+
       // Parse the EPUB
       const parsed = await parseEpub(file);
       const chaptersWithBlocks = parsed.chapters.filter(ch => ch.blocks.length > 0).length;
+      const totalBlocks = parsed.chapters.reduce((sum, ch) => sum + ch.blocks.length, 0);
       console.log(`[upload] Parsed: ${parsed.chapters.length} chapters, ${chaptersWithBlocks} with blocks`);
+
+      Sentry.addBreadcrumb({
+        category: 'upload',
+        message: 'upload.parsed',
+        data: { chapterCount: parsed.chapters.length, chaptersWithBlocks, totalBlocks, language: parsed.language },
+        level: 'info',
+      });
+
       if (chaptersWithBlocks === 0) {
         console.warn('[upload] WARNING: No blocks extracted! Check EPUB structure.');
       }
-      setProgress(40);
+      setProgress(45);
+      setMessage('Uploading file to storage...');
+
+      // Upload raw EPUB to Supabase Storage (non-blocking — book works without it)
+      let filePath = '';
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        const sanitizedName = file.name.replace(/[^a-zA-Z0-9.\-]/g, '_');
+        const storagePath = `${user?.id || 'guest'}/${Date.now()}-${sanitizedName}`;
+        const { error: storageError } = await supabase.storage
+          .from('books')
+          .upload(storagePath, file);
+        if (storageError) throw storageError;
+        filePath = storagePath;
+        Sentry.addBreadcrumb({
+          category: 'upload',
+          message: 'upload.file_stored',
+          data: { path: storagePath },
+          level: 'info',
+        });
+      } catch (storageErr) {
+        console.warn('[upload] Storage upload failed, proceeding without file:', storageErr);
+        Sentry.captureException(storageErr, {
+          contexts: { storage: { fileName: file.name, fileSize: file.size } },
+        });
+      }
+
+      setProgress(60);
       setMessage('Creating book and chapters...');
+
+      Sentry.addBreadcrumb({
+        category: 'upload',
+        message: 'upload.api_call',
+        level: 'info',
+      });
 
       // Send to backend API
       const book = await uploadBook({
         title: parsed.title,
         author: parsed.author,
         cover_url: parsed.cover,
+        file_path: filePath,
         file_size: file.size,
         source_language: parsed.language,
         chapters: parsed.chapters.map((ch) => ({
@@ -81,6 +134,13 @@ export default function UploadBookModal({ isOpen, onClose, onUploaded }: UploadB
         file_size_kb: fileSizeKb,
       });
 
+      Sentry.addBreadcrumb({
+        category: 'upload',
+        message: 'upload.success',
+        data: { bookId: book.id },
+        level: 'info',
+      });
+
       setProgress(100);
       setMessage('Book uploaded successfully!');
 
@@ -90,6 +150,9 @@ export default function UploadBookModal({ isOpen, onClose, onUploaded }: UploadB
       }, 1500);
     } catch (err: any) {
       console.error('Upload error:', err);
+      Sentry.captureException(err, {
+        contexts: { upload: { fileName: file.name, fileSize: file.size, fileSizeKb } },
+      });
       trackBookUploadFailed({ error: err.message || 'Upload failed', file_size_kb: fileSizeKb });
       setError(err.message || 'Upload failed');
       setUploading(false);
