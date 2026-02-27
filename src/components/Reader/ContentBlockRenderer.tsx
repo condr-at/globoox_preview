@@ -6,6 +6,7 @@ interface ContentBlockRendererProps {
   isPending?: boolean // True if translation is pending (from API or local request)
   showTranslatingLabel?: boolean // True only for the first pending block to show "Translating..." text
   coverUrl?: string | null // Book cover URL to use for images with relative paths
+  isCoverImage?: boolean // True only for the first image block (the actual book cover)
 }
 
 // Wrapper component for pending translation overlay
@@ -28,7 +29,7 @@ function PendingWrapper({ children, isPending, showLabel }: { children: React.Re
   );
 }
 
-export default function ContentBlockRenderer({ block, fontSize, isPending, showTranslatingLabel, coverUrl }: ContentBlockRendererProps) {
+export default function ContentBlockRenderer({ block, fontSize, isPending, showTranslatingLabel, coverUrl, isCoverImage }: ContentBlockRendererProps) {
   const style = fontSize ? { fontSize: `${fontSize}px` } : undefined
 
   if (block.type === 'hr') {
@@ -36,12 +37,14 @@ export default function ContentBlockRenderer({ block, fontSize, isPending, showT
   }
 
   if (block.type === 'image') {
-    // Use coverUrl for relative image paths (EPUB internal paths like "images/xxx.jpg")
+    // For relative EPUB paths, only substitute coverUrl for the first image (the actual cover).
+    // Other in-chapter images with relative paths cannot be resolved and are skipped.
     let imageSrc = block.src
     if (imageSrc && !imageSrc.startsWith('http://') && !imageSrc.startsWith('https://') && !imageSrc.startsWith('data:')) {
-      // Relative path - use book's coverUrl if available
-      if (coverUrl) {
+      if (isCoverImage && coverUrl) {
         imageSrc = coverUrl
+      } else {
+        return null
       }
     }
     
