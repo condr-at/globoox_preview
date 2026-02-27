@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { X, Upload, Loader2, CheckCircle } from 'lucide-react';
+import { X, Upload, Loader2, CheckCircle, FileText } from 'lucide-react';
 import { parseEpub } from '@/lib/hooks/useEpubParser';
 import { uploadBook } from '@/lib/api';
 import { trackBookUploadStarted, trackBookUploaded, trackBookUploadFailed } from '@/lib/posthog';
@@ -108,7 +108,7 @@ export default function UploadBookModal({ isOpen, onClose, onUploaded }: UploadB
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleClose} />
-      
+
       <div className="relative bg-card border rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
         <button
           onClick={handleClose}
@@ -125,12 +125,16 @@ export default function UploadBookModal({ isOpen, onClose, onUploaded }: UploadB
               onClick={() => fileInputRef.current?.click()}
               className="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:border-primary transition-colors"
             >
-              <Upload className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
+              {file ? (
+                <FileText className="w-10 h-10 mx-auto mb-3 text-primary" />
+              ) : (
+                <Upload className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
+              )}
               <p className="text-sm text-muted-foreground">
                 {file ? file.name : 'Click to select an EPUB file'}
               </p>
             </div>
-            
+
             <input
               ref={fileInputRef}
               type="file"
