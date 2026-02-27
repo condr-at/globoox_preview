@@ -207,44 +207,60 @@ export async function parseEpub(file: File): Promise<ParsedEpub> {
     }
   });
 
-  // Step 3: Process chapters in parallel batches
-  const BATCH_SIZE = 5;
-  const chapters: ParsedChapter[] = new Array(tocEntries.length);
-  
-  for (let i = 0; i < tocEntries.length; i += BATCH_SIZE) {
-    const batch = tocEntries.slice(i, i + BATCH_SIZE);
-    await Promise.all(
-      batch.map(async (entry, batchIdx) => {
-        const idx = i + batchIdx;
-        let content = '';
-        let blocks: ParsedBlock[] = [];
+  // Step 3: Group TOC entries by XHTML file, then load each file once.
+  // Multiple TOC entries pointing to the same file (with different #fragment IDs)
+  // previously caused the full file to be parsed for each entry, producing massive
+  // JSON bodies for spec-like EPUBs with hundreds of fine-grained TOC entries.
+  type EntryJob = { entry: TocEntry; idx: number; fragmentId: string | null };
+  const entriesByFile = new Map<string, EntryJob[]>();
+  for (let i = 0; i < tocEntries.length; i++) {
+    const entry = tocEntries[i];
+    const hrefWithoutHash = entry.href.split('#')[0];
+    const fragmentId = entry.href.includes('#') ? entry.href.split('#')[1] : null;
+    if (!entriesByFile.has(hrefWithoutHash)) {
+      entriesByFile.set(hrefWithoutHash, []);
+    }
+    entriesByFile.get(hrefWithoutHash)!.push({ entry, idx: i, fragmentId });
+  }
 
+  const chapters: ParsedChapter[] = new Array(tocEntries.length);
+
+  const blocksToContent = (blocks: ParsedBlock[]) =>
+    blocks
+      .filter((b) => b.type !== 'image' && b.type !== 'hr')
+      .map((b) => {
+        if (b.type === 'list') return b.items?.join('\n');
+        if ('text' in b) return b.text;
+        return '';
+      })
+      .filter(Boolean)
+      .join('\n\n');
+
+  for (const [hrefWithoutHash, jobs] of entriesByFile) {
+    const filename = hrefWithoutHash.split('/').pop() || hrefWithoutHash;
+    const section = sectionMap.get(hrefWithoutHash) || sectionMap.get(filename);
+
+    if (!section) {
+      for (const { entry, idx } of jobs) {
+        chapters[idx] = { title: entry.title, href: entry.href, content: '', blocks: [], depth: entry.depth, parentIndex: entry.parentIndex };
+      }
+      continue;
+    }
+
+    try {
+      await section.load(book.load.bind(book));
+      const doc = section.document;
+
+      for (const { entry, idx, fragmentId } of jobs) {
+        let blocks: ParsedBlock[] = [];
         try {
-          const hrefWithoutHash = entry.href.split('#')[0];
-          const filename = hrefWithoutHash.split('/').pop() || hrefWithoutHash;
-          
-          // Fast lookup
-          let section = sectionMap.get(hrefWithoutHash) || sectionMap.get(filename);
-          
-          if (section) {
-            await section.load(book.load.bind(book));
-            const doc = section.document;
-            if (doc) {
-              const body = doc.body || doc.documentElement;
-              if (body) {
-                blocks = extractBlocks(body);
-                content = blocks
-                  .filter((b) => b.type !== 'image' && b.type !== 'hr')
-                  .map((b) => {
-                    if (b.type === 'list') return b.items?.join('\n');
-                    if ('text' in b) return b.text;
-                    return '';
-                  })
-                  .filter(Boolean)
-                  .join('\n\n');
-              }
+          if (doc) {
+            const rootEl = fragmentId
+              ? (doc.getElementById(fragmentId) ?? doc.body ?? doc.documentElement)
+              : (doc.body ?? doc.documentElement);
+            if (rootEl) {
+              blocks = extractBlocks(rootEl);
             }
-            section.unload();
           }
         } catch (err) {
           Sentry.addBreadcrumb({
@@ -254,17 +270,28 @@ export async function parseEpub(file: File): Promise<ParsedEpub> {
             level: 'warning',
           });
         }
-
         chapters[idx] = {
           title: entry.title,
           href: entry.href,
-          content,
+          content: blocksToContent(blocks),
           blocks,
           depth: entry.depth,
           parentIndex: entry.parentIndex,
         };
-      })
-    );
+      }
+
+      section.unload();
+    } catch (err) {
+      Sentry.addBreadcrumb({
+        category: 'epub',
+        message: 'Section load failed',
+        data: { href: hrefWithoutHash },
+        level: 'warning',
+      });
+      for (const { entry, idx } of jobs) {
+        chapters[idx] = { title: entry.title, href: entry.href, content: '', blocks: [], depth: entry.depth, parentIndex: entry.parentIndex };
+      }
+    }
   }
 
   const totalBlocks = chapters.reduce((sum, ch) => sum + ch.blocks.length, 0);
