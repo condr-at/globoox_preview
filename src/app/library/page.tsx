@@ -147,7 +147,7 @@ export default function LibraryPage() {
   const lastBook = lastReadEntry ? books.find((b) => b.id === lastReadEntry[0]) : null;
 
   return (
-    <div className="min-h-screen bg-background pb-[calc(60px+env(safe-area-inset-bottom))] [overflow-x:clip]">
+    <div className="min-h-screen bg-background pb-[calc(60px+env(safe-area-inset-bottom))]">
       <GoogleOneTap />
       <header className="pt-[env(safe-area-inset-top)] sticky top-0 z-10 bg-background/80 backdrop-blur-xl border-b">
         <div className="container max-w-2xl mx-auto px-4 sm:px-6 flex items-center justify-between gap-3 transition-[padding] duration-300 ease-in-out" style={{ paddingTop: isCollapsed ? 8 : 16, paddingBottom: isCollapsed ? 8 : 16 }}>
