@@ -430,33 +430,9 @@ export function saveReadingPosition(
   })
 }
 
-export interface UploadBookData {
-  title: string
-  author?: string
-  cover_url?: string | null
-  file_path?: string
-  file_size?: number
-  source_language?: string | null
-  chapters: {
-    title: string
-    href: string
-    content: string
-    depth: number
-    parentIndex: number | null
-    blocks: {
-      type: string
-      text?: string
-      level?: number
-      items?: string[]
-      src?: string
-      alt?: string
-    }[]
-  }[]
-}
-
-export function uploadBook(data: UploadBookData): Promise<ApiBook> {
-  return request<ApiBook>('/api/books/upload', {
+export function uploadBook(formData: FormData): Promise<ApiBook & { chapter_count?: number }> {
+  return request<ApiBook & { chapter_count?: number }>('/api/books/upload', {
     method: 'POST',
-    body: JSON.stringify(data),
+    body: formData,
   })
 }

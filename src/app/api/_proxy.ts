@@ -14,8 +14,15 @@ export async function proxyToBackend(request: Request): Promise<NextResponse | n
   const supabase = await createClient()
   const { data: { session } } = await supabase.auth.getSession()
 
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
+  const incomingContentType = request.headers.get('content-type') || ''
+  const isMultipart = incomingContentType.includes('multipart/form-data')
+
+  const headers: Record<string, string> = {}
+  if (!isMultipart) {
+    headers['Content-Type'] = 'application/json'
+  } else {
+    // Forward multipart/form-data with its boundary intact
+    headers['Content-Type'] = incomingContentType
   }
   if (session?.access_token) {
     headers['Authorization'] = `Bearer ${session.access_token}`
@@ -27,7 +34,7 @@ export async function proxyToBackend(request: Request): Promise<NextResponse | n
 
   const body =
     request.method !== 'GET' && request.method !== 'HEAD'
-      ? await request.text()
+      ? (isMultipart ? await request.blob() : await request.text())
       : undefined
 
   try {

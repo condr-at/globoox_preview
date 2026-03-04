@@ -2,11 +2,9 @@
 
 import { useState, useRef } from 'react';
 import { X, Upload, Loader2, CheckCircle, FileText } from 'lucide-react';
-import { parseEpub } from '@/lib/hooks/useEpubParser';
 import { uploadBook } from '@/lib/api';
 import { trackBookUploadStarted, trackBookUploaded, trackBookUploadFailed } from '@/lib/posthog';
 import * as Sentry from '@sentry/nextjs';
-import { createClient } from '@/lib/supabase/client';
 
 interface UploadBookModalProps {
   isOpen: boolean;
@@ -39,7 +37,11 @@ export default function UploadBookModal({ isOpen, onClose, onUploaded }: UploadB
       const isZip = bytes.length >= 2 && bytes[0] === 0x50 && bytes[1] === 0x4b; // PK
       if (!isZip) return false;
       const text = new TextDecoder('latin1').decode(bytes).toLowerCase();
-      return text.includes('mimetypeapplication/epub+zip');
+      // Some EPUB generators place the mimetype record deeper than the first 1KB.
+      if (text.includes('mimetypeapplication/epub+zip')) return true;
+      // Loosen check: any ZIP that isn't clearly something else is allowed and will be verified by the parser later.
+      console.warn('[upload] EPUB header not found in first 1KB, treating as ZIP fallback');
+      return true;
     } catch {
       return false;
     }
@@ -63,8 +65,8 @@ export default function UploadBookModal({ isOpen, onClose, onUploaded }: UploadB
     if (!file) return;
 
     setUploading(true);
-    setProgress(5);
-    setMessage('Parsing EPUB file...');
+    setProgress(10);
+    setMessage('Uploading book...');
     setError(null);
 
     const fileSizeKb = Math.round(file.size / 1024);
@@ -78,82 +80,18 @@ export default function UploadBookModal({ isOpen, onClose, onUploaded }: UploadB
         level: 'info',
       });
 
-      // Parse the EPUB
-      const parsed = await parseEpub(file);
-      const chaptersWithBlocks = parsed.chapters.filter(ch => ch.blocks.length > 0).length;
-      const totalBlocks = parsed.chapters.reduce((sum, ch) => sum + ch.blocks.length, 0);
-      console.log(`[upload] Parsed: ${parsed.chapters.length} chapters, ${chaptersWithBlocks} with blocks`);
+      setProgress(30);
 
-      Sentry.addBreadcrumb({
-        category: 'upload',
-        message: 'upload.parsed',
-        data: { chapterCount: parsed.chapters.length, chaptersWithBlocks, totalBlocks, language: parsed.language },
-        level: 'info',
-      });
+      const formData = new FormData();
+      formData.append('epub', file);
 
-      if (chaptersWithBlocks === 0) {
-        console.warn('[upload] WARNING: No blocks extracted! Check EPUB structure.');
-      }
-      setProgress(45);
-      setMessage('Uploading file to storage...');
-
-      // Upload raw EPUB to Supabase Storage (non-blocking — book works without it)
-      let filePath = '';
-      try {
-        const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        const sanitizedName = file.name.replace(/[^a-zA-Z0-9.\-]/g, '_');
-        const storagePath = `${user?.id || 'guest'}/${Date.now()}-${sanitizedName}`;
-        const { error: storageError } = await supabase.storage
-          .from('books')
-          .upload(storagePath, file);
-        if (storageError) throw storageError;
-        filePath = storagePath;
-        Sentry.addBreadcrumb({
-          category: 'upload',
-          message: 'upload.file_stored',
-          data: { path: storagePath },
-          level: 'info',
-        });
-      } catch (storageErr) {
-        console.warn('[upload] Storage upload failed, proceeding without file:', storageErr);
-        Sentry.captureException(storageErr, {
-          contexts: { storage: { fileName: file.name, fileSize: file.size } },
-        });
-      }
-
-      setProgress(60);
-      setMessage('Creating book and chapters...');
-
-      Sentry.addBreadcrumb({
-        category: 'upload',
-        message: 'upload.api_call',
-        level: 'info',
-      });
-
-      // Send to backend API
-      const book = await uploadBook({
-        title: parsed.title,
-        author: parsed.author,
-        cover_url: parsed.cover,
-        file_path: filePath,
-        file_size: file.size,
-        source_language: parsed.language,
-        chapters: parsed.chapters.map((ch) => ({
-          title: ch.title,
-          href: ch.href,
-          content: ch.content,
-          depth: ch.depth,
-          parentIndex: ch.parentIndex,
-          blocks: ch.blocks,
-        })),
-      });
+      const book = await uploadBook(formData);
 
       trackBookUploaded({
-        title: parsed.title,
-        author: parsed.author,
-        language: parsed.language ?? 'unknown',
-        chapter_count: parsed.chapters.filter(ch => ch.blocks.length > 0).length,
+        title: book.title || file.name,
+        author: book.author || 'Unknown',
+        language: book.original_language ?? 'unknown',
+        chapter_count: book.chapter_count ?? 0,
         file_size_kb: fileSizeKb,
       });
 
