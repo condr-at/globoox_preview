@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import * as Sentry from '@sentry/nextjs'
 
 /**
  * Forward request to real backend API when API_URL is configured.
@@ -49,7 +50,16 @@ export async function proxyToBackend(request: Request): Promise<NextResponse | n
     response.headers.set('x-data-source', 'backend')
     response.headers.set('x-authenticated', session ? 'true' : 'false')
     return response
-  } catch {
+  } catch (error) {
+    Sentry.addBreadcrumb({
+      category: 'proxy',
+      message: 'Backend unavailable (502)',
+      data: { targetUrl, method: request.method },
+      level: 'error',
+    });
+    Sentry.captureException(error, {
+      contexts: { proxy: { targetUrl, method: request.method } },
+    });
     return NextResponse.json(
       { error: 'Backend is unavailable' },
       { status: 502 }

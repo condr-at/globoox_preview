@@ -51,7 +51,7 @@ export default function ReaderActionsMenu({
         ref={triggerRef}
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center text-[var(--system-blue)] active:opacity-70 disabled:opacity-50"
+        className="relative inline-flex min-h-[44px] min-w-[44px] items-center justify-center text-[var(--system-blue)] active:opacity-70 disabled:opacity-50 after:absolute after:inset-y-[-10px] after:left-[-4px] after:right-[-10px]"
         disabled={disabled}
       >
         <MoreHorizontal className="w-6 h-6" />

@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
-import { BookOpen, Plus } from 'lucide-react';
 import BookCard from '@/components/Store/BookCard';
 import UploadBookModal from '@/components/UploadBookModal';
 import SignInToUploadModal from '@/components/SignInToUploadModal';
@@ -23,6 +22,18 @@ export default function LibraryPage() {
   const [isSignInOpen, setIsSignInOpen] = useState(false);
   const [progressData, setProgressData] = useState<Record<string, BookReadingProgress>>({});
   const [progressLoading, setProgressLoading] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  // Collapse header past 60px, expand when back under 20px
+  useEffect(() => {
+    const onScroll = () => {
+      const y = window.scrollY;
+      if (y > 60) setIsCollapsed(true);
+      else if (y < 20) setIsCollapsed(false);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   // After OAuth redirect back with ?upload=1, auto-open upload modal
   useEffect(() => {
@@ -139,13 +150,19 @@ export default function LibraryPage() {
     <div className="min-h-screen bg-background pb-[calc(60px+env(safe-area-inset-bottom))]">
       <GoogleOneTap />
       <header className="pt-[env(safe-area-inset-top)] sticky top-0 z-10 bg-background/80 backdrop-blur-xl border-b">
-        <div className="container max-w-2xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-3">
-          <h1 className="text-2xl font-bold">Library</h1>
+        <div className="container max-w-2xl mx-auto px-4 sm:px-6 flex items-center justify-between gap-3 transition-[padding] duration-300 ease-in-out" style={{ paddingTop: isCollapsed ? 8 : 16, paddingBottom: isCollapsed ? 8 : 16 }}>
+          <h1 className={`font-medium transition-[font-size,line-height] duration-300 ease-in-out -mt-1 ${isCollapsed ? 'text-base' : 'text-2xl'}`}>Library</h1>
           <button
             onClick={handleUploadClick}
-            className="p-2 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+            className="text-[15px] font-medium text-[var(--system-blue)] active:opacity-50 transition-[opacity,transform] duration-300 ease-in-out px-2 py-2"
+            style={{
+              opacity: isCollapsed ? 0 : 1,
+              transform: isCollapsed ? 'scale(0)' : 'scale(1)',
+              pointerEvents: isCollapsed ? 'none' : 'auto',
+            }}
+            tabIndex={isCollapsed ? -1 : 0}
           >
-            <Plus className="w-5 h-5" />
+            Add
           </button>
         </div>
       </header>
@@ -155,10 +172,7 @@ export default function LibraryPage() {
 
         {lastBook && lastReadEntry && (
           <section>
-            <h2 className="flex items-center gap-2 text-lg font-semibold mb-4">
-              <BookOpen className="w-5 h-5 text-primary" />
-              Continue Reading
-            </h2>
+            <h2 className="text-lg font-semibold mb-4">Continue Reading</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               <BookCard
                 id={lastBook.id}

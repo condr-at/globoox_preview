@@ -267,6 +267,13 @@ export default function ReaderView({ bookId, title, availableLanguages, original
     // Normalized blocks split lists into items but keep paragraphs intact
     const normalizedBlocks = useMemo(() => normalizeBlocks(displayBlocks), [displayBlocks]);
 
+    // ID of the first image block in chapter 1 — only it should be rendered as the book cover.
+    // Images in all other chapters are relative EPUB paths that cannot be resolved and are hidden.
+    const firstImageBlockId = useMemo(
+        () => currentChapterIndex === 1 ? displayBlocks.find((b) => b.type === 'image')?.id : undefined,
+        [displayBlocks, currentChapterIndex]
+    );
+
     // Recompute pages when block structure, text content, or page height changes.
     // Including text lengths ensures pages recompute when translations arrive
     // (translated text has different length than original → page breaks shift).
@@ -776,7 +783,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
                 }}
             >
                 <div className="flex items-center justify-between h-11 px-4">
-                    <Button variant="ghost" size="icon" asChild className="text-[var(--system-blue)] -ml-2 flex-shrink-0">
+                    <Button variant="ghost" size="icon" asChild className="text-[var(--system-blue)] -ml-2 flex-shrink-0 relative after:absolute after:inset-y-[-10px] after:left-[-10px] after:right-[-4px]">
                         <Link href="/library">
                             <ChevronLeft className="w-6 h-6 text-[var(--system-blue)]" strokeWidth={2.5} />
                         </Link>
@@ -848,7 +855,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
                                     else blockMeasureRefs.current.delete(block.id);
                                 }}
                             >
-                                <ContentBlockRenderer block={block} fontSize={settings.fontSize} coverUrl={coverUrl} />
+                                <ContentBlockRenderer block={block} fontSize={settings.fontSize} coverUrl={coverUrl} isCoverImage={block.id === firstImageBlockId} />
                             </div>
                         ))}
                     </div>
@@ -875,12 +882,19 @@ export default function ReaderView({ bookId, title, availableLanguages, original
                                     let firstPendingFound = false;
                                     return currentPageBlocks.map((block) => {
                                         const blockId = block.parentId ?? block.id;
+                                        const isCoverImage = block.id === firstImageBlockId;
+                                        // Skip image blocks that cannot be rendered to avoid empty divs in the DOM
+                                        if (block.type === 'image') {
+                                            const src = (block as any).src as string | undefined;
+                                            const isAbsolute = src?.startsWith('http://') || src?.startsWith('https://') || src?.startsWith('data:');
+                                            if (!isAbsolute && !(isCoverImage && coverUrl)) return null;
+                                        }
                                         const isPending = block.is_pending || pendingBlockIds.has(blockId);
                                         const showTranslatingLabel = isPending && !firstPendingFound;
                                         if (isPending && !firstPendingFound) firstPendingFound = true;
                                         return (
                                             <div key={block.id} ref={getRefCallback(blockId, block.type)}>
-                                                <ContentBlockRenderer block={block} fontSize={settings.fontSize} isPending={isPending} showTranslatingLabel={showTranslatingLabel} coverUrl={coverUrl} />
+                                                <ContentBlockRenderer block={block} fontSize={settings.fontSize} isPending={isPending} showTranslatingLabel={showTranslatingLabel} coverUrl={coverUrl} isCoverImage={isCoverImage} />
                                             </div>
                                         );
                                     });

@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { X, Upload, Loader2, CheckCircle } from 'lucide-react';
+import { X, Upload, Loader2, CheckCircle, FileText } from 'lucide-react';
 import { parseEpub } from '@/lib/hooks/useEpubParser';
 import { uploadBook } from '@/lib/api';
 import { trackBookUploadStarted, trackBookUploaded, trackBookUploadFailed } from '@/lib/posthog';
+import * as Sentry from '@sentry/nextjs';
+import { createClient } from '@/lib/supabase/client';
 
 interface UploadBookModalProps {
   isOpen: boolean;
@@ -22,11 +24,34 @@ export default function UploadBookModal({ isOpen, onClose, onUploaded }: UploadB
 
   if (!isOpen) return null;
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const isLikelyEpub = async (selectedFile: File): Promise<boolean> => {
+    const normalizedName = selectedFile.name.trim().toLowerCase();
+    if (normalizedName.endsWith('.epub')) return true;
+
+    const mime = (selectedFile.type || '').toLowerCase();
+    if (mime === 'application/epub+zip') return true;
+
+    // Fallback for browsers that provide weak/empty MIME metadata.
+    // EPUB is a ZIP; by spec it contains "mimetypeapplication/epub+zip" near the beginning.
+    try {
+      const head = await selectedFile.slice(0, 1024).arrayBuffer();
+      const bytes = new Uint8Array(head);
+      const isZip = bytes.length >= 2 && bytes[0] === 0x50 && bytes[1] === 0x4b; // PK
+      if (!isZip) return false;
+      const text = new TextDecoder('latin1').decode(bytes).toLowerCase();
+      return text.includes('mimetypeapplication/epub+zip');
+    } catch {
+      return false;
+    }
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
-      if (!selectedFile.name.endsWith('.epub')) {
+      const valid = await isLikelyEpub(selectedFile);
+      if (!valid) {
         setError('Please select an EPUB file');
+        e.target.value = '';
         return;
       }
       setFile(selectedFile);
@@ -46,21 +71,72 @@ export default function UploadBookModal({ isOpen, onClose, onUploaded }: UploadB
     trackBookUploadStarted({ file_size_kb: fileSizeKb });
 
     try {
+      Sentry.addBreadcrumb({
+        category: 'upload',
+        message: 'upload.started',
+        data: { fileName: file.name, fileSize: file.size },
+        level: 'info',
+      });
+
       // Parse the EPUB
       const parsed = await parseEpub(file);
       const chaptersWithBlocks = parsed.chapters.filter(ch => ch.blocks.length > 0).length;
+      const totalBlocks = parsed.chapters.reduce((sum, ch) => sum + ch.blocks.length, 0);
       console.log(`[upload] Parsed: ${parsed.chapters.length} chapters, ${chaptersWithBlocks} with blocks`);
+
+      Sentry.addBreadcrumb({
+        category: 'upload',
+        message: 'upload.parsed',
+        data: { chapterCount: parsed.chapters.length, chaptersWithBlocks, totalBlocks, language: parsed.language },
+        level: 'info',
+      });
+
       if (chaptersWithBlocks === 0) {
         console.warn('[upload] WARNING: No blocks extracted! Check EPUB structure.');
       }
-      setProgress(40);
+      setProgress(45);
+      setMessage('Uploading file to storage...');
+
+      // Upload raw EPUB to Supabase Storage (non-blocking — book works without it)
+      let filePath = '';
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        const sanitizedName = file.name.replace(/[^a-zA-Z0-9.\-]/g, '_');
+        const storagePath = `${user?.id || 'guest'}/${Date.now()}-${sanitizedName}`;
+        const { error: storageError } = await supabase.storage
+          .from('books')
+          .upload(storagePath, file);
+        if (storageError) throw storageError;
+        filePath = storagePath;
+        Sentry.addBreadcrumb({
+          category: 'upload',
+          message: 'upload.file_stored',
+          data: { path: storagePath },
+          level: 'info',
+        });
+      } catch (storageErr) {
+        console.warn('[upload] Storage upload failed, proceeding without file:', storageErr);
+        Sentry.captureException(storageErr, {
+          contexts: { storage: { fileName: file.name, fileSize: file.size } },
+        });
+      }
+
+      setProgress(60);
       setMessage('Creating book and chapters...');
+
+      Sentry.addBreadcrumb({
+        category: 'upload',
+        message: 'upload.api_call',
+        level: 'info',
+      });
 
       // Send to backend API
       const book = await uploadBook({
         title: parsed.title,
         author: parsed.author,
         cover_url: parsed.cover,
+        file_path: filePath,
         file_size: file.size,
         source_language: parsed.language,
         chapters: parsed.chapters.map((ch) => ({
@@ -81,6 +157,13 @@ export default function UploadBookModal({ isOpen, onClose, onUploaded }: UploadB
         file_size_kb: fileSizeKb,
       });
 
+      Sentry.addBreadcrumb({
+        category: 'upload',
+        message: 'upload.success',
+        data: { bookId: book.id },
+        level: 'info',
+      });
+
       setProgress(100);
       setMessage('Book uploaded successfully!');
 
@@ -90,6 +173,9 @@ export default function UploadBookModal({ isOpen, onClose, onUploaded }: UploadB
       }, 1500);
     } catch (err: any) {
       console.error('Upload error:', err);
+      Sentry.captureException(err, {
+        contexts: { upload: { fileName: file.name, fileSize: file.size, fileSizeKb } },
+      });
       trackBookUploadFailed({ error: err.message || 'Upload failed', file_size_kb: fileSizeKb });
       setError(err.message || 'Upload failed');
       setUploading(false);
@@ -108,7 +194,7 @@ export default function UploadBookModal({ isOpen, onClose, onUploaded }: UploadB
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleClose} />
-      
+
       <div className="relative bg-card border rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
         <button
           onClick={handleClose}
@@ -125,12 +211,16 @@ export default function UploadBookModal({ isOpen, onClose, onUploaded }: UploadB
               onClick={() => fileInputRef.current?.click()}
               className="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:border-primary transition-colors"
             >
-              <Upload className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
+              {file ? (
+                <FileText className="w-10 h-10 mx-auto mb-3 text-primary" />
+              ) : (
+                <Upload className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
+              )}
               <p className="text-sm text-muted-foreground">
                 {file ? file.name : 'Click to select an EPUB file'}
               </p>
             </div>
-            
+
             <input
               ref={fileInputRef}
               type="file"
