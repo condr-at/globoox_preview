@@ -8,6 +8,7 @@ export function useChapterContent(chapterId: string | null, lang?: string) {
   const [blocks, setBlocks] = useState<ContentBlock[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [hasServerSnapshot, setHasServerSnapshot] = useState(false)
   // Track which lang the current blocks were fetched for
   const [blocksLang, setBlocksLang] = useState<string | undefined>(undefined)
   
@@ -26,6 +27,7 @@ export function useChapterContent(chapterId: string | null, lang?: string) {
     abortControllerRef.current = controller
 
     setError(null)
+    setHasServerSnapshot(false)
 
     void (async () => {
       const cached = await getCachedChapterContent(chapterId, lang)
@@ -35,6 +37,8 @@ export function useChapterContent(chapterId: string | null, lang?: string) {
       if (cached) {
         setBlocks(cached.blocks)
         setBlocksLang(lang)
+        // Cached full chapter is good enough to avoid false "translating" bursts on reopen.
+        if (!cached.hasPending) setHasServerSnapshot(true)
       }
 
       // Only show the loading spinner if we have nothing cached to show immediately.
@@ -50,6 +54,7 @@ export function useChapterContent(chapterId: string | null, lang?: string) {
         if (controller.signal.aborted) return
         setBlocks(data)
         setBlocksLang(lang)
+        setHasServerSnapshot(true)
         setLoading(false)
         await setCachedChapterContent(chapterId, lang, data)
       } catch (err: unknown) {
@@ -73,5 +78,5 @@ export function useChapterContent(chapterId: string | null, lang?: string) {
   // Blocks are stale if they were fetched for a different language
   const isStale = blocksLang !== lang
 
-  return { blocks, setBlocks, loading, error, isStale, blocksLang }
+  return { blocks, setBlocks, loading, error, isStale, blocksLang, hasServerSnapshot }
 }

@@ -1,4 +1,5 @@
 import { trackApiRequest } from './posthog'
+import { setCachedBookMeta } from './contentCache'
 
 // In browser we must call local Next.js API routes (/api/*), so auth can be injected by proxy.
 // Direct backend calls are allowed only during server-side execution.
@@ -247,7 +248,11 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 export function fetchBooks(status?: string): Promise<ApiBook[]> {
   const params = status ? `?status=${encodeURIComponent(status)}` : ''
   return request<ApiBook[]>(`/api/books${params}`).then((books) => {
-    for (const b of books) bookByIdCache.set(b.id, b)
+    for (const b of books) {
+      bookByIdCache.set(b.id, b)
+      // Best-effort: persist for fast reloads. Authenticated flows overwrite scoped caches when userId is known.
+      void setCachedBookMeta('guest', b)
+    }
     return books
   })
 }
@@ -259,6 +264,7 @@ export function fetchBook(id: string): Promise<ApiBook> {
     const book = allBooks.find((item) => item.id === id)
     if (!book) throw new Error('Book not found')
     bookByIdCache.set(book.id, book)
+    void setCachedBookMeta('guest', book)
     return book
   })
 }

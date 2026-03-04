@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ApiBook, fetchBooks, createBook, updateBook, deleteBook as apiDeleteBook } from './api'
+import { clearCachedBookMeta, clearCachedBooksList, getCachedBooksList, setCachedBookMeta, setCachedBooksList } from './contentCache'
 
 // Stale-While-Revalidate cache — module-level so it survives component remounts (route navigation)
 const STALE_TIME_MS = 5 * 60 * 1000 // 5 minutes — background refresh only if older
@@ -16,9 +17,14 @@ const booksCache = new Map<string, CachedBooks>()
 /** Expose a way for useSyncCheck to force-invalidate the cache from outside the hook */
 export function invalidateBooksCache() {
   booksCache.delete('all')
+  // Also drop persisted cache so a post-sync reload doesn't resurrect stale data.
+  void clearCachedBooksList()
+  void clearCachedBookMeta()
 }
 
-export function useBooks() {
+export function useBooks(options?: { scopeKey?: string }) {
+  const scopeKey = options?.scopeKey ?? 'guest'
+
   // Initialise from cache immediately — no skeleton on repeated visits
   const cached = booksCache.get('all')
   const [books, setBooks] = useState<ApiBook[]>(cached?.data ?? [])
@@ -26,6 +32,26 @@ export function useBooks() {
   const [loading, setLoading] = useState(!cached)
   const [error, setError] = useState<string | null>(null)
   const revalidating = useRef(false)
+
+  // Hydrate from persisted IndexedDB cache (fast reloads)
+  useEffect(() => {
+    let cancelled = false
+    if (booksCache.get('all')) return
+
+    void getCachedBooksList(scopeKey, 'active').then((entry) => {
+      if (cancelled) return
+      if (!entry?.books?.length) return
+      booksCache.set('all', { data: entry.books, fetchedAt: entry.fetchedAt })
+      setBooks(entry.books)
+      setLoading(false)
+      // Persist per-book metadata too, so /reader/[id] can render instantly on reload.
+      entry.books.forEach((b) => void setCachedBookMeta(scopeKey, b))
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [scopeKey])
 
   /**
    * refresh(force=false) — stale-while-revalidate:
@@ -60,14 +86,17 @@ export function useBooks() {
       const data = await fetchBooks('active')
       booksCache.set('all', { data, fetchedAt: Date.now() })
       setBooks(data)
-    } catch (err: any) {
-      setError(err.message || 'Failed to load books')
+      void setCachedBooksList(scopeKey, 'active', data)
+      data.forEach((b) => void setCachedBookMeta(scopeKey, b))
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to load books'
+      setError(message)
     } finally {
       revalidating.current = false
       // Only clear the initial loading spinner (first ever load)
       setLoading(false)
     }
-  }, [])
+  }, [scopeKey])
 
   // On mount: show cache immediately, revalidate if stale
   useEffect(() => {
@@ -89,13 +118,15 @@ export function useBooks() {
     const created = await createBook(data)
     setBooks((prev) => [created, ...prev])
     booksCache.delete('all')
+    void setCachedBookMeta(scopeKey, created)
     return created
-  }, [])
+  }, [scopeKey])
 
   const hideBook = useCallback(async (id: string) => {
     await updateBook(id, { status: 'hidden' })
     setBooks((prev) => prev.filter((b) => b.id !== id))
     booksCache.delete('all')
+    // Leave IDB cache as-is; next refresh(force=true) will overwrite.
   }, [])
 
   const unhideBook = useCallback(async (id: string) => {
@@ -107,6 +138,7 @@ export function useBooks() {
     await apiDeleteBook(id)
     setBooks((prev) => prev.filter((b) => b.id !== id))
     booksCache.delete('all')
+    // Leave IDB cache as-is; next refresh(force=true) will overwrite.
   }, [])
 
   return { books, loading, error, refresh, addBook, hideBook, unhideBook, removeBook }

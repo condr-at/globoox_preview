@@ -11,6 +11,7 @@ interface UseViewportTranslationOptions {
   lang: string
   blocks: ContentBlock[]
   sourceLanguage: string | null
+  canTranslate: boolean
   onBlocksTranslated: (translated: ContentBlock[]) => void
 }
 
@@ -40,6 +41,7 @@ export function useViewportTranslation({
   lang,
   blocks,
   sourceLanguage,
+  canTranslate,
   onBlocksTranslated,
 }: UseViewportTranslationOptions) {
   const bookIdRef = useRef(bookId)
@@ -85,11 +87,13 @@ export function useViewportTranslation({
   const langRef = useRef(lang)
   const blocksRef = useRef(blocks)
   const onBlocksTranslatedRef = useRef(onBlocksTranslated)
+  const canTranslateRef = useRef(canTranslate)
 
   chapterIdRef.current = chapterId
   langRef.current = lang
   blocksRef.current = blocks
   onBlocksTranslatedRef.current = onBlocksTranslated
+  canTranslateRef.current = canTranslate
 
   // Element refs map: blockId -> DOM element
   const elementRefs = useRef(new Map<string, HTMLElement>())
@@ -136,6 +140,7 @@ export function useViewportTranslation({
   // Flush pending IDs: send a streaming translation request
   // isHighPriority: if true, these are current-page blocks that need immediate translation
   const flushPending = useCallback(async (isHighPriority = false) => {
+    if (!canTranslateRef.current) return
     if (!chapterIdRef.current) return
     
     // If ANY batch is in-flight and we have high-priority blocks, abort it
@@ -308,6 +313,7 @@ export function useViewportTranslation({
   // loop aborts the in-flight batch started by the previous block.
   const enqueueBlock = useCallback(
     (blockId: string, isHighPriority = false, triggerFlush = true): boolean => {
+      if (!canTranslateRef.current) return false
       // Skip if already handled
       if (
         translatedIds.current.has(blockId) ||
@@ -364,7 +370,7 @@ export function useViewportTranslation({
 
   // Set up IntersectionObserver
   useEffect(() => {
-    if (isSourceLang || !chapterId) {
+    if (isSourceLang || !chapterId || !canTranslate) {
       // No translation needed — clean up observer
       if (observerRef.current) {
         observerRef.current.disconnect()
@@ -400,7 +406,7 @@ export function useViewportTranslation({
       observerRef.current?.disconnect()
       observerRef.current = null
     }
-  }, [isSourceLang, chapterId, lang, enqueueBlock, scheduleFlush])
+  }, [isSourceLang, chapterId, lang, enqueueBlock, scheduleFlush, canTranslate])
 
   // Ref callback for each block element
   const getRefCallback = useCallback(

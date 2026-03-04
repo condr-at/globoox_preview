@@ -6,6 +6,7 @@ import { invalidateBooksCache } from '@/lib/useBooks'
 import { useAppStore } from '@/lib/store'
 import { positionCacheInvalidateAll } from '@/lib/api'
 import { invalidateAllChapterContentCache } from '@/lib/contentCache'
+import { clearCachedReadingPositions } from '@/lib/contentCache'
 
 /**
  * useSyncCheck
@@ -57,6 +58,7 @@ export function useSyncCheck() {
             if (isNewer(scopes.progress, syncVersions.progress)) {
                 console.log('[useSyncCheck] progress changed, invalidating position cache')
                 positionCacheInvalidateAll()
+                void clearCachedReadingPositions()
             }
 
             // Persist the new timestamps so we don't re-invalidate on the next check

@@ -1,14 +1,20 @@
 'use client'
 
 import type { ContentBlock } from '@/lib/api'
+import type { ApiBook, ReadingPosition } from '@/lib/api'
+import type { ReadingAnchor } from '@/lib/store'
 
 type CacheKey = string
 
 const DB_NAME = 'globoox-cache'
-const DB_VERSION = 2
+const DB_VERSION = 3
 const STORE_CHAPTER_CONTENT_V1 = 'chapter_content'
 const STORE_CHAPTER_SKELETON = 'chapter_skeleton'
 const STORE_BLOCK_TEXT = 'block_text'
+const STORE_BOOKS_LIST = 'books_list'
+const STORE_BOOK_META = 'book_meta'
+const STORE_READING_POSITIONS = 'reading_positions'
+const STORE_TOC_TITLES = 'toc_titles'
 
 const DEFAULT_TTL_MS = 10 * 60 * 1000 // 10 minutes
 const PENDING_TTL_MS = 3 * 1000 // 3 seconds
@@ -46,6 +52,32 @@ function openDb(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains(STORE_BLOCK_TEXT)) {
         const store = db.createObjectStore(STORE_BLOCK_TEXT, { keyPath: 'key' })
         store.createIndex('by_chapter_lang', ['chapterId', 'lang'])
+        store.createIndex('by_fetchedAt', 'fetchedAt')
+      }
+
+      // App-level persisted caches (v3)
+      if (!db.objectStoreNames.contains(STORE_BOOKS_LIST)) {
+        const store = db.createObjectStore(STORE_BOOKS_LIST, { keyPath: 'key' })
+        store.createIndex('by_scope', 'scope')
+        store.createIndex('by_fetchedAt', 'fetchedAt')
+      }
+
+      if (!db.objectStoreNames.contains(STORE_BOOK_META)) {
+        const store = db.createObjectStore(STORE_BOOK_META, { keyPath: 'key' })
+        store.createIndex('by_scope', 'scope')
+        store.createIndex('by_bookId', 'bookId')
+        store.createIndex('by_fetchedAt', 'fetchedAt')
+      }
+
+      if (!db.objectStoreNames.contains(STORE_READING_POSITIONS)) {
+        const store = db.createObjectStore(STORE_READING_POSITIONS, { keyPath: 'key' })
+        store.createIndex('by_scope', 'scope')
+        store.createIndex('by_updatedAt', 'updatedAt')
+      }
+
+      if (!db.objectStoreNames.contains(STORE_TOC_TITLES)) {
+        const store = db.createObjectStore(STORE_TOC_TITLES, { keyPath: 'key' })
+        store.createIndex('by_scope_book_lang', ['scope', 'bookId', 'lang'])
         store.createIndex('by_fetchedAt', 'fetchedAt')
       }
     }
@@ -108,6 +140,236 @@ export interface CachedAssembledChapter {
   hasPending: boolean
   missingCount: number
   fetchedAt: number
+}
+
+// ─── App-level persisted caches (books, reading position, TOC) ────────────────
+
+function makeScopedKey(scope: string, ...parts: string[]): CacheKey {
+  return [scope, ...parts].join('::')
+}
+
+interface CachedBooksList {
+  key: CacheKey
+  scope: string
+  status: string
+  books: ApiBook[]
+  fetchedAt: number
+}
+
+interface CachedBookMeta {
+  key: CacheKey
+  scope: string
+  bookId: string
+  book: ApiBook
+  fetchedAt: number
+}
+
+export interface CachedReadingPositionEntry {
+  key: CacheKey
+  scope: string
+  bookId: string
+  position: ReadingPosition
+  updatedAt: string | null
+  fetchedAt: number
+  pendingAnchor?: ReadingAnchor
+}
+
+interface CachedTocTitles {
+  key: CacheKey
+  scope: string
+  bookId: string
+  lang: string
+  titles: Record<string, string>
+  fetchedAt: number
+}
+
+export async function getCachedBooksList(scope: string, status = 'active'): Promise<CachedBooksList | null> {
+  try {
+    const key = makeScopedKey(scope, status)
+    const entry = await withStore<CachedBooksList | undefined>(STORE_BOOKS_LIST, 'readonly', (store) => store.get(key))
+    return entry ?? null
+  } catch {
+    return null
+  }
+}
+
+export async function setCachedBooksList(scope: string, status: string, books: ApiBook[]): Promise<void> {
+  const entry: CachedBooksList = {
+    key: makeScopedKey(scope, status),
+    scope,
+    status,
+    books,
+    fetchedAt: Date.now(),
+  }
+  await withStore(STORE_BOOKS_LIST, 'readwrite', (store) => store.put(entry as any))
+}
+
+export async function clearCachedBooksList(scope?: string): Promise<void> {
+  try {
+    const db = await openDb()
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STORE_BOOKS_LIST, 'readwrite')
+      const store = tx.objectStore(STORE_BOOKS_LIST)
+      const req = scope ? store.index('by_scope').openCursor(IDBKeyRange.only(scope)) : store.openCursor()
+      req.onsuccess = () => {
+        const cursor = req.result as IDBCursorWithValue | null
+        if (!cursor) return
+        cursor.delete()
+        cursor.continue()
+      }
+      req.onerror = () => reject(req.error ?? new Error('IndexedDB cursor failed'))
+      tx.oncomplete = () => resolve()
+      tx.onerror = () => reject(tx.error ?? new Error('IndexedDB transaction failed'))
+    })
+    db.close()
+  } catch {
+    // ignore
+  }
+}
+
+export async function getCachedBookMeta(scope: string, bookId: string): Promise<ApiBook | null> {
+  try {
+    const key = makeScopedKey(scope, bookId)
+    const entry = await withStore<CachedBookMeta | undefined>(STORE_BOOK_META, 'readonly', (store) => store.get(key))
+    return entry?.book ?? null
+  } catch {
+    return null
+  }
+}
+
+export async function setCachedBookMeta(scope: string, book: ApiBook): Promise<void> {
+  const entry: CachedBookMeta = {
+    key: makeScopedKey(scope, book.id),
+    scope,
+    bookId: book.id,
+    book,
+    fetchedAt: Date.now(),
+  }
+  await withStore(STORE_BOOK_META, 'readwrite', (store) => store.put(entry as any))
+}
+
+export async function clearCachedBookMeta(scope?: string): Promise<void> {
+  try {
+    const db = await openDb()
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STORE_BOOK_META, 'readwrite')
+      const store = tx.objectStore(STORE_BOOK_META)
+      const req = scope ? store.index('by_scope').openCursor(IDBKeyRange.only(scope)) : store.openCursor()
+      req.onsuccess = () => {
+        const cursor = req.result as IDBCursorWithValue | null
+        if (!cursor) return
+        cursor.delete()
+        cursor.continue()
+      }
+      req.onerror = () => reject(req.error ?? new Error('IndexedDB cursor failed'))
+      tx.oncomplete = () => resolve()
+      tx.onerror = () => reject(tx.error ?? new Error('IndexedDB transaction failed'))
+    })
+    db.close()
+  } catch {
+    // ignore
+  }
+}
+
+export async function getCachedReadingPosition(scope: string, bookId: string): Promise<CachedReadingPositionEntry | null> {
+  try {
+    const key = makeScopedKey(scope, bookId)
+    const entry = await withStore<CachedReadingPositionEntry | undefined>(
+      STORE_READING_POSITIONS,
+      'readonly',
+      (store) => store.get(key),
+    )
+    return entry ?? null
+  } catch {
+    return null
+  }
+}
+
+export async function setCachedReadingPosition(scope: string, bookId: string, entry: Omit<CachedReadingPositionEntry, 'key' | 'scope' | 'bookId' | 'fetchedAt'>): Promise<void> {
+  const full: CachedReadingPositionEntry = {
+    key: makeScopedKey(scope, bookId),
+    scope,
+    bookId,
+    position: entry.position,
+    updatedAt: entry.updatedAt ?? entry.position.updated_at ?? null,
+    pendingAnchor: entry.pendingAnchor,
+    fetchedAt: Date.now(),
+  }
+  await withStore(STORE_READING_POSITIONS, 'readwrite', (store) => store.put(full as any))
+}
+
+export async function clearCachedReadingPositions(scope?: string): Promise<void> {
+  try {
+    const db = await openDb()
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STORE_READING_POSITIONS, 'readwrite')
+      const store = tx.objectStore(STORE_READING_POSITIONS)
+      const req = scope ? store.index('by_scope').openCursor(IDBKeyRange.only(scope)) : store.openCursor()
+      req.onsuccess = () => {
+        const cursor = req.result as IDBCursorWithValue | null
+        if (!cursor) return
+        cursor.delete()
+        cursor.continue()
+      }
+      req.onerror = () => reject(req.error ?? new Error('IndexedDB cursor failed'))
+      tx.oncomplete = () => resolve()
+      tx.onerror = () => reject(tx.error ?? new Error('IndexedDB transaction failed'))
+    })
+    db.close()
+  } catch {
+    // ignore
+  }
+}
+
+export async function getCachedTocTitles(scope: string, bookId: string, lang: string): Promise<Record<string, string> | null> {
+  try {
+    const normalizedLang = normalizeLang(lang)
+    const key = makeScopedKey(scope, bookId, normalizedLang)
+    const entry = await withStore<CachedTocTitles | undefined>(STORE_TOC_TITLES, 'readonly', (store) => store.get(key))
+    return entry?.titles ?? null
+  } catch {
+    return null
+  }
+}
+
+export async function setCachedTocTitles(scope: string, bookId: string, lang: string, titles: Record<string, string>): Promise<void> {
+  const normalizedLang = normalizeLang(lang)
+  const entry: CachedTocTitles = {
+    key: makeScopedKey(scope, bookId, normalizedLang),
+    scope,
+    bookId,
+    lang: normalizedLang,
+    titles,
+    fetchedAt: Date.now(),
+  }
+  await withStore(STORE_TOC_TITLES, 'readwrite', (store) => store.put(entry as any))
+}
+
+export async function clearCachedTocTitles(scope?: string): Promise<void> {
+  try {
+    const db = await openDb()
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STORE_TOC_TITLES, 'readwrite')
+      const store = tx.objectStore(STORE_TOC_TITLES)
+      const req = scope ? store.index('by_scope_book_lang').openCursor() : store.openCursor()
+      req.onsuccess = () => {
+        const cursor = req.result as IDBCursorWithValue | null
+        if (!cursor) return
+        if (scope && cursor.value?.scope !== scope) {
+          cursor.continue()
+          return
+        }
+        cursor.delete()
+        cursor.continue()
+      }
+      req.onerror = () => reject(req.error ?? new Error('IndexedDB cursor failed'))
+      tx.oncomplete = () => resolve()
+      tx.onerror = () => reject(tx.error ?? new Error('IndexedDB transaction failed'))
+    })
+    db.close()
+  } catch {
+    // ignore
+  }
 }
 
 function assembleBlock(skel: SkeletonBlock, text: CachedBlockText | undefined, lang: string): ContentBlock {

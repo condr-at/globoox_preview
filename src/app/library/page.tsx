@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import BookCard from '@/components/Store/BookCard';
 import UploadBookModal from '@/components/UploadBookModal';
 import SignInToUploadModal from '@/components/SignInToUploadModal';
@@ -10,18 +10,20 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import GoogleOneTap from '@/components/GoogleOneTap';
 import { trackBookOpened } from '@/lib/posthog';
 import { fetchReadingPosition, BookReadingProgress, ApiBook } from '@/lib/api';
+import { getCachedReadingPosition } from '@/lib/contentCache';
 
 const FALLBACK_COVER = '/covers/great-gatsby.jpg';
 const FALLBACK_AUTHOR = 'Unknown author';
 
 export default function LibraryPage() {
   const { progress, touchLastRead } = useAppStore();
-  const { books, loading, error, hideBook, removeBook, refresh } = useBooks();
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const syncProgressVersion = useAppStore((s) => s.syncVersions.progress);
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const scopeKey = isAuthenticated && user?.id ? user.id : 'guest';
+  const { books, loading, error, hideBook, removeBook, refresh } = useBooks({ scopeKey });
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [isSignInOpen, setIsSignInOpen] = useState(false);
   const [progressData, setProgressData] = useState<Record<string, BookReadingProgress>>({});
-  const [progressLoading, setProgressLoading] = useState(false);
   const [progressFetchedOnce, setProgressFetchedOnce] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [justReadBookId, setJustReadBookId] = useState<string | null>(null);
@@ -73,7 +75,6 @@ export default function LibraryPage() {
   const fetchAllProgress = useCallback(async (bookIds: string[]) => {
     if (!isAuthenticated || bookIds.length === 0) return;
 
-    setProgressLoading(true);
     try {
       const results = await Promise.allSettled(
         bookIds.map(id => fetchReadingPosition(id))
@@ -101,12 +102,11 @@ export default function LibraryPage() {
 
       setProgressData(progressMap);
     } finally {
-      setProgressLoading(false);
       setProgressFetchedOnce(true);
     }
   }, [isAuthenticated, progress]);
 
-  // Re-fetch reading progress whenever books list changes (e.g. after sync invalidation)
+  // Hydrate server reading positions from IndexedDB on load to avoid N requests on refresh.
   useEffect(() => {
     if (!isAuthenticated) {
       setProgressFetchedOnce(true);
@@ -119,10 +119,48 @@ export default function LibraryPage() {
       return;
     }
 
+    let cancelled = false;
     setProgressFetchedOnce(false);
-    void fetchAllProgress(books.map(b => b.id));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [books.length, isAuthenticated]);
+    void (async () => {
+      const entries = await Promise.all(
+        books.map(async (b) => {
+          const cached = await getCachedReadingPosition(scopeKey, b.id);
+          return [b.id, cached?.position ?? null] as const;
+        })
+      );
+
+      if (cancelled) return;
+
+      const progressMap: Record<string, BookReadingProgress> = {};
+      for (const [bookId, pos] of entries) {
+        if (!pos) continue;
+        progressMap[bookId] = {
+          book_id: pos.book_id,
+          chapter_id: pos.chapter_id,
+          block_id: pos.block_id,
+          block_position: pos.block_position,
+          total_blocks: pos.total_blocks ?? progress[bookId]?.totalBlocks ?? 0,
+          content_version: 0,
+          updated_at: pos.updated_at,
+        };
+      }
+      setProgressData(progressMap);
+      setProgressFetchedOnce(true);
+    })();
+
+    return () => { cancelled = true; };
+  }, [books, isAuthenticated, scopeKey, progress]);
+
+  // Only revalidate server reading positions when sync-check indicates progress changed.
+  const lastSyncProgressVersionRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    if (!syncProgressVersion) return;
+    if (lastSyncProgressVersionRef.current === syncProgressVersion) return;
+    lastSyncProgressVersionRef.current = syncProgressVersion;
+    if (books.length === 0) return;
+    void fetchAllProgress(books.map((b) => b.id));
+  }, [isAuthenticated, syncProgressVersion, books, fetchAllProgress]);
 
   // Get block-based progress for a book
   const getBookProgress = useCallback((book: ApiBook) => {
