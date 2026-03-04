@@ -7,7 +7,6 @@ import SignInToUploadModal from '@/components/SignInToUploadModal';
 import { useAppStore } from '@/lib/store';
 import { useBooks } from '@/lib/useBooks';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { useSyncCheck } from '@/lib/hooks/useSyncCheck';
 import GoogleOneTap from '@/components/GoogleOneTap';
 import { trackBookOpened } from '@/lib/posthog';
 import { fetchReadingPosition, BookReadingProgress, ApiBook } from '@/lib/api';
@@ -19,7 +18,6 @@ export default function LibraryPage() {
   const { progress } = useAppStore();
   const { books, loading, error, hideBook, removeBook, refresh } = useBooks();
   const { isAuthenticated, loading: authLoading } = useAuth();
-  useSyncCheck(); // Cross-device sync: invalidates caches on tab focus if server has newer data
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [isSignInOpen, setIsSignInOpen] = useState(false);
   const [progressData, setProgressData] = useState<Record<string, BookReadingProgress>>({});

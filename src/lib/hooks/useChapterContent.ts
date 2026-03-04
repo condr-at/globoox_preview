@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { ContentBlock, fetchContent } from '@/lib/api'
+import { getCachedChapterContent, isCacheFresh, setCachedChapterContent } from '@/lib/contentCache'
 
 export function useChapterContent(chapterId: string | null, lang?: string) {
   const [blocks, setBlocks] = useState<ContentBlock[]>([])
@@ -23,29 +24,46 @@ export function useChapterContent(chapterId: string | null, lang?: string) {
     
     const controller = new AbortController()
     abortControllerRef.current = controller
-    
-    setLoading(true)
+
     setError(null)
-    
-    fetchContent(chapterId, lang, controller.signal)
-      .then((data) => {
-        // Only update state if this request wasn't aborted
-        if (!controller.signal.aborted) {
-          setBlocks(data)
-          setBlocksLang(lang)
+
+    void (async () => {
+      const cached = await getCachedChapterContent(chapterId, lang)
+      if (controller.signal.aborted) return
+
+      const hadCached = !!cached
+      if (cached) {
+        setBlocks(cached.blocks)
+        setBlocksLang(lang)
+      }
+
+      // Only show the loading spinner if we have nothing cached to show immediately.
+      setLoading(!hadCached)
+
+      if (cached && isCacheFresh(cached)) {
+        setLoading(false)
+        return
+      }
+
+      try {
+        const data = await fetchContent(chapterId, lang, controller.signal)
+        if (controller.signal.aborted) return
+        setBlocks(data)
+        setBlocksLang(lang)
+        setLoading(false)
+        await setCachedChapterContent(chapterId, lang, data)
+      } catch (err: unknown) {
+        if (err instanceof Error && err.name === 'AbortError') return
+        if (controller.signal.aborted) return
+        // If we managed to show cached content, prefer keeping it without surfacing an error.
+        if (hadCached) {
           setLoading(false)
-        }
-      })
-      .catch((err: unknown) => {
-        // Ignore abort errors
-        if (err instanceof Error && err.name === 'AbortError') {
           return
         }
-        if (!controller.signal.aborted) {
-          setError(err instanceof Error ? err.message : 'Failed to load content')
-          setLoading(false)
-        }
-      })
+        setError(err instanceof Error ? err.message : 'Failed to load content')
+        setLoading(false)
+      }
+    })()
     
     return () => {
       controller.abort()

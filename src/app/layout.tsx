@@ -4,6 +4,7 @@ import './globals.css';
 import Header from '@/components/ui/Header';
 import { ThemeProvider } from '@/components/theme-provider';
 import PostHogProvider from '@/components/PostHogProvider';
+import SyncCheckClient from '@/components/SyncCheckClient';
 
 export const viewport: Viewport = {
   themeColor: [
@@ -69,6 +70,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <PostHogProvider />
+          <SyncCheckClient />
           <div className="min-h-screen">
             <main>
               {children}

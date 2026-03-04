@@ -49,6 +49,11 @@ Main issue:
 - Anchor restore is effectively one-shot.
 - After that, more translated blocks arrive and reflow changes again.
 
+Additional context (client caching):
+- The client caches chapter content locally (IndexedDB) to reduce refetches and loading states during navigation.
+- This is compatible with anchor stabilization, but the stabilization flow must explicitly control when cached/streamed updates
+  are allowed to mutate the visible `displayBlocks`, otherwise pagination can still reflow after the anchor is restored.
+
 ---
 
 ## 4) Target architecture (agreed constraints)
@@ -63,6 +68,12 @@ Mandatory decisions from this plan:
    - Priority 2: start -> anchor (blocking stabilization path, one-shot payload, used for canonical re-layout).
    - Priority 3: prefetch next 3 pages (can stream, same style as now).
 
+Compatibility note (per-block caching):
+- Caching translations per block `(blockId, lang)` (client-side) is aligned with this plan:
+  - Stabilization path (Priority 2) can prime the cache in one shot (range payload), then the UI applies it deterministically.
+  - Viewport/prefetch streaming updates (Priority 1/3) can update cache without forcing immediate re-layout during stabilization.
+- The key constraint remains: do not let streaming updates mutate the layout-critical window while the anchor is being stabilized.
+
 ---
 
 ## 5) New backend contract (required)
@@ -75,25 +86,27 @@ Request:
 ```json
 {
   "lang": "FR",
-  "from": { "type": "chapter_start" },
-  "to": {
-    "type": "anchor",
-    "block_id": "cb-123",
-    "sentence_index": 4,
-    "block_position": 875
-  },
-  "include_anchor_block": true
+  "from_position": 0,
+  "to_position": 875,
+  "timeout_ms": 30000,
+  "job_id": "550e8400-e29b-41d4-a716-446655440000"
 }
 ```
 
 Response (single JSON, no NDJSON stream):
 ```json
 {
-  "chapter_id": "ch-1",
-  "lang": "FR",
+  "job_id": "550e8400-e29b-41d4-a716-446655440000",
   "translated_blocks": [
-    { "id": "cb-1", "type": "paragraph", "position": 1, "text": "..." },
-    { "id": "cb-2", "type": "heading", "position": 2, "text": "..." }
+    {
+      "id": "cb-1",
+      "chapter_id": "ch-1",
+      "position": 1,
+      "type": "paragraph",
+      "original_text": "...",
+      "translations": { "FR": "..." },
+      "metadata": {}
+    }
   ],
   "range": {
     "from_position": 0,
@@ -109,12 +122,27 @@ Response (single JSON, no NDJSON stream):
 }
 ```
 
+Errors (single JSON, no NDJSON stream):
+```json
+{
+  "error": "timeout",
+  "code": 408,
+  "message": "Request timed out before all blocks could be translated",
+  "job_id": "550e8400-e29b-41d4-a716-446655440000",
+  "duration_ms": 30012
+}
+```
+
 ### 5.2 Requirements
 
 - Deterministic order by `position`.
 - Include both cached and newly translated blocks in one response.
 - Respect request timeout and return proper error code.
-- Idempotent for same `(chapterId, lang, from, to)`.
+- Idempotent for same `(chapterId, lang, from_position, to_position)` (cache makes output stable; `job_id` is for correlation/retries).
+- Operational limits must be explicit and enforced server-side:
+  - `413` if range exceeds max blocks (currently: 200).
+  - `408` on deadline.
+  - `429` on per-user concurrent range limit (currently: 3).
 
 ### 5.3 Why a dedicated endpoint
 
@@ -187,7 +215,7 @@ Transitions:
 
 Rules:
 - Only one active language-switch job per reader instance.
-- New switch invalidates previous job by `jobId`.
+- New switch invalidates previous job by `jobId` (front generates and keeps the latest one; late responses are ignored).
 - Late responses with old `jobId` are ignored.
 
 ### 7.1 Glow policy (state-driven)
@@ -198,6 +226,19 @@ Mapping:
 - `STABILIZING` -> `glow = on` (strong)
 - `UNLOCKED_READ_NOW` -> `glow = on` (soft)
 - `LIVE_READING` -> `glow = off`
+
+---
+
+## 8) Open questions / known constraints (must be decided)
+
+1. Range limit vs anchor distance:
+   - Backend limit is 200 blocks per request.
+   - Decide what frontend does if `anchor_position - chapter_start > 200`:
+     - option A: chunk multiple `translate-range` calls (must keep deterministic merge + one canonical repagination),
+     - option B: fall back to `Read now (may shift)` UX immediately.
+2. Block schema alignment:
+   - OpenAPI `ContentBlock` uses `original_text` + `translations` (per-language map).
+   - Ensure frontend chapter block types match the actual server payload before implementing merge logic.
 - `FAILED` -> `glow = off`
 - `IDLE` / `SWITCH_INIT` -> `glow = off`
 

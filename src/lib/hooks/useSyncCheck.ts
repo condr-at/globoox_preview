@@ -5,6 +5,7 @@ import { fetchSyncStatus } from '@/lib/api'
 import { invalidateBooksCache } from '@/lib/useBooks'
 import { useAppStore } from '@/lib/store'
 import { positionCacheInvalidateAll } from '@/lib/api'
+import { invalidateAllChapterContentCache } from '@/lib/contentCache'
 
 /**
  * useSyncCheck
@@ -20,9 +21,17 @@ import { positionCacheInvalidateAll } from '@/lib/api'
 export function useSyncCheck() {
     const { syncVersions, setSyncVersions } = useAppStore()
     const checking = useRef(false)
+    const lastCheckedAtRef = useRef<number>(0)
 
-    const check = async () => {
+    // Avoid hammering the backend on frequent tab switches / rapid remounts.
+    const MIN_INTERVAL_MS = 30_000
+
+    const check = async (reason: 'mount' | 'visibility') => {
         if (checking.current) return
+        const now = Date.now()
+        if (now - lastCheckedAtRef.current < MIN_INTERVAL_MS) return
+        lastCheckedAtRef.current = now
+
         checking.current = true
         try {
             const status = await fetchSyncStatus()
@@ -36,6 +45,7 @@ export function useSyncCheck() {
             if (isNewer(scopes.library, syncVersions.library)) {
                 console.log('[useSyncCheck] library changed, invalidating books cache')
                 invalidateBooksCache()
+                void invalidateAllChapterContentCache()
             }
 
             // --- progress scope ---
@@ -62,14 +72,14 @@ export function useSyncCheck() {
 
     // Run on mount
     useEffect(() => {
-        void check()
+        void check('mount')
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     // Run every time the user comes back to the tab
     useEffect(() => {
         const handleVisibility = () => {
-            if (document.visibilityState === 'visible') void check()
+            if (document.visibilityState === 'visible') void check('visibility')
         }
         document.addEventListener('visibilitychange', handleVisibility)
         return () => document.removeEventListener('visibilitychange', handleVisibility)

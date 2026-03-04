@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ContentBlock, TranslatedBlockResult, TranslateDoneEvent, translateBlocksStreaming } from '@/lib/api'
 import { trackTranslationBatch } from '@/lib/posthog'
+import { setCachedTranslatedBlockText } from '@/lib/contentCache'
 
 interface UseViewportTranslationOptions {
   bookId: string
@@ -24,10 +25,10 @@ const SKIP_TYPES = new Set(['image', 'hr'])
 /** Merge a translatedText string into the appropriate field(s) of a ContentBlock. */
 function applyTranslation(block: ContentBlock, translatedText: string): ContentBlock | null {
   if (block.type === 'paragraph' || block.type === 'quote' || block.type === 'heading') {
-    return { ...block, text: translatedText }
+    return { ...block, text: translatedText, isTranslated: true, is_pending: false }
   }
   if (block.type === 'list') {
-    return { ...block, items: translatedText.split('\n').filter(Boolean) }
+    return { ...block, items: translatedText.split('\n').filter(Boolean), isTranslated: true, is_pending: false }
   }
   // image / hr — no text translation
   return null
@@ -221,7 +222,12 @@ export function useViewportTranslation({
             const original = blocksRef.current.find((b) => b.id === result.blockId)
             if (original) {
               const translated = applyTranslation(original, result.translatedText)
-              if (translated) onBlocksTranslatedRef.current([translated])
+              if (translated) {
+                onBlocksTranslatedRef.current([translated])
+                if (chapterIdRef.current) {
+                  void setCachedTranslatedBlockText(chapterIdRef.current, langRef.current, translated)
+                }
+              }
             }
           }
         },
