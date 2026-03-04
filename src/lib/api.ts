@@ -474,7 +474,49 @@ export function fetchSyncStatus(): Promise<SyncStatusResponse> {
 export type UploadBookResponse =
   | { jobId: string; bookId: string }
   | (ApiBook & { chapter_count?: number })
+  | { id: string; chapter_count?: number }
 
+export interface SignedUrlResponse {
+  signedUrl: string
+  token: string
+  path: string
+}
+
+export interface ProcessBookResponse {
+  id: string
+  chapter_count?: number
+}
+
+/** Get a signed URL for direct upload to Supabase Storage */
+export function getSignedUploadUrl(bucket: string, path: string): Promise<SignedUrlResponse> {
+  return request<SignedUrlResponse>('/api/storage/signed-url', {
+    method: 'POST',
+    body: JSON.stringify({ bucket, path }),
+  })
+}
+
+/** Upload file directly to Supabase Storage using signed URL */
+export async function uploadToStorage(signedUrl: string, file: File, contentType: string): Promise<void> {
+  const res = await fetch(signedUrl, {
+    method: 'PUT',
+    headers: { 'Content-Type': contentType },
+    body: file,
+  })
+  if (!res.ok) {
+    const errorText = await res.text()
+    throw new Error(`Storage upload failed: ${errorText}`)
+  }
+}
+
+/** Process an already-uploaded EPUB file */
+export function processBook(filePath: string, fileName: string, fileSize: number): Promise<ProcessBookResponse> {
+  return request<ProcessBookResponse>('/api/books/process', {
+    method: 'POST',
+    body: JSON.stringify({ file_path: filePath, file_name: fileName, file_size: fileSize }),
+  })
+}
+
+/** @deprecated Use getSignedUploadUrl + uploadToStorage + processBook instead */
 export function uploadBook(formData: FormData): Promise<UploadBookResponse> {
   return request<UploadBookResponse>('/api/books/upload', {
     method: 'POST',

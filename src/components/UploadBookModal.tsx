@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { X, Upload, Loader2, CheckCircle, FileText } from 'lucide-react';
-import { uploadBook, getJobStatus } from '@/lib/api';
+import { getSignedUploadUrl, uploadToStorage, processBook, getJobStatus } from '@/lib/api';
 import { trackBookUploadStarted, trackBookUploaded, trackBookUploadFailed } from '@/lib/posthog';
 import * as Sentry from '@sentry/nextjs';
 
@@ -122,7 +122,7 @@ export default function UploadBookModal({ isOpen, onClose, onUploaded }: UploadB
 
     setUploading(true);
     setProgress(10);
-    setMessage('Uploading book…');
+    setMessage('Preparing upload…');
     setError(null);
 
     const fileSizeKb = Math.round(file.size / 1024);
@@ -136,36 +136,44 @@ export default function UploadBookModal({ isOpen, onClose, onUploaded }: UploadB
         level: 'info',
       });
 
-      setProgress(30);
+      // Generate unique file path
+      const slug = file.name
+        .replace(/\.epub$/i, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '')
+        .slice(0, 60);
+      const fileName = `${slug}-${Date.now()}-${Math.random().toString(36).substring(7)}.epub`;
 
-      const formData = new FormData();
-      formData.append('epub', file);
+      // Step 1: Get signed URL for direct upload
+      setProgress(15);
+      setMessage('Getting upload URL…');
+      const { signedUrl } = await getSignedUploadUrl('books', fileName);
 
-      const response = await uploadBook(formData);
+      // Step 2: Upload directly to Supabase Storage (bypasses server limits)
+      setProgress(25);
+      setMessage('Uploading book…');
+      await uploadToStorage(signedUrl, file, 'application/epub+zip');
 
-      // Queue mode: { jobId, bookId }
-      if ('jobId' in response) {
-        setProgress(40);
-        setMessage('Processing book…');
-        pollJobStatus(response.jobId, response.bookId, fileSizeKb, file.name);
-        return;
-      }
+      // Step 3: Process the book on the server
+      setProgress(50);
+      setMessage('Processing book…');
+      const response = await processBook(fileName, file.name, file.size);
 
-      // Sync fallback: full book object returned
-      const book = response;
+      // Success
       trackBookUploaded({
-        title: book.title || file.name,
-        author: book.author || 'Unknown',
-        language: book.original_language ?? 'unknown',
-        chapter_count: book.chapter_count ?? 0,
+        title: file.name,
+        author: 'Unknown',
+        language: 'unknown',
+        chapter_count: response.chapter_count ?? 0,
         file_size_kb: fileSizeKb,
       });
 
-      Sentry.addBreadcrumb({ category: 'upload', message: 'upload.success', data: { bookId: book.id }, level: 'info' });
+      Sentry.addBreadcrumb({ category: 'upload', message: 'upload.success', data: { bookId: response.id }, level: 'info' });
       setProgress(100);
       setMessage('Book uploaded successfully!');
 
-      setTimeout(() => { onUploaded?.(book.id); handleClose() }, 1500);
+      setTimeout(() => { onUploaded?.(response.id); handleClose() }, 1500);
     } catch (err: any) {
       console.error('Upload error:', err);
       Sentry.captureException(err, {
