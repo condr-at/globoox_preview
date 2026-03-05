@@ -35,9 +35,10 @@ function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, DB_VERSION)
 
-    req.onupgradeneeded = () => {
+    req.onupgradeneeded = (event) => {
       const db = req.result
       const tx = req.transaction
+      const oldVersion = event.oldVersion ?? 0
 
       // Legacy store (v1) — keep it for compatibility, but new code won't write to it.
       if (!db.objectStoreNames.contains(STORE_CHAPTER_CONTENT_V1)) {
@@ -84,7 +85,7 @@ function openDb(): Promise<IDBDatabase> {
 
       // v4: clear chapter translation caches once to remove mixed-language data
       // written by older buggy streaming context handling.
-      if ((req.oldVersion ?? 0) < 4 && tx) {
+      if (oldVersion < 4 && tx) {
         if (db.objectStoreNames.contains(STORE_CHAPTER_CONTENT_V1)) {
           tx.objectStore(STORE_CHAPTER_CONTENT_V1).clear()
         }
