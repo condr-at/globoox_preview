@@ -44,6 +44,7 @@ export function useViewportTranslation({
   canTranslate,
   onBlocksTranslated,
 }: UseViewportTranslationOptions) {
+  const isMountedRef = useRef(true)
   const bookIdRef = useRef(bookId)
   bookIdRef.current = bookId
   const [isTranslatingAny, setIsTranslatingAny] = useState(false)
@@ -73,7 +74,7 @@ export function useViewportTranslation({
       ...highPriorityPendingIds.current,
       ...highPriorityQueuedIds.current,
     ])
-    setPendingBlockIds(allPending)
+    if (isMountedRef.current) setPendingBlockIds(allPending)
   }, [])
 
   // Debounce timer
@@ -123,8 +124,10 @@ export function useViewportTranslation({
     highPriorityQueuedIds.current.clear()
     isInflight.current = false
     isInflightHighPriority.current = false
-    setIsTranslatingAny(false)
-    setPendingBlockIds(new Set())
+    if (isMountedRef.current) {
+      setIsTranslatingAny(false)
+      setPendingBlockIds(new Set())
+    }
 
     if (debounceTimer.current) {
       clearTimeout(debounceTimer.current)
@@ -141,7 +144,8 @@ export function useViewportTranslation({
   // isHighPriority: if true, these are current-page blocks that need immediate translation
   const flushPending = useCallback(async (isHighPriority = false) => {
     if (!canTranslateRef.current) return
-    if (!chapterIdRef.current) return
+    const requestChapterId = chapterIdRef.current
+    if (!requestChapterId) return
     
     // If ANY batch is in-flight and we have high-priority blocks, abort it
     // User has navigated to a new page - old translation is no longer immediately visible
@@ -189,23 +193,27 @@ export function useViewportTranslation({
     ids.forEach((id) => inflightIds.current.add(id))
     isInflight.current = true
     isInflightHighPriority.current = highPriorityPending.length > 0
-    setIsTranslatingAny(true)
+    if (isMountedRef.current) setIsTranslatingAny(true)
     updatePendingBlockIds()
 
     const controller = new AbortController()
     abortControllerRef.current = controller
+    const requestLang = langRef.current
+    const requestBlocksById = new Map(
+      blocksRef.current.map((b) => [b.id, b] as const)
+    )
 
     // Pass the first block id as anchor for future server-side prioritisation
     const anchorBlockId = ids[0] ?? null
 
     const flushStart = performance.now()
     let hits = 0, misses = 0, errors = 0
-    console.log(JSON.stringify({ event: 'flush_start', chapterId: chapterIdRef.current, lang: langRef.current, batchSize: ids.length, overflowSize: overflow.length }))
+    console.log(JSON.stringify({ event: 'flush_start', chapterId: requestChapterId, lang: requestLang, batchSize: ids.length, overflowSize: overflow.length }))
 
     try {
       await translateBlocksStreaming(
-        chapterIdRef.current,
-        langRef.current,
+        requestChapterId,
+        requestLang,
         ids,
         anchorBlockId,
         'down',
@@ -224,14 +232,17 @@ export function useViewportTranslation({
           console.log(JSON.stringify({ event: 'block_received', blockId: result.blockId, cache: result.cache, status: result.status }))
 
           if (result.status === 'ok' && result.translatedText) {
-            const original = blocksRef.current.find((b) => b.id === result.blockId)
+            const original = requestBlocksById.get(result.blockId)
             if (original) {
               const translated = applyTranslation(original, result.translatedText)
               if (translated) {
-                onBlocksTranslatedRef.current([translated])
-                if (chapterIdRef.current) {
-                  void setCachedTranslatedBlockText(chapterIdRef.current, langRef.current, translated)
+                const sameRequestContext =
+                  chapterIdRef.current === requestChapterId &&
+                  langRef.current === requestLang
+                if (isMountedRef.current && sameRequestContext) {
+                  onBlocksTranslatedRef.current([translated])
                 }
+                void setCachedTranslatedBlockText(requestChapterId, requestLang, translated)
               }
             }
           }
@@ -255,12 +266,12 @@ export function useViewportTranslation({
       isInflightHighPriority.current = false
 
       const durationMs = Math.round(performance.now() - flushStart)
-      console.log(JSON.stringify({ event: 'flush_done', chapterId: chapterIdRef.current, lang: langRef.current, batchSize: ids.length, hits, misses, errors, durationMs }))
+      console.log(JSON.stringify({ event: 'flush_done', chapterId: requestChapterId, lang: requestLang, batchSize: ids.length, hits, misses, errors, durationMs }))
       if (hits + misses > 0) {
         trackTranslationBatch({
           book_id: bookIdRef.current,
-          chapter_id: chapterIdRef.current ?? '',
-          language: langRef.current,
+          chapter_id: requestChapterId ?? '',
+          language: requestLang,
           block_count: ids.length,
           cache_hits: hits,
           cache_misses: misses,
@@ -284,7 +295,7 @@ export function useViewportTranslation({
       if (hasHighPriority || pendingIds.current.size > 0) {
         flushPending(hasHighPriority)
       } else {
-        setIsTranslatingAny(false)
+        if (isMountedRef.current) setIsTranslatingAny(false)
       }
     }
   }, [])
@@ -447,17 +458,22 @@ export function useViewportTranslation({
       clearTimeout(debounceTimer.current)
       debounceTimer.current = null
     }
-    setIsTranslatingAny(false)
-    setPendingBlockIds(new Set())
+    if (isMountedRef.current) {
+      setIsTranslatingAny(false)
+      setPendingBlockIds(new Set())
+    }
   }, [])
 
   // Cleanup on unmount
   useEffect(() => {
+    isMountedRef.current = true
     return () => {
+      isMountedRef.current = false
       if (debounceTimer.current) {
         clearTimeout(debounceTimer.current)
       }
-      abortControllerRef.current?.abort()
+      // Intentionally keep in-flight request alive across reader unmount,
+      // so translated blocks can still be persisted to IndexedDB.
       observerRef.current?.disconnect()
     }
   }, [])

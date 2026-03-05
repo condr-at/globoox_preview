@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { StoreBookCard } from '@/components/Store/BookCard';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -13,17 +13,6 @@ const genres = ['All', 'Fiction', 'Non-Fiction', 'Classics', 'Self-Help', 'Scien
 export default function StorePage() {
     const [search, setSearch] = useState('');
     const [selectedGenre, setSelectedGenre] = useState('All');
-    const [isCollapsed, setIsCollapsed] = useState(false);
-
-    useEffect(() => {
-        const onScroll = () => {
-            const y = window.scrollY;
-            if (y > 60) setIsCollapsed(true);
-            else if (y < 20) setIsCollapsed(false);
-        };
-        window.addEventListener('scroll', onScroll, { passive: true });
-        return () => window.removeEventListener('scroll', onScroll);
-    }, []);
 
     const filteredBooks = useMemo(() => {
         return amazonBooks.books.filter((book) => {
@@ -42,7 +31,7 @@ export default function StorePage() {
     return (
         <div className="min-h-screen bg-background pb-[calc(60px+env(safe-area-inset-bottom))]">
             {/* Header */}
-            <PageHeader title="Store" collapsed={isCollapsed}>
+            <PageHeader title="Store">
                 <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input

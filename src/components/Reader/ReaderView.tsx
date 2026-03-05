@@ -13,6 +13,7 @@ import { computePages, findPageForBlock, findPageForBlockAndSentence, findPageBy
 import { ContentBlock } from '@/lib/api';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { getCachedReadingPosition, setCachedReadingPosition, getCachedTocTitles, setCachedTocTitles } from '@/lib/contentCache';
+import { mergeDisplayBlocksPreservingTranslations } from '@/lib/reader/mergeDisplayBlocks';
 import {
   trackReadingSessionStarted,
   trackReadingSessionEnded,
@@ -57,6 +58,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
     const { user, isAuthenticated, loading: authLoading } = useAuth();
     const {
         settings,
+        perBookLanguages,
         syncVersions,
         setBookLanguage,
         setIsTranslatingForBook,
@@ -71,13 +73,14 @@ export default function ReaderView({ bookId, title, availableLanguages, original
     const [isLanguageSwitching, setIsLanguageSwitching] = useState(false);
 
     const resolvedServerLang = useMemo<Language>(() => {
-        const candidates = [serverLanguage, originalLanguage];
+        const localBookLang = perBookLanguages[bookId];
+        const candidates = [localBookLang, serverLanguage, originalLanguage];
         for (const c of candidates) {
             const l = c?.toLowerCase() as Language;
             if (l && ['en', 'fr', 'es', 'de', 'ru'].includes(l)) return l;
         }
         return settings.language;
-    }, [serverLanguage, originalLanguage, settings.language]);
+    }, [perBookLanguages, bookId, serverLanguage, originalLanguage, settings.language]);
     const activeLang = pendingLang ?? resolvedServerLang;
 
     const { chapters, loading: chaptersLoading, error: chaptersError } = useChapters(bookId);
@@ -122,10 +125,15 @@ export default function ReaderView({ bookId, title, availableLanguages, original
     useEffect(() => {
         // Only update if blocks are for the correct language (not stale)
         if (blocksLang === activeLang.toUpperCase()) {
-            setDisplayBlocks(blocks);
+            setDisplayBlocks((prev) =>
+                mergeDisplayBlocksPreservingTranslations(prev, blocks, {
+                    // Never preserve translated text across different target languages.
+                    preserve: displayBlocksLang === blocksLang,
+                })
+            );
             setDisplayBlocksLang(blocksLang);
         }
-    }, [blocks, blocksLang, activeLang]);
+    }, [blocks, blocksLang, activeLang, displayBlocksLang]);
 
     // Content is effectively loading if:
     // - fetch is in progress
@@ -159,8 +167,9 @@ export default function ReaderView({ bookId, title, availableLanguages, original
         : false;
 
     useEffect(() => {
+        if (perBookLanguages[bookId]) return;
         setBookLanguage(bookId, resolvedServerLang);
-    }, [bookId, resolvedServerLang, setBookLanguage]);
+    }, [bookId, perBookLanguages, resolvedServerLang, setBookLanguage]);
 
     // NOTE: glow state is derived later, once pagination + currentPageBlocks are available.
 
@@ -922,17 +931,19 @@ export default function ReaderView({ bookId, title, availableLanguages, original
         setPages([]);
         setPaginatedBlocks([]);
         
+        setBookLanguage(bookId, lang);
         setPendingLang(lang);
         setIsLanguageSwitching(true);
 
         updateBookLanguage(bookId, lang)
             .then(() => {
-                setBookLanguage(bookId, lang);
+                // local state was already updated optimistically
             })
             .catch(() => {
                 // Only revert if the user hasn't switched to another language since
                 setPendingLang((current) => {
                     if (current === lang) {
+                        setBookLanguage(bookId, previousLang as Language);
                         return previousLang === resolvedServerLang ? null : previousLang;
                     }
                     return current;

@@ -643,6 +643,11 @@ body {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
+.library-scroll-lock-x {
+  overscroll-behavior-x: none;
+  overflow-x: clip;
+}
+
 /* ============================================
    Focus States (Accessibility)
    ============================================ */

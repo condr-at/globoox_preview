@@ -17,21 +17,10 @@ export default function ProfilePage() {
     const supabaseRef = useRef<SupabaseClient | null>(null);
     const { user, loading } = useAuth();
     const [signingOut, setSigningOut] = useState(false);
-    const [isCollapsed, setIsCollapsed] = useState(false);
 
     useEffect(() => {
         const supabase = createClient();
         supabaseRef.current = supabase;
-    }, []);
-
-    useEffect(() => {
-        const onScroll = () => {
-            const y = window.scrollY;
-            if (y > 60) setIsCollapsed(true);
-            else if (y < 20) setIsCollapsed(false);
-        };
-        window.addEventListener('scroll', onScroll, { passive: true });
-        return () => window.removeEventListener('scroll', onScroll);
     }, []);
 
     const handleSignOut = async () => {
@@ -53,7 +42,7 @@ export default function ProfilePage() {
     return (
         <div className="min-h-screen bg-background pb-[calc(60px+env(safe-area-inset-bottom))]">
             {/* Header */}
-            <PageHeader title="Profile" collapsed={isCollapsed} />
+            <PageHeader title="Profile" />
 
             <div className="container max-w-2xl mx-auto px-4 sm:px-6 pt-[calc(1rem+env(safe-area-inset-top)+76px)] pb-4 space-y-4">
                 {loading ? (

@@ -7,7 +7,7 @@ import type { ReadingAnchor } from '@/lib/store'
 type CacheKey = string
 
 const DB_NAME = 'globoox-cache'
-const DB_VERSION = 3
+const DB_VERSION = 4
 const STORE_CHAPTER_CONTENT_V1 = 'chapter_content'
 const STORE_CHAPTER_SKELETON = 'chapter_skeleton'
 const STORE_BLOCK_TEXT = 'block_text'
@@ -37,6 +37,7 @@ function openDb(): Promise<IDBDatabase> {
 
     req.onupgradeneeded = () => {
       const db = req.result
+      const tx = req.transaction
 
       // Legacy store (v1) — keep it for compatibility, but new code won't write to it.
       if (!db.objectStoreNames.contains(STORE_CHAPTER_CONTENT_V1)) {
@@ -79,6 +80,20 @@ function openDb(): Promise<IDBDatabase> {
         const store = db.createObjectStore(STORE_TOC_TITLES, { keyPath: 'key' })
         store.createIndex('by_scope_book_lang', ['scope', 'bookId', 'lang'])
         store.createIndex('by_fetchedAt', 'fetchedAt')
+      }
+
+      // v4: clear chapter translation caches once to remove mixed-language data
+      // written by older buggy streaming context handling.
+      if ((req.oldVersion ?? 0) < 4 && tx) {
+        if (db.objectStoreNames.contains(STORE_CHAPTER_CONTENT_V1)) {
+          tx.objectStore(STORE_CHAPTER_CONTENT_V1).clear()
+        }
+        if (db.objectStoreNames.contains(STORE_CHAPTER_SKELETON)) {
+          tx.objectStore(STORE_CHAPTER_SKELETON).clear()
+        }
+        if (db.objectStoreNames.contains(STORE_BLOCK_TEXT)) {
+          tx.objectStore(STORE_BLOCK_TEXT).clear()
+        }
       }
     }
 

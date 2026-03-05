@@ -26,7 +26,6 @@ export default function LibraryPage() {
   const [isSignInOpen, setIsSignInOpen] = useState(false);
   const [progressData, setProgressData] = useState<Record<string, BookReadingProgress>>({});
   const [progressFetchedOnce, setProgressFetchedOnce] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const [justReadBookId, setJustReadBookId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -43,15 +42,13 @@ export default function LibraryPage() {
     }
   }, []);
 
-  // Collapse header past 60px, expand when back under 20px
   useEffect(() => {
-    const onScroll = () => {
-      const y = window.scrollY;
-      if (y > 60) setIsCollapsed(true);
-      else if (y < 20) setIsCollapsed(false);
+    document.documentElement.classList.add('library-scroll-lock-x');
+    document.body.classList.add('library-scroll-lock-x');
+    return () => {
+      document.documentElement.classList.remove('library-scroll-lock-x');
+      document.body.classList.remove('library-scroll-lock-x');
     };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
   // After OAuth redirect back with ?upload=1, auto-open upload modal
@@ -233,7 +230,6 @@ export default function LibraryPage() {
       <GoogleOneTap />
       <PageHeader
         title="Library"
-        collapsed={isCollapsed}
         action={{ label: 'Add', onClick: handleUploadClick }}
       />
 
