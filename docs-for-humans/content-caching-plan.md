@@ -10,6 +10,7 @@
   - Сборка `ContentBlock[]` из кеша: `src/lib/hooks/useChapterContent.ts`
   - Дозапись переводов по мере стрима: `src/lib/hooks/useViewportTranslation.ts`
   - Инвалидация: `useSyncCheck` при изменении `library` scope очищает кеш контента.
+  - Автоперевод в Reader запускается только после серверного snapshot для текущих `(chapterId, lang)` (`hasServerSnapshot`), чтобы не показывать ложный `Translating...` на новом устройстве.
 
 ### 1) Скелет главы (language-agnostic)
 

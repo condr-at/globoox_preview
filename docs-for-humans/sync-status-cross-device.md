@@ -40,6 +40,15 @@ What it does:
    - invalidates reading-position cache (`positionCacheInvalidateAll()`)
 5. Persists new per-scope timestamps in the app store so we don’t re-invalidate repeatedly.
 
+Reader-specific progress policy (current):
+- Reader is local-first for reading anchor restore.
+- For authenticated users, `GET /api/books/:id/reading-position` is **conditional**, not always-on.
+- Revalidation happens only when at least one condition is true:
+  - no local anchor for this book,
+  - `progress` scope changed,
+  - per-book TTL expired (5 minutes).
+- If local anchor exists and scope did not change, server fetch is background-only and does not block initial render.
+
 Note on chapter content caching:
 - Chapter content (`GET /api/chapters/:id/content?lang=XX`) is cached client-side in IndexedDB to reduce backend load.
 - If backend translations/content can change independently (e.g. background translation finishing later), we need a server-side “version bump”
