@@ -416,6 +416,23 @@ export default function ReaderView({ bookId, title, availableLanguages, original
         const chapterId = currentChapter?.id ?? '';
         return `${bookId}::${chapterId}::${blockStructureKey}`;
     }, [bookId, currentChapter?.id, blockStructureKey]);
+    const localAnchorChapterAppliedRef = useRef<string | null>(null);
+    const restoredFromPaginationCacheRef = useRef(false);
+
+    useEffect(() => {
+        if (chaptersLoading || chapters.length === 0) return;
+        const anchor = getAnchor(bookId);
+        if (!anchor?.chapterId) return;
+
+        const applyKey = `${bookId}::${anchor.chapterId}`;
+        if (localAnchorChapterAppliedRef.current === applyKey) return;
+
+        const chapterIdx = chapters.findIndex((chapter) => chapter.id === anchor.chapterId);
+        if (chapterIdx < 0) return;
+
+        localAnchorChapterAppliedRef.current = applyKey;
+        setCurrentChapterIndex((prev) => (prev === chapterIdx + 1 ? prev : chapterIdx + 1));
+    }, [bookId, chapters, chaptersLoading, getAnchor]);
 
     useEffect(() => {
         if (blockStructureKey === prevBlockStructureKey.current) return;
@@ -451,7 +468,6 @@ export default function ReaderView({ bookId, title, availableLanguages, original
             setPaginatedBlocks(computed.finalBlocks);
             fragmentMapRef.current = computed.fragmentMap;
             setPagesReady(true);
-            setVisiblePagesReady(true);
 
             // Update cache for instant reopen.
             paginationCache.set(paginationCacheKey, {
@@ -482,15 +498,17 @@ export default function ReaderView({ bookId, title, availableLanguages, original
 
         const cached = paginationCache.get(paginationCacheKey);
         if (cached) {
+            restoredFromPaginationCacheRef.current = true;
             setPages(cached.pages);
             setPaginatedBlocks(cached.finalBlocks);
             fragmentMapRef.current = cached.fragmentMap;
             setPagesReady(true);
             setCurrentPageIdx(Math.max(0, Math.min(cached.currentPageIdx, cached.pages.length - 1)));
-            setVisiblePagesReady(true);
+            setVisiblePagesReady(false);
             return;
         }
 
+        restoredFromPaginationCacheRef.current = false;
         setPagesReady(false);
         setVisiblePagesReady(false);
         setPages([]);
@@ -633,6 +651,11 @@ export default function ReaderView({ bookId, title, availableLanguages, original
         if (!pagesReady || pages.length === 0) return;
         if (visiblePagesReady && pendingAnchorBlockId.current === null) return;
 
+        if (restoredFromPaginationCacheRef.current && pendingAnchorBlockId.current === null) {
+            setVisiblePagesReady(true);
+            return;
+        }
+
         // If there's a pending anchor (from language switch), use it
         const targetBlockId = pendingAnchorBlockId.current;
         if (targetBlockId !== null) {
@@ -665,6 +688,14 @@ export default function ReaderView({ bookId, title, availableLanguages, original
         // Initial load: restore from saved anchor
         const anchor = getAnchor(bookId);
         if (anchor && anchor.chapterId === (currentChapter?.id ?? '')) {
+            if (anchor.fragmentId) {
+                const exactPageIdx = pages.findIndex((page) => page.includes(anchor.fragmentId!));
+                if (exactPageIdx >= 0) {
+                    setCurrentPageIdx(exactPageIdx);
+                    setVisiblePagesReady(true);
+                    return;
+                }
+            }
             const idx = findPageForBlockAndSentence(pages, paginatedBlocks, anchor.blockId, anchor.sentenceIndex ?? 0, fragmentMapRef.current);
             if (idx >= 0) {
                 setCurrentPageIdx(idx);
@@ -764,11 +795,12 @@ export default function ReaderView({ bookId, title, availableLanguages, original
         });
     }, [bookId, storeSetAnchor, isAuthenticated, activeLang, updateServerProgress, user?.id]);
 
-    const saveAnchor = useCallback((blockId: string, blockPosition: number, sentenceIndex = 0) => {
+    const saveAnchor = useCallback((blockId: string, blockPosition: number, sentenceIndex = 0, fragmentId?: string) => {
         if (!currentChapter) return;
         const anchor: ReadingAnchor = {
             chapterId: currentChapter.id,
             blockId,
+            fragmentId,
             blockPosition,
             sentenceIndex,
             updatedAt: new Date().toISOString(),
@@ -873,7 +905,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
             if (currentPageBlocksRef.current.length > 0) {
                 const currentBlock = currentPageBlocksRef.current[0];
                 const blockId = currentBlock.parentId ?? currentBlock.id;
-                saveAnchor(blockId, currentBlock.position, getSentenceIndex(currentBlock));
+                saveAnchor(blockId, currentBlock.position, getSentenceIndex(currentBlock), currentBlock.id);
             }
 
             pendingAnchorBlockId.current = options?.targetPage === 'end' ? LAST_PAGE_SENTINEL : null;
@@ -892,7 +924,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
         setCurrentPageIdx(idx);
         const anchorBlockId = pages[idx][0];
         const block = paginatedBlocks.find((b) => b.id === anchorBlockId);
-        if (block) saveAnchor(block.parentId ?? block.id, block.position, getSentenceIndex(block));
+        if (block) saveAnchor(block.parentId ?? block.id, block.position, getSentenceIndex(block), block.id);
         // Translation enqueue is handled by the useEffect on currentPageIdx change.
         // No direct enqueue here to avoid double-enqueuing (which would cause an
         // unnecessary abort of the batch the useEffect just started).

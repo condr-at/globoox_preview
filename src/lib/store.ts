@@ -37,6 +37,7 @@ interface ReadingProgress {
 export interface ReadingAnchor {
   chapterId: string;
   blockId: string;
+  fragmentId?: string;
   blockPosition: number;
   sentenceIndex: number;
   updatedAt: string;
