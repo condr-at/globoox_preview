@@ -110,6 +110,7 @@ export default function ReaderPage({ params }: ReaderPageProps) {
       key={book.id}
       bookId={book.id}
       title={book.title}
+      author={book.author}
       availableLanguages={book.available_languages}
       originalLanguage={book.original_language}
       serverLanguage={book.selected_language}

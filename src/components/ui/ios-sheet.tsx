@@ -14,7 +14,6 @@ interface IOSSheetProps {
   describedBy?: string;
   dragHandle?: React.ReactNode;
   enableDragDismiss?: boolean;
-  disableDesktopSlide?: boolean;
 }
 
 const sideClassName: Record<NonNullable<IOSSheetProps['side']>, string> = {
@@ -51,7 +50,6 @@ export default function IOSSheet({
   describedBy,
   dragHandle,
   enableDragDismiss = false,
-  disableDesktopSlide = false,
 }: IOSSheetProps) {
   const [dragOffset, setDragOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -94,7 +92,7 @@ export default function IOSSheet({
     if (shouldClose) onOpenChange(false);
   };
 
-  const shouldDisableSlide = disableDesktopSlide && isDesktop && side === 'bottom';
+  const shouldDisableSlide = isDesktop && side === 'bottom';
 
   return (
     <IOSModalShell
@@ -122,7 +120,7 @@ export default function IOSSheet({
           : shouldDisableSlide
             ? 'opacity 180ms ease-out'
           : state === 'open'
-            ? 'transform 420ms cubic-bezier(0.22, 0.78, 0, 1)'
+            ? 'transform 320ms cubic-bezier(0.22, 0.78, 0, 1)'
             : 'transform 240ms cubic-bezier(0.4, 0, 1, 1)',
         opacity: shouldDisableSlide ? (state === 'open' ? 1 : 0) : 1,
         willChange: shouldDisableSlide ? 'opacity' : 'transform',
@@ -130,14 +128,21 @@ export default function IOSSheet({
     >
       {canDrag && dragHandle ? (
         <>
-          <div
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={(event) => finishDrag(event.pointerId)}
-            onPointerCancel={(event) => finishDrag(event.pointerId)}
-            className="touch-none"
-          >
-            {dragHandle}
+          <div className={cn(
+            'absolute inset-x-0 top-0 z-20',
+            shouldDisableSlide ? 'hidden' : 'block',
+          )}>
+            <div
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={(event) => finishDrag(event.pointerId)}
+              onPointerCancel={(event) => finishDrag(event.pointerId)}
+              className="touch-none h-10"
+            >
+              <div className="flex justify-center pt-2">
+                {dragHandle}
+              </div>
+            </div>
           </div>
           {children}
         </>

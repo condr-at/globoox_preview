@@ -335,6 +335,16 @@ export function translateChapterTitles(
   )
 }
 
+export function translateBookMetadata(
+  bookId: string,
+  lang: string,
+): Promise<{ title: string; author: string | null }> {
+  return request<{ title: string; author: string | null }>(
+    `/api/books/${bookId}/translate-meta`,
+    { method: 'POST', body: JSON.stringify({ lang: lang.toUpperCase() }) },
+  )
+}
+
 export function fetchContent(chapterId: string, lang?: string, signal?: AbortSignal): Promise<ContentBlock[]> {
   const params = lang ? `?lang=${encodeURIComponent(lang.toUpperCase())}` : ''
   return request<ContentBlock[]>(`/api/chapters/${chapterId}/content${params}`, { signal }).then((blocks) =>

@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useAppStore, Language, ReadingAnchor } from '@/lib/store';
-import { fetchContent, fetchReadingPosition, saveReadingPosition, updateBookLanguage, translateChapterTitles } from '@/lib/api';
+import { fetchContent, fetchReadingPosition, saveReadingPosition, updateBookLanguage, translateBookMetadata, translateChapterTitles } from '@/lib/api';
 import { useChapters } from '@/lib/hooks/useChapters';
 import { useChapterContent } from '@/lib/hooks/useChapterContent';
 import { useViewportTranslation } from '@/lib/hooks/useViewportTranslation';
@@ -16,9 +16,11 @@ import {
     getCachedChapterBlockIds,
     getCachedChapterLayout,
     getCachedReadingPosition,
+    getCachedBookTranslation,
     setCachedChapterContent,
     setCachedChapterLayout,
     setCachedReadingPosition,
+    setCachedBookTranslation,
     getCachedTocTitles,
     setCachedTocTitles,
 } from '@/lib/contentCache';
@@ -48,6 +50,7 @@ const LAST_PAGE_SENTINEL = '__LAST_PAGE__';
 interface ReaderViewProps {
     bookId: string;
     title: string;
+    author?: string | null;
     availableLanguages: string[];
     originalLanguage?: string | null;
     serverLanguage?: string | null;
@@ -107,7 +110,7 @@ function getLayoutContentSignature(blocks: ContentBlock[]): string {
 // Module-level cache so it survives route navigation (unmount/remount).
 const paginationCache = new Map<string, PaginationCacheEntry>();
 
-export default function ReaderView({ bookId, title, availableLanguages, originalLanguage, serverLanguage, coverUrl }: ReaderViewProps) {
+export default function ReaderView({ bookId, title, author, availableLanguages, originalLanguage, serverLanguage, coverUrl }: ReaderViewProps) {
     const { user, isAuthenticated, loading: authLoading } = useAuth();
     const {
         settings,
@@ -145,11 +148,14 @@ export default function ReaderView({ bookId, title, availableLanguages, original
     const [translatedChapterTitles, setTranslatedChapterTitles] = useState<Map<string, string>>(new Map());
     const [isTranslatingChapterTitles, setIsTranslatingChapterTitles] = useState(false);
     const translatingTitlesLangRef = useRef<string | null>(null);
+    const [translatedBookMeta, setTranslatedBookMeta] = useState<{ title: string; author: string | null } | null>(null);
+    const [isTranslatingBookMeta, setIsTranslatingBookMeta] = useState(false);
 
     // Reset translated titles when active language changes
     useEffect(() => {
         setTranslatedChapterTitles(new Map());
         translatingTitlesLangRef.current = null;
+        setTranslatedBookMeta(null);
     }, [activeLang]);
 
     // Best-effort: hydrate translated chapter titles from IndexedDB for fast reloads.
@@ -165,6 +171,44 @@ export default function ReaderView({ bookId, title, availableLanguages, original
             cancelled = true;
         };
     }, [bookId, activeLang, user?.id]);
+
+    useEffect(() => {
+        let cancelled = false;
+        const scopeKey = user?.id ?? 'guest';
+        const targetLang = activeLang.toUpperCase();
+        const sourceLang = originalLanguage?.toUpperCase() ?? null;
+
+        if (!sourceLang || sourceLang === targetLang) {
+            setTranslatedBookMeta({ title, author: author ?? null });
+            setIsTranslatingBookMeta(false);
+            return () => {
+                cancelled = true;
+            };
+        }
+
+        setIsTranslatingBookMeta(true);
+        void getCachedBookTranslation(scopeKey, bookId, targetLang).then((cached) => {
+            if (cancelled || !cached) return;
+            setTranslatedBookMeta(cached);
+            setIsTranslatingBookMeta(false);
+        });
+
+        void translateBookMetadata(bookId, targetLang)
+            .then((result) => {
+                if (cancelled) return;
+                setTranslatedBookMeta(result);
+                setIsTranslatingBookMeta(false);
+                void setCachedBookTranslation(scopeKey, bookId, targetLang, result);
+            })
+            .catch(() => {
+                if (cancelled) return;
+                setIsTranslatingBookMeta(false);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [activeLang, originalLanguage, bookId, title, author, user?.id]);
 
     const { blocks, loading: contentLoading, error: contentError, isStale, blocksLang, hasServerSnapshot } = useChapterContent(
         currentChapterId,
@@ -1280,6 +1324,11 @@ export default function ReaderView({ bookId, title, availableLanguages, original
             || currentChapter.title
         : `Ch. ${currentChapterIndex}`
     ;
+    const isBookMetaPending = !!originalLanguage
+        && originalLanguage.toUpperCase() !== activeLang.toUpperCase()
+        && !translatedBookMeta;
+    const readerBookTitle = translatedBookMeta?.title ?? title;
+    const readerBookAuthor = translatedBookMeta?.author ?? author ?? null;
 
     // ─── Chrome visibility (header + footer toggle) ───────────────────────────
     const [chromeVisible, setChromeVisible] = useState(true);
@@ -1357,7 +1406,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
                     if (!nextOpen) dismissTranslationNotice();
                 }}
                 title="Translation takes a moment"
-                description="Translating the first pages can take about 30 seconds. After that, the rest will continue quietly in the background. You can safely leave the reader and come back later."
+                description="The first pages may take about 30 seconds. After that, the rest will keep translating as you read."
                 confirmLabel="OK"
                 onConfirm={dismissTranslationNotice}
                 icon={null}
@@ -1390,7 +1439,21 @@ export default function ReaderView({ bookId, title, availableLanguages, original
                     </Button>
 
                     <div className="flex-1 min-w-0 text-center px-1">
-                        <h1 className="text-sm font-semibold truncate">{title}</h1>
+                        <div className="relative inline-flex max-w-full flex-col items-center justify-center">
+                            <h1 className={`max-w-full text-sm font-semibold truncate ${isBookMetaPending ? 'blur-[3px] opacity-40' : ''}`}>
+                                {readerBookTitle}
+                            </h1>
+                            {readerBookAuthor && (
+                                <p className={`max-w-full text-[11px] leading-3 text-[var(--label-secondary)] truncate ${isBookMetaPending ? 'blur-[3px] opacity-40' : ''}`}>
+                                    {readerBookAuthor}
+                                </p>
+                            )}
+                            {isBookMetaPending && (
+                                <span className="absolute inset-0 flex items-center justify-center text-[11px] font-medium text-[var(--system-blue)]">
+                                    Translating...
+                                </span>
+                            )}
+                        </div>
                     </div>
 
                     <div className="flex items-center flex-shrink-0">
@@ -1403,7 +1466,9 @@ export default function ReaderView({ bookId, title, availableLanguages, original
                         <ReaderActionsMenu
                             book={{
                                 id: bookId,
-                                title,
+                                title: readerBookTitle,
+                                author: readerBookAuthor,
+                                isMetaPending: isBookMetaPending || isTranslatingBookMeta,
                                 coverUrl,
                                 languages,
                                 chapters: chapters.map((c) => ({

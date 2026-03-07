@@ -7,7 +7,7 @@ import type { ReadingAnchor } from '@/lib/store'
 type CacheKey = string
 
 const DB_NAME = 'globoox-cache'
-const DB_VERSION = 6
+const DB_VERSION = 7
 const STORE_CHAPTER_CONTENT_V1 = 'chapter_content'
 const STORE_CHAPTER_SKELETON = 'chapter_skeleton'
 const STORE_BLOCK_TEXT = 'block_text'
@@ -16,6 +16,7 @@ const STORE_BOOKS_LIST = 'books_list'
 const STORE_BOOK_META = 'book_meta'
 const STORE_READING_POSITIONS = 'reading_positions'
 const STORE_TOC_TITLES = 'toc_titles'
+const STORE_BOOK_TRANSLATIONS = 'book_translations'
 
 const DEFAULT_TTL_MS = 10 * 60 * 1000 // 10 minutes
 const PENDING_TTL_MS = 3 * 1000 // 3 seconds
@@ -86,6 +87,12 @@ function openDb(): Promise<IDBDatabase> {
 
       if (!db.objectStoreNames.contains(STORE_TOC_TITLES)) {
         const store = db.createObjectStore(STORE_TOC_TITLES, { keyPath: 'key' })
+        store.createIndex('by_scope_book_lang', ['scope', 'bookId', 'lang'])
+        store.createIndex('by_fetchedAt', 'fetchedAt')
+      }
+
+      if (!db.objectStoreNames.contains(STORE_BOOK_TRANSLATIONS)) {
+        const store = db.createObjectStore(STORE_BOOK_TRANSLATIONS, { keyPath: 'key' })
         store.createIndex('by_scope_book_lang', ['scope', 'bookId', 'lang'])
         store.createIndex('by_fetchedAt', 'fetchedAt')
       }
@@ -203,6 +210,16 @@ interface CachedTocTitles {
   bookId: string
   lang: string
   titles: Record<string, string>
+  fetchedAt: number
+}
+
+interface CachedBookTranslation {
+  key: CacheKey
+  scope: string
+  bookId: string
+  lang: string
+  title: string
+  author: string | null
   fetchedAt: number
 }
 
@@ -387,6 +404,45 @@ export async function setCachedTocTitles(scope: string, bookId: string, lang: st
     fetchedAt: Date.now(),
   }
   await withStore(STORE_TOC_TITLES, 'readwrite', (store) => store.put(entry))
+}
+
+export async function getCachedBookTranslation(
+  scope: string,
+  bookId: string,
+  lang: string,
+): Promise<{ title: string; author: string | null } | null> {
+  try {
+    const normalizedLang = normalizeLang(lang)
+    const key = makeScopedKey(scope, bookId, 'meta', normalizedLang)
+    const entry = await withStore<CachedBookTranslation | undefined>(
+      STORE_BOOK_TRANSLATIONS,
+      'readonly',
+      (store) => store.get(key),
+    )
+    if (!entry) return null
+    return { title: entry.title, author: entry.author }
+  } catch {
+    return null
+  }
+}
+
+export async function setCachedBookTranslation(
+  scope: string,
+  bookId: string,
+  lang: string,
+  data: { title: string; author: string | null },
+): Promise<void> {
+  const normalizedLang = normalizeLang(lang)
+  const entry: CachedBookTranslation = {
+    key: makeScopedKey(scope, bookId, 'meta', normalizedLang),
+    scope,
+    bookId,
+    lang: normalizedLang,
+    title: data.title,
+    author: data.author,
+    fetchedAt: Date.now(),
+  }
+  await withStore(STORE_BOOK_TRANSLATIONS, 'readwrite', (store) => store.put(entry))
 }
 
 export async function getCachedChapterLayout(layoutKey: string): Promise<CachedChapterLayoutEntry | null> {

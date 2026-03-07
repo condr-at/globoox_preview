@@ -1,6 +1,5 @@
 'use client';
 
-import { AlertTriangle } from 'lucide-react';
 import IOSAlertDialog from '@/components/ui/ios-alert-dialog';
 
 interface DeleteBookConfirmDialogProps {
@@ -37,11 +36,6 @@ export default function DeleteBookConfirmDialog({
       destructive
       loading={deleting}
       showCancel
-      icon={(
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--system-red)_14%,transparent)] text-[var(--system-red)]">
-          <AlertTriangle className="h-6 w-6" strokeWidth={2.25} />
-        </div>
-      )}
     />
   );
 }

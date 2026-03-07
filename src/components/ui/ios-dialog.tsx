@@ -51,7 +51,7 @@ export default function IOSDialog({
         ? {
             transform: state === 'open' ? 'translate3d(0, 0, 0)' : 'translate3d(0, 100%, 0)',
             transition: state === 'open'
-              ? 'transform 420ms cubic-bezier(0.22, 0.78, 0, 1)'
+              ? 'transform 320ms cubic-bezier(0.22, 0.78, 0, 1)'
               : 'transform 240ms cubic-bezier(0.4, 0, 1, 1)',
             willChange: 'transform',
           }

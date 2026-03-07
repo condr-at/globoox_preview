@@ -11,6 +11,8 @@ interface ReaderActionsMenuProps {
   book: {
     id: string;
     title: string;
+    author?: string | null;
+    isMetaPending?: boolean;
     coverUrl?: string | null;
     languages: Language[];
     chapters: { number: number; title: string; depth?: number }[];
@@ -98,6 +100,8 @@ export default function ReaderActionsMenu({
 
       <TableOfContents
         bookTitle={book.title}
+        bookAuthor={book.author}
+        isBookMetaPending={book.isMetaPending}
         coverUrl={book.coverUrl}
         chapters={book.chapters}
         currentChapter={currentChapter}

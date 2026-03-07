@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Settings, Type, X } from 'lucide-react';
-import IOSDialog from '@/components/ui/ios-dialog';
+import { Settings, Type } from 'lucide-react';
+import IOSSheet from '@/components/ui/ios-sheet';
+import IOSSheetHeader from '@/components/ui/ios-sheet-header';
 import { useAppStore } from '@/lib/store';
 import { trackFontSizeChanged } from '@/lib/posthog';
 
@@ -35,23 +36,19 @@ export default function ReaderSettings({
                 </button>
             )}
 
-            <IOSDialog
+            <IOSSheet
                 open={isOpen}
                 onOpenChange={setIsOpen}
-                className="w-full sm:max-w-[320px] sm:rounded-[24px]"
-                mobileLayout="sheet"
+                side="bottom"
+                enableDragDismiss
+                dragHandle={<div className="h-1 w-12 rounded-full bg-black/12 dark:bg-white/16" />}
+                className="mt-[max(240px,46vh)] flex h-[calc(100dvh-max(240px,46vh))] max-h-none flex-col rounded-t-[20px] border-0 bg-[var(--bg-grouped-secondary)] sm:mt-0 sm:h-auto sm:max-w-[320px] sm:rounded-[24px] sm:border sm:border-[var(--separator)]"
             >
-                <div className="p-[20px]">
-                    <div className="flex items-center justify-between mb-[24px]">
-                        <h3 className="text-[20px] font-semibold">Reading Settings</h3>
-                        <button
-                            onClick={() => setIsOpen(false)}
-                            className="p-[8px] -mr-[8px] rounded-full active:bg-[var(--fill-tertiary)] transition-colors"
-                        >
-                            <X className="w-[20px] h-[20px] text-[var(--label-secondary)]" />
-                        </button>
-                    </div>
-
+                <IOSSheetHeader
+                    title="Themes & Settings"
+                    onClose={() => setIsOpen(false)}
+                />
+                <div className="p-5 pt-0">
                     <div>
                         <div className="flex items-center gap-[8px] mb-[12px]">
                             <Type className="w-[16px] h-[16px] text-[var(--label-secondary)]" />
@@ -104,7 +101,7 @@ export default function ReaderSettings({
                         </p>
                     </div>
                 </div>
-            </IOSDialog>
+            </IOSSheet>
         </>
     );
 }
