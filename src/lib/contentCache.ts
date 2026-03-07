@@ -306,6 +306,15 @@ export async function clearCachedBookMeta(scope?: string): Promise<void> {
   }
 }
 
+export async function clearCachedBookMetaEntry(scope: string, bookId: string): Promise<void> {
+  try {
+    const key = makeScopedKey(scope, bookId)
+    await withStore(STORE_BOOK_META, 'readwrite', (store) => store.delete(key))
+  } catch {
+    // ignore
+  }
+}
+
 export async function getCachedReadingPosition(scope: string, bookId: string): Promise<CachedReadingPositionEntry | null> {
   try {
     const key = makeScopedKey(scope, bookId)

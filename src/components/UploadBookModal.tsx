@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { X, Upload, Loader2, CheckCircle, FileText } from 'lucide-react';
+import IOSDialog from '@/components/ui/ios-dialog';
 import { getSignedUploadUrl, uploadToStorage, processBook } from '@/lib/api';
 import { trackBookUploadStarted, trackBookUploaded, trackBookUploadFailed } from '@/lib/posthog';
 import * as Sentry from '@sentry/nextjs';
@@ -76,8 +77,6 @@ export default function UploadBookModal({ isOpen, onClose, onUploaded }: UploadB
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadHelp = getUploadHelp(error)
-
-  if (!isOpen) return null;
 
   const isLikelyEpub = async (selectedFile: File): Promise<boolean> => {
     const normalizedName = selectedFile.name.trim().toLowerCase();
@@ -187,10 +186,13 @@ export default function UploadBookModal({ isOpen, onClose, onUploaded }: UploadB
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleClose} />
-
-      <div className="relative bg-card border rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
+    <IOSDialog
+      open={isOpen}
+      onOpenChange={(nextOpen) => !nextOpen && handleClose()}
+      className="bg-card sm:max-w-md"
+      mobileLayout="sheet"
+    >
+      <div className="relative p-6">
         <button
           onClick={handleClose}
           className="absolute top-4 right-4 p-1 rounded-full hover:bg-muted transition-colors"
@@ -265,6 +267,6 @@ export default function UploadBookModal({ isOpen, onClose, onUploaded }: UploadB
           </div>
         )}
       </div>
-    </div>
+    </IOSDialog>
   );
 }

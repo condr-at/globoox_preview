@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState, useSyncExternalStore } from 'react';
-import { createPortal } from 'react-dom';
-import { List, X, Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import Image from 'next/image';
+import { List, X, Loader2, ChevronDown } from 'lucide-react';
+import IOSSheet from '@/components/ui/ios-sheet';
 
 interface Chapter {
     number: number;
@@ -12,6 +13,8 @@ interface Chapter {
 }
 
 interface TableOfContentsProps {
+    bookTitle: string;
+    coverUrl?: string | null;
     chapters: Chapter[];
     currentChapter: number;
     onSelectChapter: (chapter: number) => void;
@@ -21,6 +24,8 @@ interface TableOfContentsProps {
 }
 
 export default function TableOfContents({
+    bookTitle,
+    coverUrl,
     chapters,
     currentChapter,
     onSelectChapter,
@@ -33,105 +38,10 @@ export default function TableOfContents({
     const isOpen = externalOpen !== undefined ? externalOpen : internalOpen;
     const setIsOpen = setExternalOpen !== undefined ? setExternalOpen : setInternalOpen;
 
-    const mounted = useSyncExternalStore(
-        () => () => {},
-        () => true,
-        () => false,
-    );
-
-    // Close on escape
-    useEffect(() => {
-        const handleEscape = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') setIsOpen(false);
-        };
-        window.addEventListener('keydown', handleEscape);
-        return () => window.removeEventListener('keydown', handleEscape);
-    }, [setIsOpen]);
-
     const handleSelect = (chapterNum: number) => {
         onSelectChapter(chapterNum);
         setIsOpen(false);
     };
-
-    const modal = isOpen ? (
-        <>
-            {/* Backdrop */}
-            <div
-                onClick={() => setIsOpen(false)}
-                className="fixed inset-0 bg-black/50 z-[200]"
-            />
-
-            {/* Side panel */}
-            <div className="fixed inset-y-0 left-0 w-[320px] max-w-[85vw] bg-[var(--bg-grouped-secondary)] z-[201] flex flex-col safe-area-inset-top">
-                {/* Header */}
-                <div className="flex items-center justify-between p-[16px] border-b border-[var(--separator)]">
-                    <div className="flex items-center gap-2">
-                        <h3 className="text-[20px] font-semibold">Contents</h3>
-                        {isTranslating && (
-                            <Loader2 className="w-[16px] h-[16px] text-[var(--system-blue)] animate-spin" />
-                        )}
-                    </div>
-                    <button
-                        onClick={() => setIsOpen(false)}
-                        className="p-[8px] -mr-[8px] rounded-full active:bg-[var(--fill-tertiary)] transition-colors"
-                    >
-                        <X className="w-[20px] h-[20px] text-[var(--label-secondary)]" />
-                    </button>
-                </div>
-
-                {/* Chapters list */}
-                <div className="flex-1 overflow-y-auto">
-                    {chapters.map((chapter) => {
-                        const depth = chapter.depth || 1;
-                        const indentPx = (depth - 1) * 16;
-                        const isActive = currentChapter === chapter.number;
-                        
-                        return (
-                            <button
-                                key={chapter.number}
-                                onClick={() => handleSelect(chapter.number)}
-                                className={`
-                                    w-full flex items-center gap-[12px] py-[12px] text-left min-h-[44px]
-                                    transition-colors active:bg-[var(--fill-tertiary)]
-                                    ${isActive ? 'bg-[var(--system-blue)]/10' : ''}
-                                `}
-                                style={{ paddingLeft: `${16 + indentPx}px`, paddingRight: '16px' }}
-                            >
-                                {depth === 1 && (
-                                    <span className={`
-                                        w-[28px] text-[15px] font-medium transition-colors flex-shrink-0
-                                        ${isActive
-                                            ? 'text-[var(--system-blue)]'
-                                            : 'text-[var(--label-tertiary)]'
-                                        }
-                                    `}>
-                                        {chapter.number}
-                                    </span>
-                                )}
-                                <span className="relative flex-1 min-w-0">
-                                    <span
-                                        className={`
-                                            block
-                                            ${depth === 1 ? 'text-[17px]' : depth === 2 ? 'text-[16px]' : 'text-[15px]'}
-                                            ${isActive
-                                                ? 'text-[var(--system-blue)] font-semibold'
-                                                : depth === 1
-                                                    ? 'text-[var(--label-primary)]'
-                                                    : 'text-[var(--label-secondary)]'
-                                            }
-                                            ${chapter.isPending ? 'blur-[3px] opacity-40' : ''}
-                                        `}
-                                    >
-                                        {chapter.title}
-                                    </span>
-                                </span>
-                            </button>
-                        );
-                    })}
-                </div>
-            </div>
-        </>
-    ) : null;
 
     return (
         <>
@@ -144,7 +54,99 @@ export default function TableOfContents({
                 </button>
             )}
 
-            {mounted && modal && createPortal(modal, document.body)}
+            <IOSSheet
+                open={isOpen}
+                onOpenChange={setIsOpen}
+                side="bottom"
+                enableDragDismiss
+                disableDesktopSlide
+                dragHandle={<div className="mx-auto mb-3 mt-3 h-1.5 w-9 rounded-full bg-black/12 dark:bg-white/16" />}
+                className="mt-[max(56px,calc(env(safe-area-inset-top)+18px))] flex h-[calc(100dvh-max(56px,calc(env(safe-area-inset-top)+18px)))] max-h-none flex-col overflow-hidden rounded-t-[20px] border-0 bg-[#f3f3f1] shadow-[0_-12px_40px_rgba(0,0,0,0.16)] dark:bg-[#1c1c1e]"
+            >
+                <div className="px-4 pt-3">
+                    <div className="rounded-[18px] bg-[#f7f7f5] px-4 py-4 shadow-[inset_0_0_0_0.5px_rgba(60,60,67,0.12)] dark:bg-[#2a2a2c]">
+                        <div className="flex items-start gap-4">
+                            <div className="relative h-[94px] w-[64px] shrink-0 overflow-hidden rounded-[6px] bg-[var(--fill-secondary)] shadow-[0_3px_10px_rgba(0,0,0,0.18)]">
+                                {coverUrl ? (
+                                    <Image
+                                        src={coverUrl}
+                                        alt={bookTitle}
+                                        fill
+                                        sizes="64px"
+                                        className="object-cover"
+                                    />
+                                ) : (
+                                    <div className="flex h-full w-full items-center justify-center bg-[linear-gradient(180deg,#cfcfcd,#aaaaa8)] text-[8px] font-medium uppercase tracking-[0.14em] text-white/70">
+                                        EPUB
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="min-w-0 flex-1 pt-1">
+                                <div className="flex items-start justify-between gap-3">
+                                    <div className="min-w-0">
+                                        <h3 className="truncate text-[18px] font-semibold tracking-[-0.02em] text-[var(--label-primary)]">
+                                            {bookTitle}
+                                        </h3>
+                                        <div className="mt-1 inline-flex items-center gap-1 text-[17px] text-[var(--label-secondary)]">
+                                            <span>Chapter {currentChapter} of {chapters.length}</span>
+                                            <ChevronDown className="h-4 w-4" strokeWidth={2.2} />
+                                        </div>
+                                    </div>
+                                    {isTranslating && (
+                                        <Loader2 className="mt-1 h-4 w-4 shrink-0 animate-spin text-[var(--system-blue)]" />
+                                    )}
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={() => setIsOpen(false)}
+                                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black/8 text-[var(--label-secondary)] transition-colors active:bg-black/12 dark:bg-white/10 dark:active:bg-white/14"
+                            >
+                                <X className="h-5 w-5" strokeWidth={2.2} />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="mt-3 flex-1 overflow-y-auto pb-[calc(env(safe-area-inset-bottom)+12px)]">
+                    {chapters.map((chapter) => {
+                        const depth = chapter.depth || 1;
+                        const indentPx = (depth - 1) * 22;
+                        const isActive = currentChapter === chapter.number;
+
+                        return (
+                            <button
+                                key={chapter.number}
+                                onClick={() => handleSelect(chapter.number)}
+                                className="relative flex min-h-[72px] w-full items-center gap-4 border-t border-black/[0.07] px-6 text-left transition-colors active:bg-black/[0.035] dark:border-white/[0.08] dark:active:bg-white/[0.03]"
+                                style={{ paddingLeft: `${24 + indentPx}px`, paddingRight: '24px' }}
+                            >
+                                <span className="relative min-w-0 flex-1">
+                                    <span
+                                        className={`
+                                            block
+                                            ${depth === 1 ? 'text-[18px]' : 'text-[16px]'}
+                                            ${isActive
+                                                ? 'text-[var(--label-primary)] font-semibold'
+                                                : depth === 1
+                                                    ? 'text-[var(--label-primary)]'
+                                                    : 'text-[var(--label-secondary)]'
+                                            }
+                                            ${chapter.isPending ? 'blur-[3px] opacity-40' : ''}
+                                        `}
+                                    >
+                                        {chapter.title}
+                                    </span>
+                                </span>
+                                <span className="shrink-0 text-[15px] text-[var(--label-secondary)]">
+                                    {depth === 1 ? chapter.number : ''}
+                                </span>
+                            </button>
+                        );
+                    })}
+                </div>
+            </IOSSheet>
         </>
     );
 }

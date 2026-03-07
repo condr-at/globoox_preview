@@ -10,6 +10,8 @@ import { useAdaptiveDropdown } from '@/components/ui/useAdaptiveDropdown';
 interface ReaderActionsMenuProps {
   book: {
     id: string;
+    title: string;
+    coverUrl?: string | null;
     languages: Language[];
     chapters: { number: number; title: string; depth?: number }[];
   };
@@ -95,6 +97,8 @@ export default function ReaderActionsMenu({
       )}
 
       <TableOfContents
+        bookTitle={book.title}
+        coverUrl={book.coverUrl}
         chapters={book.chapters}
         currentChapter={currentChapter}
         onSelectChapter={onSelectChapter}

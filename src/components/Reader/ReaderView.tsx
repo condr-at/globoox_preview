@@ -37,6 +37,7 @@ import AppleIntelligenceGlow from './AppleIntelligenceGlow';
 import LanguageSwitch from './LanguageSwitch';
 import ContentBlockRenderer from './ContentBlockRenderer';
 import { Button } from '@/components/ui/button';
+import IOSAlertDialog from '@/components/ui/ios-alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 
 // Source of a navigation event. Any source other than manual_scroll is a "jump"
@@ -98,8 +99,6 @@ function getLayoutContentSignature(blocks: ContentBlock[]): string {
                 return `${block.id}|${block.type}|${block.position}|${block.src ?? ''}|${block.alt ?? ''}|${block.caption ?? ''}`;
             case 'hr':
                 return `${block.id}|${block.type}|${block.position}`;
-            default:
-                return `${block.id}|${block.type}|${block.position}`;
         }
     }).join('\u001e');
     return hashString(serialized);
@@ -125,6 +124,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
     const [currentChapterIndex, setCurrentChapterIndex] = useState(1);
     const [pendingLang, setPendingLang] = useState<Language | null>(null);
     const [isLanguageSwitching, setIsLanguageSwitching] = useState(false);
+    const [isChapterEntryTransitionActive, setIsChapterEntryTransitionActive] = useState(false);
 
     const resolvedServerLang = useMemo<Language>(() => {
         const localBookLang = perBookLanguages[bookId];
@@ -942,53 +942,147 @@ export default function ReaderView({ bookId, title, availableLanguages, original
         [paginatedBlocks, currentPageBlockIds]
     );
 
+    const currentPageTranslatableBlocks = useMemo(
+        () => currentPageBlocks.filter(isTranslatableBlock),
+        [currentPageBlocks]
+    );
+
+    const currentPageHasReadyBlock = useMemo(
+        () => currentPageTranslatableBlocks.some((block) => !isBlockPendingForActiveLang(block, pendingBlockIds)),
+        [currentPageTranslatableBlocks, pendingBlockIds]
+    );
+
+    const isCurrentPageReadable = useMemo(() => {
+        if (isSourceLang) return true;
+        if (isContentLoading) return false;
+        if (!pagesReady || !visiblePagesReady) return false;
+        if (!currentPageBlocks.length) return false;
+        if (currentPageTranslatableBlocks.length === 0) return true;
+        return currentPageHasReadyBlock;
+    }, [
+        isSourceLang,
+        isContentLoading,
+        pagesReady,
+        visiblePagesReady,
+        currentPageBlocks,
+        currentPageTranslatableBlocks,
+        currentPageHasReadyBlock,
+    ]);
+
     useEffect(() => {
         currentPageIdxRef.current = currentPageIdx;
     }, [currentPageIdx]);
 
+    const chapterEntryTransitionKey = currentChapterId
+        ? `${currentChapterId}::${activeLang.toLowerCase()}`
+        : null;
+    const initializedChapterEntryTransitionKeyRef = useRef<string | null>(null);
+
+    useEffect(() => {
+        if (isSourceLang || !chapterEntryTransitionKey) {
+            initializedChapterEntryTransitionKeyRef.current = null;
+            setIsChapterEntryTransitionActive(false);
+            return;
+        }
+        if (initializedChapterEntryTransitionKeyRef.current === chapterEntryTransitionKey) return;
+        if (!blocksLang || blocksLang.toLowerCase() !== activeLang.toLowerCase()) return;
+
+        const hasMissingTranslation = displayBlocks.some((block) => (
+            isTranslatableBlock(block) && isBlockPendingForActiveLang(block, pendingBlockIds)
+        ));
+
+        setIsChapterEntryTransitionActive(hasMissingTranslation);
+        initializedChapterEntryTransitionKeyRef.current = chapterEntryTransitionKey;
+    }, [chapterEntryTransitionKey, isSourceLang, blocksLang, activeLang, displayBlocks, pendingBlockIds]);
+
+    const isTranslationTransitionActive = isLanguageSwitching || isChapterEntryTransitionActive;
+
+    const pageReadabilityGate = useMemo(() => {
+        if (isSourceLang) return false;
+        if (isContentLoading) return true;
+        if (!pagesReady || !visiblePagesReady) return true;
+        if (!currentPageBlocks.length) return true;
+        if (currentPageTranslatableBlocks.length === 0) return false;
+        return !currentPageHasReadyBlock;
+    }, [
+        isSourceLang,
+        isContentLoading,
+        pagesReady,
+        visiblePagesReady,
+        currentPageBlocks,
+        currentPageTranslatableBlocks,
+        currentPageHasReadyBlock,
+    ]);
+
     // Glow policy:
-    // - Can appear ONLY during a language switch.
-    // - Even then, show it only if this page has zero ready translatable blocks
-    //   (i.e. the whole page is still pending/blurred).
+    // - Only during an explicit language switch OR when entering/re-entering
+    //   a not-yet-readable target-language chapter.
+    // - And only while the current page still has zero ready translatable blocks.
     const shouldShowGlow = useMemo(() => {
-        if (!isLanguageSwitching) return false;
-        if (!pagesReady || !visiblePagesReady) return false;
-        if (!currentPageBlocks.length) return false;
-        const translatable = currentPageBlocks.filter(isTranslatableBlock);
-        if (translatable.length === 0) return false;
-        const hasAnyReady = translatable.some((block) => {
-            return !isBlockPendingForActiveLang(block, pendingBlockIds);
+        return isTranslationTransitionActive && pageReadabilityGate;
+    }, [isTranslationTransitionActive, pageReadabilityGate]);
+    const translationAlertKey = currentChapterId
+        ? `${bookId}::${currentChapterId}::${activeLang.toLowerCase()}`
+        : null;
+    const [dismissedTranslationAlertKeys, setDismissedTranslationAlertKeys] = useState<string[]>([]);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        try {
+            const raw = window.sessionStorage.getItem('globoox:translation-alert-dismissed');
+            if (!raw) return;
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+                setDismissedTranslationAlertKeys(parsed.filter((value): value is string => typeof value === 'string'));
+            }
+        } catch {
+            // ignore malformed session state
+        }
+    }, []);
+
+    const shouldShowTranslationNotice = Boolean(
+        shouldShowGlow
+        && translationAlertKey
+        && !dismissedTranslationAlertKeys.includes(translationAlertKey)
+    );
+
+    const dismissTranslationNotice = useCallback(() => {
+        if (!translationAlertKey) return;
+        setDismissedTranslationAlertKeys((previous) => {
+            if (previous.includes(translationAlertKey)) return previous;
+            const next = [...previous, translationAlertKey];
+            try {
+                window.sessionStorage.setItem('globoox:translation-alert-dismissed', JSON.stringify(next));
+            } catch {
+                // ignore storage failures
+            }
+            return next;
         });
-        return !hasAnyReady;
-    }, [isLanguageSwitching, pagesReady, visiblePagesReady, currentPageBlocks, pendingBlockIds]);
-    const shouldShowTranslationNotice = shouldShowGlow;
+    }, [translationAlertKey]);
 
     useEffect(() => {
         setIsTranslatingForBook(bookId, shouldShowGlow);
     }, [bookId, shouldShowGlow, setIsTranslatingForBook]);
 
-    // Consider language switching "done" once the switched-to page is readable:
-    // - the correct language is loaded
-    // - pagination/anchor applied
-    // - and at least one translatable block is ready (or there are none).
+    // Consider the transition "done" once the current page becomes readable:
+    // - explicit language switch stops here
+    // - chapter-entry glow restoration also stops here
     useEffect(() => {
-        if (!isLanguageSwitching) return;
-        if (isContentLoading) return;
-        if (!blocksLang) return;
-        if (blocksLang.toLowerCase() !== activeLang.toLowerCase()) return;
-        if (!pagesReady || !visiblePagesReady) return;
-        if (!currentPageBlocks.length) return;
+        if (!isTranslationTransitionActive) return;
+        if (!isCurrentPageReadable) return;
 
-        const translatable = currentPageBlocks.filter(isTranslatableBlock);
-        if (translatable.length === 0) {
+        if (isLanguageSwitching) {
             setIsLanguageSwitching(false);
-            return;
         }
-        const hasAnyReady = translatable.some((block) => {
-            return !isBlockPendingForActiveLang(block, pendingBlockIds);
-        });
-        if (hasAnyReady) setIsLanguageSwitching(false);
-    }, [isLanguageSwitching, isContentLoading, blocksLang, activeLang, pagesReady, visiblePagesReady, currentPageBlocks, pendingBlockIds]);
+        if (isChapterEntryTransitionActive) {
+            setIsChapterEntryTransitionActive(false);
+        }
+    }, [
+        isTranslationTransitionActive,
+        isCurrentPageReadable,
+        isLanguageSwitching,
+        isChapterEntryTransitionActive,
+    ]);
 
     const currentPageBlocksRef = useRef<ContentBlock[]>([]);
 
@@ -1153,6 +1247,10 @@ export default function ReaderView({ bookId, title, availableLanguages, original
         setBookLanguage(bookId, lang);
         setPendingLang(lang);
         setIsLanguageSwitching(true);
+        setIsChapterEntryTransitionActive(false);
+        initializedChapterEntryTransitionKeyRef.current = currentChapter?.id
+            ? `${currentChapter.id}::${lang.toLowerCase()}`
+            : null;
 
         updateBookLanguage(bookId, lang)
             .then(() => {
@@ -1253,13 +1351,17 @@ export default function ReaderView({ bookId, title, availableLanguages, original
     return (
         <div className="bg-background" style={{ position: 'fixed', inset: 0, overflow: 'hidden', overscrollBehavior: 'none' } as React.CSSProperties}>
             <AppleIntelligenceGlow bookId={bookId} />
-            {shouldShowTranslationNotice && (
-                <div className="fixed inset-x-4 top-[calc(env(safe-area-inset-top)+76px)] z-50 pointer-events-none">
-                    <div className="mx-auto max-w-md rounded-2xl border border-white/15 bg-black/55 px-4 py-3 text-center text-sm leading-5 text-white shadow-2xl backdrop-blur-xl">
-                        Translating the first pages can take about 30 seconds. After that, the rest will continue quietly in the background. You can safely leave the reader and come back later.
-                    </div>
-                </div>
-            )}
+            <IOSAlertDialog
+                open={shouldShowTranslationNotice}
+                onOpenChange={(nextOpen) => {
+                    if (!nextOpen) dismissTranslationNotice();
+                }}
+                title="Translation takes a moment"
+                description="Translating the first pages can take about 30 seconds. After that, the rest will continue quietly in the background. You can safely leave the reader and come back later."
+                confirmLabel="OK"
+                onConfirm={dismissTranslationNotice}
+                icon={null}
+            />
 
             {/* ── Header (fixed, slides out upward) ── */}
             <header
@@ -1301,6 +1403,8 @@ export default function ReaderView({ bookId, title, availableLanguages, original
                         <ReaderActionsMenu
                             book={{
                                 id: bookId,
+                                title,
+                                coverUrl,
                                 languages,
                                 chapters: chapters.map((c) => ({
                                     number: c.index,

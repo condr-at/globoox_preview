@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import BookCard from '@/components/Store/BookCard';
+import DeleteBookConfirmDialog from '@/components/Store/DeleteBookConfirmDialog';
 import UploadBookModal from '@/components/UploadBookModal';
 import SignInToUploadModal from '@/components/SignInToUploadModal';
 import { useAppStore } from '@/lib/store';
@@ -27,6 +28,8 @@ export default function LibraryPage() {
   const [progressData, setProgressData] = useState<Record<string, BookReadingProgress>>({});
   const [progressFetchedOnce, setProgressFetchedOnce] = useState(false);
   const [justReadBookId, setJustReadBookId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
+  const [isDeletingBook, setIsDeletingBook] = useState(false);
 
   useEffect(() => {
     try {
@@ -68,6 +71,32 @@ export default function LibraryPage() {
       setIsSignInOpen(true);
     }
   };
+
+  const handleRequestDelete = useCallback((bookId: string) => {
+    const book = books.find((entry) => entry.id === bookId);
+    if (!book) return;
+    setDeleteTarget({ id: book.id, title: book.title });
+  }, [books]);
+
+  const handleCancelDelete = useCallback(() => {
+    if (isDeletingBook) return;
+    setDeleteTarget(null);
+  }, [isDeletingBook]);
+
+  const handleConfirmDelete = useCallback(async () => {
+    if (!deleteTarget) return;
+
+    setIsDeletingBook(true);
+    const targetId = deleteTarget.id;
+    try {
+      setDeleteTarget(null);
+      await removeBook(targetId);
+    } catch {
+      // useBooks already restores the removed book and exposes the error to the page
+    } finally {
+      setIsDeletingBook(false);
+    }
+  }, [deleteTarget, removeBook]);
 
   // Fetch reading positions for all books (authenticated users only)
   const fetchAllProgress = useCallback(async (bookIds: string[]) => {
@@ -247,7 +276,7 @@ export default function LibraryPage() {
                 cover={lastBook.cover_url ?? FALLBACK_COVER}
                 progress={getBookProgress(lastBook)}
                 onHide={hideBook}
-                onDelete={removeBook}
+                onDelete={handleRequestDelete}
                 hideLabel="Hide"
                 onOpen={() => {
                   touchLastRead(lastBook.id);
@@ -279,7 +308,7 @@ export default function LibraryPage() {
                   cover={book.cover_url ?? FALLBACK_COVER}
                   progress={getBookProgress(book)}
                   onHide={hideBook}
-                  onDelete={removeBook}
+                  onDelete={handleRequestDelete}
                   hideLabel="Hide"
                   onOpen={() => {
                     touchLastRead(book.id);
@@ -308,6 +337,14 @@ export default function LibraryPage() {
       <SignInToUploadModal
         isOpen={isSignInOpen}
         onClose={() => setIsSignInOpen(false)}
+      />
+
+      <DeleteBookConfirmDialog
+        open={deleteTarget !== null}
+        title={deleteTarget?.title ?? ''}
+        deleting={isDeletingBook}
+        onCancel={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
       />
     </div>
   );
