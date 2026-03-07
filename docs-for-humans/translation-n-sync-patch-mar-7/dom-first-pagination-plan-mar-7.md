@@ -298,6 +298,27 @@ Refactor hidden pagination pass into stable-prefix builder.
 
 Persist layout cache in IDB by layout key and content version.
 
+Done on March 7:
+
+- added `chapter_layout` IndexedDB store
+- persisted chapter layout entries with:
+  - `pages`
+  - `finalBlocks`
+  - `fragmentMap`
+  - `currentPageIdx`
+- switched layout cache key from a text-length heuristic to a real layout-content signature plus:
+  - viewport width
+  - viewport height
+  - font size
+  - language
+- Reader now hydrates layout from memory first, then from IDB, before falling back to a fresh hidden pagination pass
+
+Browser verification:
+
+- after a full browser reload on the same chapter/layout key, `chapter_layout` entries were present in IDB
+- reopening the reader restored the same visible text fragment after reload
+- this means layout reuse is no longer limited to module-memory cache inside one route lifetime
+
 ### Stage 4
 
 Add neighboring chapter layout prefetch.

@@ -12,7 +12,16 @@ import { usePageGestures } from '@/lib/hooks/usePageGestures';
 import { computePages, findPageForBlock, findPageForBlockAndSentence, findPageByBlockPosition, normalizeBlocks } from '@/lib/paginatorUtils';
 import { ContentBlock } from '@/lib/api';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { getCachedChapterBlockIds, getCachedReadingPosition, setCachedChapterContent, setCachedReadingPosition, getCachedTocTitles, setCachedTocTitles } from '@/lib/contentCache';
+import {
+    getCachedChapterBlockIds,
+    getCachedChapterLayout,
+    getCachedReadingPosition,
+    setCachedChapterContent,
+    setCachedChapterLayout,
+    setCachedReadingPosition,
+    getCachedTocTitles,
+    setCachedTocTitles,
+} from '@/lib/contentCache';
 import { mergeDisplayBlocksPreservingTranslations } from '@/lib/reader/mergeDisplayBlocks';
 import { isBlockPendingForActiveLang, isTranslatableBlock } from '@/lib/translationState';
 import {
@@ -65,6 +74,35 @@ type PaginationCacheEntry = {
 
 function getSentenceIndex(block: ContentBlock): number {
     return 'sentenceIndex' in block && typeof block.sentenceIndex === 'number' ? block.sentenceIndex : 0;
+}
+
+function hashString(value: string): string {
+    let hash = 5381;
+    for (let i = 0; i < value.length; i += 1) {
+        hash = ((hash << 5) + hash) ^ value.charCodeAt(i);
+    }
+    return (hash >>> 0).toString(36);
+}
+
+function getLayoutContentSignature(blocks: ContentBlock[]): string {
+    const serialized = blocks.map((block) => {
+        switch (block.type) {
+            case 'paragraph':
+            case 'quote':
+                return `${block.id}|${block.type}|${block.position}|${block.text ?? ''}`;
+            case 'heading':
+                return `${block.id}|${block.type}|${block.position}|${block.level}|${block.text ?? ''}`;
+            case 'list':
+                return `${block.id}|${block.type}|${block.position}|${block.ordered ? '1' : '0'}|${(block.items ?? []).join('\u001f')}`;
+            case 'image':
+                return `${block.id}|${block.type}|${block.position}|${block.src ?? ''}|${block.alt ?? ''}|${block.caption ?? ''}`;
+            case 'hr':
+                return `${block.id}|${block.type}|${block.position}`;
+            default:
+                return `${block.id}|${block.type}|${block.position}`;
+        }
+    }).join('\u001e');
+    return hashString(serialized);
 }
 
 // Module-level cache so it survives route navigation (unmount/remount).
@@ -246,6 +284,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
     const blockMeasureRefs = useRef<Map<string, HTMLElement>>(new Map());
 
     const [pageHeight, setPageHeight] = useState(0);
+    const [pageWidth, setPageWidth] = useState(0);
     const [pages, setPages] = useState<string[][]>([]);
     const [paginatedBlocks, setPaginatedBlocks] = useState<ContentBlock[]>([]);
     const fragmentMapRef = useRef<Map<string, string>>(new Map());
@@ -255,6 +294,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
     const [pagesReady, setPagesReady] = useState(false);
     const [visiblePagesReady, setVisiblePagesReady] = useState(false);
     const [remoteAnchorReady, setRemoteAnchorReady] = useState(false);
+    const [layoutCacheReadyKey, setLayoutCacheReadyKey] = useState('');
     const currentPageIdxRef = useRef(0);
 
     // Translation windows are block-based around the current reading position.
@@ -373,6 +413,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
         const updateHeight = () => {
             if (pageViewportRef.current) {
                 setPageHeight(pageViewportRef.current.clientHeight);
+                setPageWidth(pageViewportRef.current.clientWidth);
             }
         };
         const ro = new ResizeObserver(updateHeight);
@@ -396,15 +437,10 @@ export default function ReaderView({ bookId, title, availableLanguages, original
     // (translated text has different length than original → page breaks shift).
     const blockStructureKey = useMemo(
         () => {
-            const parts = normalizedBlocks.map((b) => {
-                let tl = 0;
-                if ('text' in b && typeof b.text === 'string') tl = b.text.length;
-                else if ('items' in b && Array.isArray(b.items)) tl = b.items.join('').length;
-                return `${b.id}:${tl}`;
-            });
-            return `${parts.join(',')}__${pageHeight}__${settings.fontSize}__${displayBlocksLang}`;
+            const contentSignature = getLayoutContentSignature(normalizedBlocks);
+            return `${contentSignature}__${pageWidth}__${pageHeight}__${settings.fontSize}__${displayBlocksLang}`;
         },
-        [normalizedBlocks, pageHeight, settings.fontSize, displayBlocksLang]
+        [normalizedBlocks, pageWidth, pageHeight, settings.fontSize, displayBlocksLang]
     );
     const prevBlockStructureKey = useRef('');
     const lastProgressFetchAtRef = useRef<Map<string, number>>(new Map());
@@ -435,8 +471,9 @@ export default function ReaderView({ bookId, title, availableLanguages, original
     }, [bookId, chapters, chaptersLoading, getAnchor]);
 
     useEffect(() => {
+        if (layoutCacheReadyKey !== paginationCacheKey) return;
         if (blockStructureKey === prevBlockStructureKey.current) return;
-        if (pageHeight === 0 || normalizedBlocks.length === 0) return;
+        if (pageHeight === 0 || pageWidth === 0 || normalizedBlocks.length === 0) return;
 
         let cancelled = false;
         setVisiblePagesReady(false);
@@ -477,14 +514,27 @@ export default function ReaderView({ bookId, title, availableLanguages, original
                 currentPageIdx: currentPageIdxRef.current,
                 savedAt: Date.now(),
             });
+
+            void setCachedChapterLayout({
+                key: paginationCacheKey,
+                bookId,
+                chapterId: currentChapter?.id ?? '',
+                layoutKey: blockStructureKey,
+                pages: computed.pages,
+                finalBlocks: computed.finalBlocks,
+                fragmentEntries: Array.from(computed.fragmentMap.entries()),
+                currentPageIdx: currentPageIdxRef.current,
+            }).catch(() => {
+                // Ignore IDB failures; memory cache still keeps navigation smooth.
+            });
         }
 
-        measureAndCompute();
+        void measureAndCompute();
 
         return () => {
             cancelled = true;
         };
-    }, [blockStructureKey, pageHeight, normalizedBlocks, settings.fontSize, displayBlocksLang, activeLang, paginationCacheKey]);
+    }, [layoutCacheReadyKey, paginationCacheKey, blockStructureKey, pageHeight, pageWidth, normalizedBlocks, settings.fontSize, displayBlocksLang, activeLang, currentChapter?.id, bookId]);
 
     // ─── Anchor restore ──────────────────────────────────────────────────────
     // Set by language-switch handler: blockId + sentenceIndex to jump to on next page recompute
@@ -496,24 +546,56 @@ export default function ReaderView({ bookId, title, availableLanguages, original
         const chapterId = currentChapter?.id ?? '';
         if (!chapterId) return;
 
+        let cancelled = false;
+        setLayoutCacheReadyKey('');
+        restoredFromPaginationCacheRef.current = false;
+        setPagesReady(false);
+        setVisiblePagesReady(false);
+        setPages([]);
+        setPaginatedBlocks([]);
+        fragmentMapRef.current = new Map();
+        setCurrentPageIdx(0);
+
         const cached = paginationCache.get(paginationCacheKey);
         if (cached) {
             restoredFromPaginationCacheRef.current = true;
+            prevBlockStructureKey.current = blockStructureKey;
             setPages(cached.pages);
             setPaginatedBlocks(cached.finalBlocks);
             fragmentMapRef.current = cached.fragmentMap;
             setPagesReady(true);
             setCurrentPageIdx(Math.max(0, Math.min(cached.currentPageIdx, cached.pages.length - 1)));
             setVisiblePagesReady(false);
+            setLayoutCacheReadyKey(paginationCacheKey);
             return;
         }
 
-        restoredFromPaginationCacheRef.current = false;
-        setPagesReady(false);
-        setVisiblePagesReady(false);
-        setPages([]);
-        setCurrentPageIdx(0);
-    }, [currentChapter?.id, paginationCacheKey]);
+        void getCachedChapterLayout(paginationCacheKey)
+            .then((cachedLayout) => {
+                if (cancelled) return;
+                if (cachedLayout && cachedLayout.layoutKey === blockStructureKey) {
+                    restoredFromPaginationCacheRef.current = true;
+                    prevBlockStructureKey.current = blockStructureKey;
+                    setPages(cachedLayout.pages);
+                    setPaginatedBlocks(cachedLayout.finalBlocks);
+                    fragmentMapRef.current = new Map(cachedLayout.fragmentEntries);
+                    setPagesReady(true);
+                    setCurrentPageIdx(Math.max(0, Math.min(cachedLayout.currentPageIdx, cachedLayout.pages.length - 1)));
+                    setVisiblePagesReady(false);
+                }
+            })
+            .catch(() => {
+                // Ignore cache hydration failures; a fresh compute will follow.
+            })
+            .finally(() => {
+                if (cancelled) return;
+                setLayoutCacheReadyKey(paginationCacheKey);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [currentChapter?.id, paginationCacheKey, blockStructureKey]);
 
     useEffect(() => {
         if (!pagesReady || pages.length === 0) return;

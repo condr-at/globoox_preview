@@ -7,10 +7,11 @@ import type { ReadingAnchor } from '@/lib/store'
 type CacheKey = string
 
 const DB_NAME = 'globoox-cache'
-const DB_VERSION = 5
+const DB_VERSION = 6
 const STORE_CHAPTER_CONTENT_V1 = 'chapter_content'
 const STORE_CHAPTER_SKELETON = 'chapter_skeleton'
 const STORE_BLOCK_TEXT = 'block_text'
+const STORE_CHAPTER_LAYOUT = 'chapter_layout'
 const STORE_BOOKS_LIST = 'books_list'
 const STORE_BOOK_META = 'book_meta'
 const STORE_READING_POSITIONS = 'reading_positions'
@@ -54,6 +55,12 @@ function openDb(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains(STORE_BLOCK_TEXT)) {
         const store = db.createObjectStore(STORE_BLOCK_TEXT, { keyPath: 'key' })
         store.createIndex('by_chapter_lang', ['chapterId', 'lang'])
+        store.createIndex('by_fetchedAt', 'fetchedAt')
+      }
+
+      if (!db.objectStoreNames.contains(STORE_CHAPTER_LAYOUT)) {
+        const store = db.createObjectStore(STORE_CHAPTER_LAYOUT, { keyPath: 'key' })
+        store.createIndex('by_book_chapter', ['bookId', 'chapterId'])
         store.createIndex('by_fetchedAt', 'fetchedAt')
       }
 
@@ -196,6 +203,18 @@ interface CachedTocTitles {
   bookId: string
   lang: string
   titles: Record<string, string>
+  fetchedAt: number
+}
+
+export interface CachedChapterLayoutEntry {
+  key: CacheKey
+  bookId: string
+  chapterId: string
+  layoutKey: string
+  pages: string[][]
+  finalBlocks: ContentBlock[]
+  fragmentEntries: Array<[string, string]>
+  currentPageIdx: number
   fetchedAt: number
 }
 
@@ -359,6 +378,61 @@ export async function setCachedTocTitles(scope: string, bookId: string, lang: st
     fetchedAt: Date.now(),
   }
   await withStore(STORE_TOC_TITLES, 'readwrite', (store) => store.put(entry))
+}
+
+export async function getCachedChapterLayout(layoutKey: string): Promise<CachedChapterLayoutEntry | null> {
+  try {
+    const entry = await withStore<CachedChapterLayoutEntry | undefined>(
+      STORE_CHAPTER_LAYOUT,
+      'readonly',
+      (store) => store.get(layoutKey),
+    )
+    return entry ?? null
+  } catch {
+    return null
+  }
+}
+
+export async function setCachedChapterLayout(entry: Omit<CachedChapterLayoutEntry, 'fetchedAt'>): Promise<void> {
+  const fullEntry: CachedChapterLayoutEntry = {
+    ...entry,
+    fetchedAt: Date.now(),
+  }
+  await withStore(STORE_CHAPTER_LAYOUT, 'readwrite', (store) => store.put(fullEntry))
+}
+
+export async function clearCachedChapterLayouts(bookId?: string, chapterId?: string): Promise<void> {
+  try {
+    const db = await openDb()
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STORE_CHAPTER_LAYOUT, 'readwrite')
+      const store = tx.objectStore(STORE_CHAPTER_LAYOUT)
+      const req = (bookId || chapterId)
+        ? store.index('by_book_chapter').openCursor()
+        : store.openCursor()
+      req.onsuccess = () => {
+        const cursor = req.result as IDBCursorWithValue | null
+        if (!cursor) return
+        const value = cursor.value as CachedChapterLayoutEntry
+        if (bookId && value.bookId !== bookId) {
+          cursor.continue()
+          return
+        }
+        if (chapterId && value.chapterId !== chapterId) {
+          cursor.continue()
+          return
+        }
+        cursor.delete()
+        cursor.continue()
+      }
+      req.onerror = () => reject(req.error ?? new Error('IndexedDB cursor failed'))
+      tx.oncomplete = () => resolve()
+      tx.onerror = () => reject(tx.error ?? new Error('IndexedDB transaction failed'))
+    })
+    db.close()
+  } catch {
+    // ignore
+  }
 }
 
 export async function clearCachedTocTitles(scope?: string): Promise<void> {
