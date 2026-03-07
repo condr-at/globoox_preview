@@ -23,6 +23,7 @@ const MAX_BATCH_SIZE = 10 // Smaller batches to reduce duplicate requests and im
 const RECOVERY_POLL_MS = 1500
 const RECOVERY_BATCH_SIZE = 50
 const RECOVERY_RETRY_COOLDOWN_MS = 30000
+const RECOVERY_MAX_RETRIES = 3
 const RECONCILE_COALESCE_MS = 120
 const RECENT_BLOCK_TEXT_TTL_MS = 2000
 
@@ -165,6 +166,7 @@ export function useViewportTranslation({
   const recoveryRef = useRef(new Map<string, Map<string, string>>())
   const recoveryTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const recoveryRetryAtRef = useRef(new Map<string, number>())
+  const recoveryRetryCountRef = useRef(new Map<string, number>())
   const recoveryRetryInFlightRef = useRef(new Set<string>())
   const reconcileQueueRef = useRef(new Map<string, Set<string>>())
   const reconcileTimerRef = useRef(new Map<string, ReturnType<typeof setTimeout>>())
@@ -221,8 +223,23 @@ export function useViewportTranslation({
   const markRecoveryRetried = useCallback((requestChapterId: string, requestLang: string, ids: string[]) => {
     const now = Date.now()
     for (const blockId of ids) {
-      recoveryRetryAtRef.current.set(getRecoveryRetryKey(requestChapterId, requestLang, blockId), now)
+      const key = getRecoveryRetryKey(requestChapterId, requestLang, blockId)
+      recoveryRetryAtRef.current.set(key, now)
+      recoveryRetryCountRef.current.set(key, (recoveryRetryCountRef.current.get(key) ?? 0) + 1)
     }
+  }, [getRecoveryRetryKey])
+
+  const clearRecoveryRetryState = useCallback((requestChapterId: string, requestLang: string, ids: string[]) => {
+    for (const blockId of ids) {
+      const key = getRecoveryRetryKey(requestChapterId, requestLang, blockId)
+      recoveryRetryAtRef.current.delete(key)
+      recoveryRetryCountRef.current.delete(key)
+    }
+  }, [getRecoveryRetryKey])
+
+  const hasExceededRecoveryRetries = useCallback((requestChapterId: string, requestLang: string, blockId: string) => {
+    const key = getRecoveryRetryKey(requestChapterId, requestLang, blockId)
+    return (recoveryRetryCountRef.current.get(key) ?? 0) >= RECOVERY_MAX_RETRIES
   }, [getRecoveryRetryKey])
 
   const pruneRecoveryRetryState = useCallback(() => {
@@ -541,6 +558,7 @@ export function useViewportTranslation({
           if (!translated) return
 
           idToType.delete(result.blockId)
+          clearRecoveryRetryState(recoveryChapterId, recoveryLang, [result.blockId])
           void setCachedTranslatedBlockText(recoveryChapterId, recoveryLang, translated)
 
           const sameRequestContext =
@@ -556,7 +574,7 @@ export function useViewportTranslation({
     } finally {
       recoveryRetryInFlightRef.current.delete(queueKey)
     }
-  }, [markRecoveryRetried, pruneRecoveryRetryState, wasRecoveryRetriedRecently])
+  }, [clearRecoveryRetryState, markRecoveryRetried, pruneRecoveryRetryState, wasRecoveryRetriedRecently])
 
   const reconcileBlocks = useCallback(async (ids: string[]) => {
     if (!canTranslateRef.current) return
@@ -836,6 +854,13 @@ export function useViewportTranslation({
             const translatedBlock = buildRecoveredTranslatedBlock(payload, type as ContentBlock['type'])
             void setCachedTranslatedBlockText(recoveryChapterId, recoveryLang, translatedBlock)
             idToType.delete(payload.blockId)
+            clearRecoveryRetryState(recoveryChapterId, recoveryLang, [payload.blockId])
+          }
+          for (const blockId of res.missing) {
+            if (hasExceededRecoveryRetries(recoveryChapterId, recoveryLang, blockId)) {
+              idToType.delete(blockId)
+              clearRecoveryRetryState(recoveryChapterId, recoveryLang, [blockId])
+            }
           }
           if (res.missing.length > 0) {
             void retryRecoveryMissing(recoveryChapterId, recoveryLang, idToType, res.missing)
@@ -851,7 +876,7 @@ export function useViewportTranslation({
       if (recoveryTimerRef.current) clearInterval(recoveryTimerRef.current)
       recoveryTimerRef.current = null
     }
-  }, [markRecentlyChecked, pruneRecentChecked, retryRecoveryMissing, wasRecentlyChecked])
+  }, [clearRecoveryRetryState, hasExceededRecoveryRetries, markRecentlyChecked, pruneRecentChecked, retryRecoveryMissing, wasRecentlyChecked])
 
   // Cleanup on unmount
   useEffect(() => {

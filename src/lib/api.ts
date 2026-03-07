@@ -119,6 +119,25 @@ export interface TranslateDoneEvent {
   fallbacks: number
 }
 
+function normalizeContentBlock(block: ContentBlock): ContentBlock {
+  if (block.type === 'image' || block.type === 'hr') {
+    return {
+      ...block,
+      targetLangReady: true,
+      isTranslated: true,
+      is_pending: false,
+    }
+  }
+
+  const targetLangReady = block.targetLangReady ?? (block.isTranslated === true)
+  return {
+    ...block,
+    targetLangReady,
+    isTranslated: targetLangReady,
+    is_pending: !targetLangReady,
+  }
+}
+
 export type TranslateStreamMessage = TranslatedBlockResult | TranslateDoneEvent
 
 export type BlockTextPayload =
@@ -318,7 +337,9 @@ export function translateChapterTitles(
 
 export function fetchContent(chapterId: string, lang?: string, signal?: AbortSignal): Promise<ContentBlock[]> {
   const params = lang ? `?lang=${encodeURIComponent(lang.toUpperCase())}` : ''
-  return request<ContentBlock[]>(`/api/chapters/${chapterId}/content${params}`, { signal })
+  return request<ContentBlock[]>(`/api/chapters/${chapterId}/content${params}`, { signal }).then((blocks) =>
+    blocks.map(normalizeContentBlock),
+  )
 }
 
 export function translateBlocks(

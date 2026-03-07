@@ -8,9 +8,7 @@ export function isTranslatableBlock(block: ContentBlock): boolean {
 
 export function hasTargetLangText(block: ContentBlock): boolean {
   if (!isTranslatableBlock(block)) return true
-  if (block.targetLangReady === true) return true
-  if (block.targetLangReady === false) return false
-  return block.isTranslated === true
+  return block.targetLangReady === true
 }
 
 export function isBlockPendingForActiveLang(block: ContentBlock, pendingBlockIds?: Set<string>): boolean {

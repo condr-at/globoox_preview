@@ -135,9 +135,11 @@
 - если target text есть -> блок ready;
 - если target text нет -> блок собирается с fallback и `is_pending`;
 - fallback не должен записываться как target text.
+- frontend cache write path теперь пишет target text только если `targetLangReady === true`.
 
 5. Reader:
 - pending для UI считается по отсутствию target text;
+- frontend runtime normalizes `/content` payload в `targetLangReady`, чтобы primary decision-making не зависел от `isTranslated`;
 - reconcile вызывается для current/high + prefetch windows;
 - windows переведены на block-based логику;
 - есть межглавный добор blockIds через IDB-first.
@@ -244,7 +246,7 @@
 
 1. `ContentBlock` shape все еще legacy-friendly.
 2. `/content?lang=X` остается mixed snapshot endpoint.
-3. `isTranslated` / `is_pending` еще живут как поля совместимости, хотя должны мыслиться как derived.
+3. `isTranslated` / `is_pending` еще живут как поля совместимости, хотя уже должны мыслиться как strictly derived.
 
 ## Что считать финальным решением на сегодня
 
@@ -271,7 +273,7 @@
 Если захотим довести систему до “совсем чистой” архитектуры, следующий этап:
 
 1. сделать единый display model builder для Reader;
-2. убрать роль `isTranslated/is_pending` как самостоятельных решений;
+2. убрать `isTranslated/is_pending` из общего runtime shape там, где они больше не нужны даже как compat payload;
 3. решить, нужен ли legacy `translate-status` вообще;
 4. при желании упростить `/content` контракт.
 

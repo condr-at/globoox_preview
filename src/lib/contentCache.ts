@@ -605,7 +605,7 @@ export async function getCachedChapterContent(chapterId: string, lang?: string):
       .sort((a, b) => a.position - b.position)
       .map((skel) => assembleBlock(skel, textMap.get(skel.id)))
 
-    const missing = assembled.filter((b) => b.is_pending === true).length
+    const missing = assembled.filter((b) => b.targetLangReady !== true).length
     return { blocks: assembled, hasPending: missing > 0, missingCount: missing, fetchedAt: skeleton.fetchedAt }
   } catch {
     return null
@@ -655,7 +655,7 @@ export async function setCachedChapterContent(
         const entry = toBlockText(chapterId, normalizedLang, block)
         if (!entry) continue
         // Only persist text for the requested lang when that lang is actually ready.
-        if (!(block.targetLangReady ?? block.isTranslated)) continue
+        if (block.targetLangReady !== true) continue
         textStore.put(entry)
       }
 

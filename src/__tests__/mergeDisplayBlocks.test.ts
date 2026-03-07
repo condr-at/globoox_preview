@@ -5,10 +5,10 @@ import { mergeDisplayBlocksPreservingTranslations } from '@/lib/reader/mergeDisp
 describe('mergeDisplayBlocksPreservingTranslations', () => {
   it('preserves translated text when next block is not translated', () => {
     const prev: ContentBlock[] = [
-      { id: 'p1', position: 1, type: 'paragraph', text: 'Bonjour', isTranslated: true, is_pending: false },
+      { id: 'p1', position: 1, type: 'paragraph', text: 'Bonjour', targetLangReady: true, isTranslated: true, is_pending: false },
     ]
     const next: ContentBlock[] = [
-      { id: 'p1', position: 1, type: 'paragraph', text: 'Hello', isTranslated: false, is_pending: true },
+      { id: 'p1', position: 1, type: 'paragraph', text: 'Hello', targetLangReady: false, isTranslated: false, is_pending: true },
     ]
     expect(mergeDisplayBlocksPreservingTranslations(prev, next)).toEqual([
       { id: 'p1', position: 1, type: 'paragraph', text: 'Bonjour', targetLangReady: true, isTranslated: true, is_pending: false },
@@ -17,10 +17,10 @@ describe('mergeDisplayBlocksPreservingTranslations', () => {
 
   it('does not overwrite a translated next block', () => {
     const prev: ContentBlock[] = [
-      { id: 'p1', position: 1, type: 'paragraph', text: 'Bonjour', isTranslated: true, is_pending: false },
+      { id: 'p1', position: 1, type: 'paragraph', text: 'Bonjour', targetLangReady: true, isTranslated: true, is_pending: false },
     ]
     const next: ContentBlock[] = [
-      { id: 'p1', position: 1, type: 'paragraph', text: 'Salut', isTranslated: true, is_pending: false },
+      { id: 'p1', position: 1, type: 'paragraph', text: 'Salut', targetLangReady: true, isTranslated: true, is_pending: false },
     ]
     expect(mergeDisplayBlocksPreservingTranslations(prev, next)).toEqual(next)
   })

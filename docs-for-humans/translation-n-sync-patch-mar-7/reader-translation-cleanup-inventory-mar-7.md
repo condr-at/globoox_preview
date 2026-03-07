@@ -104,23 +104,24 @@
 - `globoox/server/api/chapters/[id]/content.get.ts`
 
 Текущее состояние:
-- primary frontend logic уже должна идти через наличие target text;
-- но compat shape все еще везде присутствует;
-- `translationState.ts` сейчас делает fallback:
-  - `targetLangReady`
-  - иначе `isTranslated`
+- primary frontend logic теперь идет через `targetLangReady`;
+- `fetchContent()` нормализует серверный payload в этот compat flag при входе;
+- compat shape все еще везде присутствует, но `translationState.ts` больше не fallback'ится на `isTranslated`.
 
 Почему это пока не мертвое:
 - это все еще совместимость между новым cache/reconcile path и старым `ContentBlock` runtime shape;
 - резкое удаление приведет к крупному рефактору и высокому регрессионному риску.
 
 Статус:
-- `keep for now`
+- `narrowed, keep for now`
+
+Что уже сделано:
+- `targetLangReady` сделан единственным primary frontend ready-flag;
+- `isTranslated` и `is_pending` остались только как совместимый shape / derived payload.
 
 Что будет финальным cleanup:
-- перестать использовать `isTranslated` как fallback вообще;
-- `targetLangReady` сделать единственным compat flag;
-- позже убрать и его в пользу более чистой модели assembled text presence.
+- позже убрать и `isTranslated` / `is_pending` из общего runtime shape там, где это безопасно;
+- затем решить, нужен ли вообще отдельный compat field сверх assembled text presence.
 
 ### 2. Legacy IDB store `chapter_content`
 
@@ -194,6 +195,9 @@
 2. в runtime мыслить ready только через target text presence / `targetLangReady`;
 3. оставить `isTranslated` только как server compat output.
 
+Статус:
+- `done`
+
 ### Pass 2
 
 Проверить external usage server endpoints:
@@ -236,6 +240,9 @@
 Правильная формулировка:
 - сейчас поддерживается `offline-first cache reuse`;
 - не поддерживается `full offline reader mode`.
+
+Дополнение:
+- Reader startup path теперь идет `memory -> IDB -> network`, поэтому локально закэшированная книга не должна ломаться из-за позднего network miss.
 
 ## Bottom Line
 

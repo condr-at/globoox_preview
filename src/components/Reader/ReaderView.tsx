@@ -607,6 +607,14 @@ export default function ReaderView({ bookId, title, availableLanguages, original
     // Authenticated users: local-first anchor restore + conditional server revalidation.
     useEffect(() => {
         let cancelled = false;
+        const localAnchor = getAnchor(bookId);
+        const localAnchorChapterId = localAnchor?.chapterId;
+        if (localAnchorChapterId) {
+            const localChapterIdx = chapters.findIndex((c) => c.id === localAnchorChapterId);
+            if (localChapterIdx >= 0) {
+                setCurrentChapterIndex(localChapterIdx + 1);
+            }
+        }
 
         if (authLoading || chaptersLoading) return;
         if (!isAuthenticated) {
@@ -615,7 +623,6 @@ export default function ReaderView({ bookId, title, availableLanguages, original
         }
 
         const scopeKey = user?.id ?? 'guest';
-        const localAnchor = getAnchor(bookId);
         const hasLocalAnchor = !!localAnchor;
         const currentProgressScope = syncVersions.progress;
         const scopeChanged =
@@ -733,7 +740,15 @@ export default function ReaderView({ bookId, title, availableLanguages, original
         if (!pagesReady || pages.length === 0) return;
         if (visiblePagesReady && pendingAnchorBlockId.current === null) return;
 
-        if (restoredFromPaginationCacheRef.current && pendingAnchorBlockId.current === null) {
+        const savedAnchor = getAnchor(bookId);
+        const hasSavedAnchorForCurrentChapter =
+            !!savedAnchor && savedAnchor.chapterId === (currentChapter?.id ?? '');
+
+        if (
+            restoredFromPaginationCacheRef.current &&
+            pendingAnchorBlockId.current === null &&
+            !hasSavedAnchorForCurrentChapter
+        ) {
             setVisiblePagesReady(true);
             return;
         }
@@ -768,7 +783,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
         }
 
         // Initial load: restore from saved anchor
-        const anchor = getAnchor(bookId);
+        const anchor = savedAnchor;
         if (anchor && anchor.chapterId === (currentChapter?.id ?? '')) {
             if (anchor.fragmentId) {
                 const exactPageIdx = pages.findIndex((page) => page.includes(anchor.fragmentId!));
