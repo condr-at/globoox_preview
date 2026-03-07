@@ -57,17 +57,6 @@ interface ReaderViewProps {
     coverUrl?: string | null;
 }
 
-function isPendingChapterTitle(
-    chapterId: string,
-    activeLang: string,
-    sourceLanguage: string | null | undefined,
-    translatedTitles: Map<string, string>,
-): boolean {
-    if (!sourceLanguage) return false;
-    if (sourceLanguage.toUpperCase() === activeLang.toUpperCase()) return false;
-    return !translatedTitles.has(chapterId);
-}
-
 type PaginationCacheEntry = {
     pages: string[][];
     finalBlocks: ContentBlock[];
@@ -146,10 +135,8 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
 
     // Chapter title translation state
     const [translatedChapterTitles, setTranslatedChapterTitles] = useState<Map<string, string>>(new Map());
-    const [isTranslatingChapterTitles, setIsTranslatingChapterTitles] = useState(false);
     const translatingTitlesLangRef = useRef<string | null>(null);
     const [translatedBookMeta, setTranslatedBookMeta] = useState<{ title: string; author: string | null } | null>(null);
-    const [isTranslatingBookMeta, setIsTranslatingBookMeta] = useState(false);
 
     // Reset translated titles when active language changes
     useEffect(() => {
@@ -180,29 +167,24 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
 
         if (!sourceLang || sourceLang === targetLang) {
             setTranslatedBookMeta({ title, author: author ?? null });
-            setIsTranslatingBookMeta(false);
             return () => {
                 cancelled = true;
             };
         }
 
-        setIsTranslatingBookMeta(true);
         void getCachedBookTranslation(scopeKey, bookId, targetLang).then((cached) => {
             if (cancelled || !cached) return;
             setTranslatedBookMeta(cached);
-            setIsTranslatingBookMeta(false);
         });
 
         void translateBookMetadata(bookId, targetLang)
             .then((result) => {
                 if (cancelled) return;
                 setTranslatedBookMeta(result);
-                setIsTranslatingBookMeta(false);
                 void setCachedBookTranslation(scopeKey, bookId, targetLang, result);
             })
             .catch(() => {
                 if (cancelled) return;
-                setIsTranslatingBookMeta(false);
             });
 
         return () => {
@@ -1236,11 +1218,10 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
         if (isSourceLang || !chapters.length) return;
         // Skip if already translated or in progress for this lang
         if (translatingTitlesLangRef.current === lang) return;
-        const missing = chapters.some((c) => c.title && !c.translations?.[lang]);
+        const missing = chapters.some((c) => c.title && !translatedChapterTitles.has(c.id) && !c.translations?.[lang]);
         if (!missing) return;
 
         translatingTitlesLangRef.current = lang;
-        setIsTranslatingChapterTitles(true);
         try {
             const { results } = await translateChapterTitles(bookId, lang);
             const map = new Map<string, string>();
@@ -1251,9 +1232,9 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
         } catch {
             // silently fail — original titles remain visible
         } finally {
-            setIsTranslatingChapterTitles(false);
+            translatingTitlesLangRef.current = null;
         }
-    }, [activeLang, isSourceLang, chapters, bookId, user?.id]);
+    }, [activeLang, isSourceLang, chapters, bookId, translatedChapterTitles, user?.id]);
 
     // ─── Language switch (lock anchor before, restore after) ─────────────────
     const handleLanguageChange = (lang: Language) => {
@@ -1327,6 +1308,12 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
     const isBookMetaPending = !!originalLanguage
         && originalLanguage.toUpperCase() !== activeLang.toUpperCase()
         && !translatedBookMeta;
+    const isTargetLanguageReaderChrome = !!originalLanguage
+        && originalLanguage.toUpperCase() !== activeLang.toUpperCase();
+    const areAllChapterTitlesReady = !isTargetLanguageReaderChrome
+        || chapters.every((chapter) => translatedChapterTitles.has(chapter.id));
+    const isTocContentPending = isTargetLanguageReaderChrome
+        && (!translatedBookMeta || !areAllChapterTitlesReady);
     const readerBookTitle = translatedBookMeta?.title ?? title;
     const readerBookAuthor = translatedBookMeta?.author ?? author ?? null;
 
@@ -1421,25 +1408,27 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                     transform: chromeVisible ? 'translateY(0)' : 'translateY(-100%)',
                 }}
             >
-                <div className="flex items-center justify-between h-11 px-4">
-                    <Button variant="ghost" size="icon" asChild className="text-[var(--system-blue)] -ml-2 flex-shrink-0 relative after:absolute after:inset-y-[-10px] after:left-[-10px] after:right-[-4px]">
-                        <Link
-                            href="/library"
-                            onClick={() => {
-                                try {
-                                    sessionStorage.setItem(
-                                        'globoox:last_read_book',
-                                        JSON.stringify({ bookId, at: Date.now() })
-                                    );
-                                } catch { /* ignore */ }
-                            }}
-                        >
-                            <ChevronLeft className="w-6 h-6 text-[var(--system-blue)]" strokeWidth={2.5} />
-                        </Link>
-                    </Button>
+                <div className="flex h-11 items-center px-4">
+                    <div className="flex h-full items-center justify-start shrink-0">
+                        <Button variant="ghost" size="icon" asChild className="text-[var(--system-blue)] -ml-2 flex-shrink-0 relative after:absolute after:inset-y-[-10px] after:left-[-10px] after:right-[-4px]">
+                            <Link
+                                href="/library"
+                                onClick={() => {
+                                    try {
+                                        sessionStorage.setItem(
+                                            'globoox:last_read_book',
+                                            JSON.stringify({ bookId, at: Date.now() })
+                                        );
+                                    } catch { /* ignore */ }
+                                }}
+                            >
+                                <ChevronLeft className="w-6 h-6 text-[var(--system-blue)]" strokeWidth={2.5} />
+                            </Link>
+                        </Button>
+                    </div>
 
-                    <div className="flex-1 min-w-0 text-center px-1">
-                        <div className="relative inline-flex max-w-full flex-col items-center justify-center">
+                    <div className="min-w-0 flex-1 px-2">
+                        <div className="flex max-w-full flex-col justify-center text-left">
                             <h1 className={`max-w-full text-sm font-semibold truncate ${isBookMetaPending ? 'blur-[3px] opacity-40' : ''}`}>
                                 {readerBookTitle}
                             </h1>
@@ -1448,15 +1437,10 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                                     {readerBookAuthor}
                                 </p>
                             )}
-                            {isBookMetaPending && (
-                                <span className="absolute inset-0 flex items-center justify-center text-[11px] font-medium text-[var(--system-blue)]">
-                                    Translating...
-                                </span>
-                            )}
                         </div>
                     </div>
 
-                    <div className="flex items-center flex-shrink-0">
+                    <div className="flex h-full items-center justify-end shrink-0">
                         <LanguageSwitch
                             availableLanguages={languages}
                             currentLanguage={activeLang}
@@ -1468,7 +1452,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                                 id: bookId,
                                 title: readerBookTitle,
                                 author: readerBookAuthor,
-                                isMetaPending: isBookMetaPending || isTranslatingBookMeta,
+                                isTocContentPending,
                                 coverUrl,
                                 languages,
                                 chapters: chapters.map((c) => ({
@@ -1477,19 +1461,12 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                                         || (activeLang && c.translations?.[activeLang.toUpperCase()])
                                         || c.title,
                                     depth: c.depth,
-                                    isPending: isPendingChapterTitle(
-                                        c.id,
-                                        activeLang,
-                                        originalLanguage,
-                                        translatedChapterTitles,
-                                    ),
                                 })),
                             }}
                             currentChapter={currentChapterIndex}
                             onSelectChapter={handleSelectChapterFromToc}
                             disabled={false}
                             onTocOpen={handleTocOpen}
-                            isTranslatingChapterTitles={isTranslatingChapterTitles}
                         />
                     </div>
                 </div>
