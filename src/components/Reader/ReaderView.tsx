@@ -255,6 +255,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
     const [pagesReady, setPagesReady] = useState(false);
     const [visiblePagesReady, setVisiblePagesReady] = useState(false);
     const [remoteAnchorReady, setRemoteAnchorReady] = useState(false);
+    const currentPageIdxRef = useRef(0);
 
     // Translation windows are block-based around the current reading position.
     const PREFETCH_BLOCKS_FORWARD = 20;
@@ -421,6 +422,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
         if (pageHeight === 0 || normalizedBlocks.length === 0) return;
 
         let cancelled = false;
+        setVisiblePagesReady(false);
 
         async function measureAndCompute() {
             // Ensure fonts are loaded before measuring
@@ -440,20 +442,23 @@ export default function ReaderView({ bookId, title, availableLanguages, original
                 pageHeight,
                 measureContainerRef.current,
                 settings.fontSize,
-                displayBlocksLang ?? activeLang
+                displayBlocksLang ?? activeLang,
+                1,
+                blockMeasureRefs.current,
             );
 
             setPages(computed.pages);
             setPaginatedBlocks(computed.finalBlocks);
             fragmentMapRef.current = computed.fragmentMap;
             setPagesReady(true);
+            setVisiblePagesReady(true);
 
             // Update cache for instant reopen.
             paginationCache.set(paginationCacheKey, {
                 pages: computed.pages,
                 finalBlocks: computed.finalBlocks,
                 fragmentMap: computed.fragmentMap,
-                currentPageIdx,
+                currentPageIdx: currentPageIdxRef.current,
                 savedAt: Date.now(),
             });
         }
@@ -463,7 +468,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
         return () => {
             cancelled = true;
         };
-    }, [blockStructureKey, pageHeight, normalizedBlocks, settings.fontSize, displayBlocksLang, activeLang, currentPageIdx, paginationCacheKey]);
+    }, [blockStructureKey, pageHeight, normalizedBlocks, settings.fontSize, displayBlocksLang, activeLang, paginationCacheKey]);
 
     // ─── Anchor restore ──────────────────────────────────────────────────────
     // Set by language-switch handler: blockId + sentenceIndex to jump to on next page recompute
@@ -626,6 +631,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
     useEffect(() => {
         if (!remoteAnchorReady) return;
         if (!pagesReady || pages.length === 0) return;
+        if (visiblePagesReady && pendingAnchorBlockId.current === null) return;
 
         // If there's a pending anchor (from language switch), use it
         const targetBlockId = pendingAnchorBlockId.current;
@@ -669,7 +675,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
             setCurrentPageIdx(Math.max(0, byPos));
         }
         setVisiblePagesReady(true);
-    }, [remoteAnchorReady, pagesReady, pages, bookId, currentChapter?.id, displayBlocks, getAnchor, paginatedBlocks]);
+    }, [remoteAnchorReady, pagesReady, pages, bookId, currentChapter?.id, displayBlocks, getAnchor, paginatedBlocks, visiblePagesReady]);
 
     // ─── Anchor save (throttled ~1 s) ────────────────────────────────────────
     const lastSavedAnchorAt = useRef(0);
@@ -806,6 +812,10 @@ export default function ReaderView({ bookId, title, availableLanguages, original
         () => paginatedBlocks.filter((b) => currentPageBlockIds.has(b.id)),
         [paginatedBlocks, currentPageBlockIds]
     );
+
+    useEffect(() => {
+        currentPageIdxRef.current = currentPageIdx;
+    }, [currentPageIdx]);
 
     // Glow policy:
     // - Can appear ONLY during a language switch.
@@ -1216,6 +1226,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
                             <div
                                 key={block.id}
                                 className="flow-root"
+                                data-measure-block-id={block.id}
                                 ref={(el) => {
                                     if (el) blockMeasureRefs.current.set(block.id, el);
                                     else blockMeasureRefs.current.delete(block.id);
