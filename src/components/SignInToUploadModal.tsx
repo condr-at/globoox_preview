@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { X, BookMarked, Smartphone, Globe } from 'lucide-react';
 import { GoogleIcon } from '@/components/icons/GoogleIcon';
+import IOSDialog from '@/components/ui/ios-dialog';
 import { createClient } from '@/lib/supabase/client';
 import { getSiteUrl } from '@/lib/supabase/utils';
 
@@ -20,8 +21,6 @@ const BENEFITS = [
 export default function SignInToUploadModal({ isOpen, onClose }: Props) {
   const [loading, setLoading] = useState(false);
 
-  if (!isOpen) return null;
-
   const handleGoogleSignIn = async () => {
     setLoading(true);
     const supabase = createClient();
@@ -37,10 +36,8 @@ export default function SignInToUploadModal({ isOpen, onClose }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-
-      <div className="relative bg-card border border-border/60 rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-sm pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:pb-6">
+    <IOSDialog open={isOpen} onOpenChange={(nextOpen) => !nextOpen && onClose()} className="border-border/60 bg-card sm:max-w-sm sm:pb-6" mobileLayout="sheet">
+      <div className="relative">
         {/* drag handle (mobile) */}
         <div className="flex justify-center pt-3 pb-1 sm:hidden">
           <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
@@ -98,6 +95,6 @@ export default function SignInToUploadModal({ isOpen, onClose }: Props) {
           </button>
         </div>
       </div>
-    </div>
+    </IOSDialog>
   );
 }

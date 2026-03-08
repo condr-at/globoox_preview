@@ -2,6 +2,11 @@
 
 > **Related:** For the broader roadmap (paginator, gestures, tap zones), see [`reader-pagination-status-and-plan.md`](./reader-pagination-status-and-plan.md).  
 > This document focuses on **immediate API integration** and **bug fixes**.
+>
+> **Translation v2 note:** Reader progress/anchor logic must remain compatible with Translation v2 invariants:
+> - visible blocks use HIGH priority translation,
+> - reconcile is IDB-first,
+> - prefetch windows are block-based (`LOW` forward, `EXTRALOW` backward), not page-count based.
 
 ## ЗАЧЕМ (Why)
 

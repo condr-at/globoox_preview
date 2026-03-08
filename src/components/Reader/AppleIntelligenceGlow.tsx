@@ -77,39 +77,12 @@ interface AppleIntelligenceGlowProps {
 export default function AppleIntelligenceGlow({ bookId }: AppleIntelligenceGlowProps) {
   const isTranslating = useAppStore((state) => state.isTranslatingByBook[bookId] ?? false);
   const [mounted, setMounted] = useState(false);
-  const [visible, setVisible] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>(0);
   const startTimeRef = useRef<number>(0);
-  const hideTimerRef = useRef<number>(0);
 
   useEffect(() => {
     setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (isTranslating) {
-      setVisible(true);
-      startTimeRef.current = performance.now();
-      
-      // Clear any existing hide timer
-      if (hideTimerRef.current) {
-        clearTimeout(hideTimerRef.current);
-      }
-      
-      // Hide after 7 seconds
-      hideTimerRef.current = window.setTimeout(() => {
-        setVisible(false);
-      }, 7000);
-    }
-  }, [isTranslating]);
-
-  useEffect(() => {
-    return () => {
-      if (hideTimerRef.current) {
-        clearTimeout(hideTimerRef.current);
-      }
-    };
   }, []);
 
   const drawGlow = useCallback(function drawGlowFrame() {
@@ -270,17 +243,22 @@ export default function AppleIntelligenceGlow({ bookId }: AppleIntelligenceGlowP
   }, []);
 
   useEffect(() => {
-    if (visible && canvasRef.current) {
+    if (!mounted) return;
+
+    if (isTranslating && canvasRef.current) {
+      startTimeRef.current = performance.now();
       drawGlow();
+    } else if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
     }
     return () => {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [visible, drawGlow]);
+  }, [mounted, isTranslating, drawGlow]);
 
-  if (!mounted || !visible) return null;
+  if (!mounted) return null;
 
   const overflow = 20; // px за край viewport
 
