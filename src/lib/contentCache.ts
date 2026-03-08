@@ -124,6 +124,17 @@ function openDb(): Promise<IDBDatabase> {
   })
 }
 
+export async function clearEntireContentCache(): Promise<void> {
+  if (typeof indexedDB === 'undefined') return
+
+  await new Promise<void>((resolve, reject) => {
+    const req = indexedDB.deleteDatabase(DB_NAME)
+    req.onsuccess = () => resolve()
+    req.onerror = () => reject(req.error ?? new Error('Failed to delete IndexedDB database'))
+    req.onblocked = () => reject(new Error('IndexedDB delete blocked by open connections'))
+  })
+}
+
 function withStore<T>(storeName: string, mode: IDBTransactionMode, fn: (store: IDBObjectStore) => IDBRequest<T>): Promise<T> {
   return openDb().then(
     (db) =>

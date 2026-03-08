@@ -59,6 +59,16 @@
 - какие transitions и recovery semantics обязательны;
 - почему derived pagination/layout objects не должны становиться новой истиной.
 
+6. `06-offline-first-roadmap.md`
+
+Отдельное ТЗ на дальний offline-first режим:
+
+- что реально достижимо;
+- что должно считаться offline-first Reader/Library;
+- что должно оставаться online-only;
+- reconnect semantics;
+- staged roadmap без ложного обещания “полного оффлайна”.
+
 ## Связанные старые документы
 
 Основные документы прошлого прохода:
