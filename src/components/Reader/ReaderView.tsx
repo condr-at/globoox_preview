@@ -1441,14 +1441,20 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                                     else blockMeasureRefs.current.delete(block.id);
                                 }}
                             >
-                                <ContentBlockRenderer block={block} fontSize={settings.fontSize} coverUrl={coverUrl} isCoverImage={block.id === firstImageBlockId} />
+                                <ContentBlockRenderer
+                                    block={block}
+                                    fontSize={settings.fontSize}
+                                    coverUrl={coverUrl}
+                                    isCoverImage={block.id === firstImageBlockId}
+                                    imageMaxHeight={pageHeight}
+                                />
                             </div>
                         ))}
                     </div>
 
                     {/* Visible page */}
                     <TranslationGlow>
-                        <div className="container max-w-2xl mx-auto px-4 h-full" lang={activeLang}>
+                        <div className="container max-w-2xl mx-auto px-4 h-full select-none md:select-text" lang={activeLang}>
                             {isLoading || !visiblePagesReady ? (
                                 <>
                                     <Skeleton className="h-7 w-64 mb-5" />
@@ -1481,7 +1487,16 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                                         if (isPending && !firstPendingFound) firstPendingFound = true;
                                         return (
                                             <div key={block.id} className="flow-root" ref={getRefCallback(blockId, block.type)}>
-                                                <ContentBlockRenderer block={block} fontSize={settings.fontSize} isPending={isPending} showTranslatingLabel={showTranslatingLabel} pendingLabel={pendingLabel} coverUrl={coverUrl} isCoverImage={isCoverImage} />
+                                                <ContentBlockRenderer
+                                                    block={block}
+                                                    fontSize={settings.fontSize}
+                                                    isPending={isPending}
+                                                    showTranslatingLabel={showTranslatingLabel}
+                                                    pendingLabel={pendingLabel}
+                                                    coverUrl={coverUrl}
+                                                    isCoverImage={isCoverImage}
+                                                    imageMaxHeight={pageHeight}
+                                                />
                                             </div>
                                         );
                                     });

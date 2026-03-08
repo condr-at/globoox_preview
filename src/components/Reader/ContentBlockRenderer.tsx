@@ -8,6 +8,7 @@ interface ContentBlockRendererProps {
   pendingLabel?: string
   coverUrl?: string | null // Book cover URL to use for images with relative paths
   isCoverImage?: boolean // True only for the first image block (the actual book cover)
+  imageMaxHeight?: number
 }
 
 // Wrapper component for pending translation overlay
@@ -40,8 +41,18 @@ function PendingWrapper({
   );
 }
 
-export default function ContentBlockRenderer({ block, fontSize, isPending, showTranslatingLabel, pendingLabel, coverUrl, isCoverImage }: ContentBlockRendererProps) {
+export default function ContentBlockRenderer({
+  block,
+  fontSize,
+  isPending,
+  showTranslatingLabel,
+  pendingLabel,
+  coverUrl,
+  isCoverImage,
+  imageMaxHeight,
+}: ContentBlockRendererProps) {
   const style = fontSize ? { fontSize: `${fontSize}px` } : undefined
+  const resolvedImageMaxHeight = imageMaxHeight ? Math.max(160, imageMaxHeight - 24) : undefined
 
   if (block.type === 'hr') {
     return <hr className="my-5 border-border" />
@@ -60,8 +71,14 @@ export default function ContentBlockRenderer({ block, fontSize, isPending, showT
     }
     
     return (
-      <figure className="my-4">
-        <img src={imageSrc} alt={block.alt} className="w-full rounded-md" />
+      <figure className="my-4 select-none">
+        <img
+          src={imageSrc}
+          alt={block.alt}
+          draggable={false}
+          className="mx-auto block h-auto max-w-full rounded-md object-contain"
+          style={resolvedImageMaxHeight ? { maxHeight: `${resolvedImageMaxHeight}px` } : undefined}
+        />
         {block.caption && (
           <figcaption className="text-xs text-muted-foreground text-center mt-1">
             {block.caption}
