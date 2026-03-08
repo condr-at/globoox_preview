@@ -50,6 +50,9 @@ export function normalizeBlocks(blocks: ContentBlock[]): ContentBlock[] {
           partIndex: index,
           isFirstPart: index === 0,
           isLastPart: index === block.items.length - 1,
+          targetLangReady: block.targetLangReady,
+          isTranslated: block.isTranslated,
+          is_pending: block.is_pending,
         })
       })
     } else {

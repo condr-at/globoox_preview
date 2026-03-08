@@ -49,6 +49,16 @@
 - что именно нужно проверить в auth/signup path перед любым fix;
 - какие выводы уже можно делать, а какие пока нельзя.
 
+5. `05-ideal-state-machine-spec.md`
+
+Отдельное ТЗ на целевую state machine для Translation/Reader:
+
+- отдельно backend state machine;
+- отдельно frontend state machine;
+- какие должны быть entity contracts;
+- какие transitions и recovery semantics обязательны;
+- почему derived pagination/layout objects не должны становиться новой истиной.
+
 ## Связанные старые документы
 
 Основные документы прошлого прохода:
