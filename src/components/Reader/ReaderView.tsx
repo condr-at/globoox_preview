@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useAppStore, Language, ReadingAnchor } from '@/lib/store';
-import { fetchContent, fetchReadingPosition, saveReadingPosition, updateBookLanguage } from '@/lib/api';
+import { fetchContent, fetchReadingPosition, saveReadingPosition, updateBookLanguage, checkTranslationLimit } from '@/lib/api';
 import { useChapters } from '@/lib/hooks/useChapters';
 import { useChapterContent } from '@/lib/hooks/useChapterContent';
 import { useReaderMetadataTranslations } from '@/lib/hooks/useReaderMetadataTranslations';
@@ -38,6 +38,7 @@ import ContentBlockRenderer from './ContentBlockRenderer';
 import { Button } from '@/components/ui/button';
 import IOSAlertDialog from '@/components/ui/ios-alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
+import UnlimitedAccessModal from '@/components/UnlimitedAccessModal';
 
 // Source of a navigation event. Any source other than manual_scroll is a "jump"
 // that aborts in-flight prefetch requests and updates readingAnchor immediately.
@@ -52,6 +53,7 @@ interface ReaderViewProps {
     originalLanguage?: string | null;
     serverLanguage?: string | null;
     coverUrl?: string | null;
+    isOwn?: boolean;
 }
 
 type PaginationCacheEntry = {
@@ -122,8 +124,8 @@ function getLayoutContentSignature(blocks: ContentBlock[]): string {
 // Module-level cache so it survives route navigation (unmount/remount).
 const paginationCache = new Map<string, PaginationCacheEntry>();
 
-export default function ReaderView({ bookId, title, author, availableLanguages, originalLanguage, serverLanguage, coverUrl }: ReaderViewProps) {
-    const { user, isAuthenticated, loading: authLoading } = useAuth();
+export default function ReaderView({ bookId, title, author, availableLanguages, originalLanguage, serverLanguage, coverUrl, isOwn = false }: ReaderViewProps) {
+    const { user, isAlpha, isAuthenticated, loading: authLoading } = useAuth();
     const {
         settings,
         perBookLanguages,
@@ -140,6 +142,8 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
     const [pendingLang, setPendingLang] = useState<Language | null>(null);
     const [isLanguageSwitching, setIsLanguageSwitching] = useState(false);
     const [isChapterEntryTransitionActive, setIsChapterEntryTransitionActive] = useState(false);
+    const [showTranslationLimitModal, setShowTranslationLimitModal] = useState(false);
+    const translationAllowedRef = useRef<boolean | null>(null);
 
     const resolvedServerLang = useMemo<Language>(() => {
         const localBookLang = perBookLanguages[bookId];
@@ -236,6 +240,16 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
         if (perBookLanguages[bookId]) return;
         setBookLanguage(bookId, resolvedServerLang);
     }, [bookId, perBookLanguages, resolvedServerLang, setBookLanguage]);
+
+    // Pre-check translation limit for non-alpha users reading their own books
+    useEffect(() => {
+        if (!isOwn || isAlpha || !isAuthenticated || authLoading) return;
+        checkTranslationLimit(bookId).then(({ allowed }) => {
+            translationAllowedRef.current = allowed;
+        }).catch(() => {
+            translationAllowedRef.current = true; // fail open
+        });
+    }, [isOwn, isAlpha, isAuthenticated, authLoading, bookId]);
 
     // NOTE: glow state is derived later, once pagination + currentPageBlocks are available.
 
@@ -1206,8 +1220,27 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
     }, [isSourceLang, chapters.length, ensureTocTranslations]);
 
     // ─── Language switch (lock anchor before, restore after) ─────────────────
-    const handleLanguageChange = (lang: Language) => {
+    const handleLanguageChange = async (lang: Language) => {
         if (lang.toLowerCase() === activeLang.toLowerCase()) return;
+
+        // Check translation limit for non-alpha users switching to a non-source language on their own book
+        const isTargetingTranslation = !originalLanguage || lang.toUpperCase() !== originalLanguage.toUpperCase();
+        if (isOwn && !isAlpha && isAuthenticated && isTargetingTranslation) {
+            let allowed = translationAllowedRef.current;
+            if (allowed === null) {
+                try {
+                    const result = await checkTranslationLimit(bookId);
+                    allowed = result.allowed;
+                    translationAllowedRef.current = allowed;
+                } catch {
+                    allowed = true; // fail open
+                }
+            }
+            if (!allowed) {
+                setShowTranslationLimitModal(true);
+                return;
+            }
+        }
 
         trackLanguageSwitched({ book_id: bookId, from_language: activeLang, to_language: lang });
         // Lock the current anchor so we can restore it after the language reloads
@@ -1354,6 +1387,14 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                 onConfirm={dismissTranslationNotice}
                 icon={null}
             />
+            {user && (
+                <UnlimitedAccessModal
+                    open={showTranslationLimitModal}
+                    onOpenChange={setShowTranslationLimitModal}
+                    userEmail={user.email ?? ''}
+                    trigger="translation_limit"
+                />
+            )}
 
             {/* ── Header (fixed, slides out upward) ── */}
             <header

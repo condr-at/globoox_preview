@@ -115,6 +115,7 @@ export default function ReaderPage({ params }: ReaderPageProps) {
       originalLanguage={book.original_language}
       serverLanguage={book.selected_language}
       coverUrl={book.cover_url}
+      isOwn={book.is_own ?? false}
     />
   );
 }

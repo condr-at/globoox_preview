@@ -6,6 +6,7 @@ import type { User } from '@supabase/supabase-js';
 
 let cachedUser: User | null | undefined = undefined; // undefined = unknown/not fetched yet
 let cachedIsAdmin: boolean | undefined = undefined;
+let cachedIsAlpha: boolean | undefined = undefined;
 let cachedAdminUserId: string | undefined = undefined;
 let cachedAdminFetchedAt: number | undefined = undefined;
 const ADMIN_STALE_MS = 5 * 60 * 1000;
@@ -13,6 +14,7 @@ const ADMIN_STALE_MS = 5 * 60 * 1000;
 export function useAuth() {
   const [user, setUser] = useState<User | null>(cachedUser ?? null);
   const [isAdmin, setIsAdmin] = useState(cachedIsAdmin ?? false);
+  const [isAlpha, setIsAlpha] = useState(cachedIsAlpha ?? false);
   const [loading, setLoading] = useState(cachedUser === undefined);
   const adminFetchInFlightRef = useRef<Promise<void> | null>(null);
 
@@ -25,10 +27,12 @@ export function useAuth() {
       cachedUser = nextUser;
       setUser(nextUser);
       if (session?.user) {
-        fetchAdminStatus(session.user.id);
+        fetchProfileStatus(session.user.id);
       } else {
         cachedIsAdmin = false;
+        cachedIsAlpha = false;
         setIsAdmin(false);
+        setIsAlpha(false);
         setLoading(false);
       }
     });
@@ -41,10 +45,12 @@ export function useAuth() {
       cachedUser = nextUser;
       setUser(nextUser);
       if (session?.user) {
-        fetchAdminStatus(session.user.id);
+        fetchProfileStatus(session.user.id);
       } else {
         cachedIsAdmin = false;
+        cachedIsAlpha = false;
         setIsAdmin(false);
+        setIsAlpha(false);
         setLoading(false);
       }
     });
@@ -52,15 +58,17 @@ export function useAuth() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const fetchAdminStatus = async (userId: string) => {
+  const fetchProfileStatus = async (userId: string) => {
     const now = Date.now();
     if (
       cachedAdminUserId === userId &&
       cachedIsAdmin !== undefined &&
+      cachedIsAlpha !== undefined &&
       cachedAdminFetchedAt !== undefined &&
       now - cachedAdminFetchedAt < ADMIN_STALE_MS
     ) {
       setIsAdmin(cachedIsAdmin);
+      setIsAlpha(cachedIsAlpha);
       setLoading(false);
       return;
     }
@@ -72,17 +80,17 @@ export function useAuth() {
     }
 
     const supabase = createClient();
-    
+
     try {
       adminFetchInFlightRef.current = Promise.resolve(
         supabase
           .from('profiles')
-          .select('is_admin')
+          .select('is_admin, is_alpha')
           .eq('id', userId)
           .single()
       )
         .then(({ data, error }) => {
-          console.log('[useAuth] Fetched admin status:', { data, error, userId });
+          console.log('[useAuth] Fetched profile status:', { data, error, userId });
 
           if (error?.code === 'PGRST116') {
             // Profile doesn't exist, create it
@@ -93,18 +101,23 @@ export function useAuth() {
               .then(() => {
                 cachedAdminUserId = userId;
                 cachedIsAdmin = false;
+                cachedIsAlpha = false;
                 cachedAdminFetchedAt = Date.now();
                 setIsAdmin(false);
+                setIsAlpha(false);
               });
           }
 
           if (!error && data) {
             const nextIsAdmin = data.is_admin || false;
+            const nextIsAlpha = (data as any).is_alpha || false;
             cachedAdminUserId = userId;
             cachedIsAdmin = nextIsAdmin;
+            cachedIsAlpha = nextIsAlpha;
             cachedAdminFetchedAt = Date.now();
             setIsAdmin(nextIsAdmin);
-            console.log('[useAuth] isAdmin set to:', data.is_admin);
+            setIsAlpha(nextIsAlpha);
+            console.log('[useAuth] isAdmin:', nextIsAdmin, 'isAlpha:', nextIsAlpha);
           }
         })
         .finally(() => {
@@ -113,17 +126,24 @@ export function useAuth() {
 
       await adminFetchInFlightRef.current;
     } catch (e) {
-      console.warn('Could not fetch admin status:', e);
+      console.warn('Could not fetch profile status:', e);
       adminFetchInFlightRef.current = null;
     }
-    
+
     setLoading(false);
+  };
+
+  const refreshAlphaStatus = () => {
+    cachedAdminFetchedAt = undefined; // invalidate cache
+    if (cachedUser) fetchProfileStatus(cachedUser.id);
   };
 
   return {
     user,
     isAdmin,
+    isAlpha,
     loading,
     isAuthenticated: !!user,
+    refreshAlphaStatus,
   };
 }

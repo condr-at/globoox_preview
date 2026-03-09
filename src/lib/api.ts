@@ -17,6 +17,7 @@ export interface ApiBook {
   selected_language?: string | null
   status: string
   created_at: string
+  is_own?: boolean
 }
 
 // Simple in-memory cache for book metadata to avoid spinners during in-app navigation.
@@ -642,4 +643,29 @@ export interface JobStatus {
 
 export function getJobStatus(jobId: string): Promise<JobStatus> {
   return request<JobStatus>(`/api/jobs/${jobId}`)
+}
+
+export interface TranslationLimitResponse {
+  allowed: boolean
+  count: number
+}
+
+export function checkTranslationLimit(excludeBookId: string): Promise<TranslationLimitResponse> {
+  return request<TranslationLimitResponse>(
+    `/api/translation-limit?exclude_book_id=${encodeURIComponent(excludeBookId)}`
+  )
+}
+
+export function joinWaitlist(email: string): Promise<{ success: boolean }> {
+  return request<{ success: boolean }>('/api/waitlist', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  })
+}
+
+export function joinAlpha(token: string): Promise<{ success: boolean }> {
+  return request<{ success: boolean }>('/api/alpha/join', {
+    method: 'POST',
+    body: JSON.stringify({ token }),
+  })
 }

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { User, Settings, HelpCircle, LogOut, Loader2 } from 'lucide-react';
+import { User, Settings, HelpCircle, LogOut, Loader2, FlaskConical } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -11,12 +11,14 @@ import PageHeader from '@/components/ui/PageHeader';
 import { createClient } from '@/lib/supabase/client';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { useAuth } from '@/lib/hooks/useAuth';
+import UnlimitedAccessModal from '@/components/UnlimitedAccessModal';
 
 export default function ProfilePage() {
     const router = useRouter();
     const supabaseRef = useRef<SupabaseClient | null>(null);
-    const { user, loading } = useAuth();
+    const { user, isAlpha, loading } = useAuth();
     const [signingOut, setSigningOut] = useState(false);
+    const [showAccessModal, setShowAccessModal] = useState(false);
 
     useEffect(() => {
         const supabase = createClient();
@@ -69,12 +71,43 @@ export default function ProfilePage() {
                                         </div>
                                     )}
                                     <div>
-                                        <CardTitle className="text-lg">{displayName}</CardTitle>
+                                        <div className="flex items-center gap-2">
+                                            <CardTitle className="text-lg">{displayName}</CardTitle>
+                                            {isAlpha && (
+                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400">
+                                                    <FlaskConical className="w-3 h-3" />
+                                                    Alpha
+                                                </span>
+                                            )}
+                                        </div>
                                         <CardDescription>{displayEmail}</CardDescription>
                                     </div>
                                 </div>
                             </CardContent>
                         </Card>
+
+                        {/* Alpha Tester */}
+                        {!isAlpha && (
+                            <Card>
+                                <CardContent className="p-4 flex items-center justify-between gap-4">
+                                    <div className="flex items-center gap-3">
+                                        <FlaskConical className="w-5 h-5 text-violet-500 shrink-0" />
+                                        <div>
+                                            <p className="text-sm font-medium">Join Alpha Program</p>
+                                            <p className="text-xs text-muted-foreground">Get early access to new features</p>
+                                        </div>
+                                    </div>
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="shrink-0 border-violet-300 text-violet-700 hover:bg-violet-50 dark:border-violet-700 dark:text-violet-400 dark:hover:bg-violet-900/20"
+                                        onClick={() => setShowAccessModal(true)}
+                                    >
+                                        Join
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        )}
 
                         {/* Menu Items */}
                         <Card>
@@ -130,6 +163,15 @@ export default function ProfilePage() {
                     Globoox Preview v1.0.0
                 </p>
             </div>
+
+            {user && (
+                <UnlimitedAccessModal
+                    open={showAccessModal}
+                    onOpenChange={setShowAccessModal}
+                    userEmail={user.email ?? ''}
+                    trigger="alpha_join"
+                />
+            )}
         </div>
     );
 }
