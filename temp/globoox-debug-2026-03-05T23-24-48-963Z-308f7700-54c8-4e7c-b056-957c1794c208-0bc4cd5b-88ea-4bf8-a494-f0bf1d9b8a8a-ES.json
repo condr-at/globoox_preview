@@ -1,0 +1,728 @@
+{
+  "capturedAt": "2026-03-05T23:24:48.963Z",
+  "href": "http://localhost:3001/reader/308f7700-54c8-4e7c-b056-957c1794c208",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36",
+  "ctx": {
+    "bookId": "308f7700-54c8-4e7c-b056-957c1794c208",
+    "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+    "lang": "ES"
+  },
+  "events": [
+    {
+      "ts": 1772753046876,
+      "type": "api_request_start",
+      "data": {
+        "path": "/api/books?status=active",
+        "method": "GET"
+      }
+    },
+    {
+      "ts": 1772753047457,
+      "type": "api_request_done",
+      "data": {
+        "path": "/api/books?status=active",
+        "method": "GET",
+        "status": 200,
+        "durationMs": 581
+      }
+    },
+    {
+      "ts": 1772753055544,
+      "type": "api_request_start",
+      "data": {
+        "path": "/api/books/308f7700-54c8-4e7c-b056-957c1794c208/chapters",
+        "method": "GET"
+      }
+    },
+    {
+      "ts": 1772753055546,
+      "type": "reader_ctx",
+      "data": {
+        "bookId": "308f7700-54c8-4e7c-b056-957c1794c208",
+        "chapterId": null,
+        "lang": "FR",
+        "chapterIndex": 1
+      }
+    },
+    {
+      "ts": 1772753055551,
+      "type": "reader_ctx",
+      "data": {
+        "bookId": "308f7700-54c8-4e7c-b056-957c1794c208",
+        "chapterId": null,
+        "lang": "FR",
+        "chapterIndex": 1
+      }
+    },
+    {
+      "ts": 1772753055787,
+      "type": "api_request_done",
+      "data": {
+        "path": "/api/books/308f7700-54c8-4e7c-b056-957c1794c208/chapters",
+        "method": "GET",
+        "status": 200,
+        "durationMs": 242
+      }
+    },
+    {
+      "ts": 1772753055795,
+      "type": "reader_ctx",
+      "data": {
+        "bookId": "308f7700-54c8-4e7c-b056-957c1794c208",
+        "chapterId": "c0cf2da1-9625-4bdc-8815-dbe86ddd7322",
+        "lang": "FR",
+        "chapterIndex": 1
+      }
+    },
+    {
+      "ts": 1772753055795,
+      "type": "chapter_content_effect_start",
+      "data": {
+        "chapterId": "c0cf2da1-9625-4bdc-8815-dbe86ddd7322",
+        "lang": "FR"
+      }
+    },
+    {
+      "ts": 1772753055807,
+      "type": "api_request_start",
+      "data": {
+        "path": "/api/books/308f7700-54c8-4e7c-b056-957c1794c208/reading-position",
+        "method": "GET"
+      }
+    },
+    {
+      "ts": 1772753055825,
+      "type": "chapter_content_fetch_start",
+      "data": {
+        "chapterId": "c0cf2da1-9625-4bdc-8815-dbe86ddd7322",
+        "lang": "FR"
+      }
+    },
+    {
+      "ts": 1772753055825,
+      "type": "api_request_start",
+      "data": {
+        "path": "/api/chapters/c0cf2da1-9625-4bdc-8815-dbe86ddd7322/content?lang=FR",
+        "method": "GET"
+      }
+    },
+    {
+      "ts": 1772753056126,
+      "type": "api_request_done",
+      "data": {
+        "path": "/api/books/308f7700-54c8-4e7c-b056-957c1794c208/reading-position",
+        "method": "GET",
+        "status": 200,
+        "durationMs": 319
+      }
+    },
+    {
+      "ts": 1772753056135,
+      "type": "chapter_content_effect_cleanup",
+      "data": {
+        "chapterId": "c0cf2da1-9625-4bdc-8815-dbe86ddd7322",
+        "lang": "FR"
+      }
+    },
+    {
+      "ts": 1772753056135,
+      "type": "reader_ctx",
+      "data": {
+        "bookId": "308f7700-54c8-4e7c-b056-957c1794c208",
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "FR",
+        "chapterIndex": 17
+      }
+    },
+    {
+      "ts": 1772753056135,
+      "type": "chapter_content_effect_start",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "FR"
+      }
+    },
+    {
+      "ts": 1772753056135,
+      "type": "chapter_content_abort_previous",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "FR"
+      }
+    },
+    {
+      "ts": 1772753056137,
+      "type": "api_request_abort",
+      "data": {
+        "path": "/api/chapters/c0cf2da1-9625-4bdc-8815-dbe86ddd7322/content?lang=FR",
+        "method": "GET",
+        "durationMs": 312,
+        "message": "signal is aborted without reason"
+      }
+    },
+    {
+      "ts": 1772753056148,
+      "type": "chapter_content_cache_hit",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "FR",
+        "hasPending": false,
+        "missingCount": 0
+      }
+    },
+    {
+      "ts": 1772753056148,
+      "type": "chapter_content_cache_fresh_skip_fetch",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "FR",
+        "hasPending": false
+      }
+    },
+    {
+      "ts": 1772753056290,
+      "type": "translate_enqueue_high",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "FR",
+        "requested": 17,
+        "newlyEnqueued": 0
+      }
+    },
+    {
+      "ts": 1772753056291,
+      "type": "translate_enqueue_low",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "FR",
+        "requested": 117,
+        "newlyEnqueued": 0
+      }
+    },
+    {
+      "ts": 1772753061570,
+      "type": "api_request_start",
+      "data": {
+        "path": "/api/books/308f7700-54c8-4e7c-b056-957c1794c208/reading-position",
+        "method": "PUT"
+      }
+    },
+    {
+      "ts": 1772753061571,
+      "type": "api_request_start",
+      "data": {
+        "path": "/api/books/308f7700-54c8-4e7c-b056-957c1794c208/language",
+        "method": "PATCH"
+      }
+    },
+    {
+      "ts": 1772753061635,
+      "type": "chapter_content_effect_cleanup",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "FR"
+      }
+    },
+    {
+      "ts": 1772753061636,
+      "type": "reader_ctx",
+      "data": {
+        "bookId": "308f7700-54c8-4e7c-b056-957c1794c208",
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "RU",
+        "chapterIndex": 17
+      }
+    },
+    {
+      "ts": 1772753061637,
+      "type": "chapter_content_effect_start",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "RU"
+      }
+    },
+    {
+      "ts": 1772753061637,
+      "type": "chapter_content_abort_previous",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "RU"
+      }
+    },
+    {
+      "ts": 1772753061705,
+      "type": "chapter_content_cache_hit",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "RU",
+        "hasPending": false,
+        "missingCount": 0
+      }
+    },
+    {
+      "ts": 1772753061705,
+      "type": "chapter_content_cache_fresh_skip_fetch",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "RU",
+        "hasPending": false
+      }
+    },
+    {
+      "ts": 1772753061878,
+      "type": "api_request_done",
+      "data": {
+        "path": "/api/books/308f7700-54c8-4e7c-b056-957c1794c208/language",
+        "method": "PATCH",
+        "status": 200,
+        "durationMs": 307
+      }
+    },
+    {
+      "ts": 1772753061881,
+      "type": "translate_enqueue_high",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "RU",
+        "requested": 17,
+        "newlyEnqueued": 0
+      }
+    },
+    {
+      "ts": 1772753061882,
+      "type": "translate_enqueue_low",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "RU",
+        "requested": 117,
+        "newlyEnqueued": 0
+      }
+    },
+    {
+      "ts": 1772753062426,
+      "type": "api_request_done",
+      "data": {
+        "path": "/api/books/308f7700-54c8-4e7c-b056-957c1794c208/reading-position",
+        "method": "PUT",
+        "status": 200,
+        "durationMs": 856
+      }
+    },
+    {
+      "ts": 1772753064134,
+      "type": "api_request_start",
+      "data": {
+        "path": "/api/books/308f7700-54c8-4e7c-b056-957c1794c208/reading-position",
+        "method": "PUT"
+      }
+    },
+    {
+      "ts": 1772753064135,
+      "type": "api_request_start",
+      "data": {
+        "path": "/api/books/308f7700-54c8-4e7c-b056-957c1794c208/language",
+        "method": "PATCH"
+      }
+    },
+    {
+      "ts": 1772753064210,
+      "type": "chapter_content_effect_cleanup",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "RU"
+      }
+    },
+    {
+      "ts": 1772753064211,
+      "type": "reader_ctx",
+      "data": {
+        "bookId": "308f7700-54c8-4e7c-b056-957c1794c208",
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "ES",
+        "chapterIndex": 17
+      }
+    },
+    {
+      "ts": 1772753064212,
+      "type": "chapter_content_effect_start",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "ES"
+      }
+    },
+    {
+      "ts": 1772753064212,
+      "type": "chapter_content_abort_previous",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "ES"
+      }
+    },
+    {
+      "ts": 1772753064275,
+      "type": "chapter_content_cache_hit",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "ES",
+        "hasPending": true,
+        "missingCount": 133
+      }
+    },
+    {
+      "ts": 1772753064275,
+      "type": "chapter_content_fetch_start",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "ES"
+      }
+    },
+    {
+      "ts": 1772753064275,
+      "type": "api_request_start",
+      "data": {
+        "path": "/api/chapters/0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a/content?lang=ES",
+        "method": "GET"
+      }
+    },
+    {
+      "ts": 1772753064456,
+      "type": "api_request_done",
+      "data": {
+        "path": "/api/books/308f7700-54c8-4e7c-b056-957c1794c208/language",
+        "method": "PATCH",
+        "status": 200,
+        "durationMs": 321
+      }
+    },
+    {
+      "ts": 1772753064460,
+      "type": "translate_flush_start",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "ES",
+        "batchSize": 10,
+        "overflowSize": 123
+      }
+    },
+    {
+      "ts": 1772753064462,
+      "type": "translate_enqueue_high",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "ES",
+        "requested": 133,
+        "newlyEnqueued": 133
+      }
+    },
+    {
+      "ts": 1772753064879,
+      "type": "api_request_done",
+      "data": {
+        "path": "/api/books/308f7700-54c8-4e7c-b056-957c1794c208/reading-position",
+        "method": "PUT",
+        "status": 200,
+        "durationMs": 745
+      }
+    },
+    {
+      "ts": 1772753064906,
+      "type": "api_request_done",
+      "data": {
+        "path": "/api/chapters/0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a/content?lang=ES",
+        "method": "GET",
+        "status": 200,
+        "durationMs": 631
+      }
+    },
+    {
+      "ts": 1772753064906,
+      "type": "chapter_content_fetch_ok",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "ES",
+        "blockCount": 133
+      }
+    },
+    {
+      "ts": 1772753064952,
+      "type": "translate_enqueue_high",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "ES",
+        "requested": 18,
+        "newlyEnqueued": 0
+      }
+    },
+    {
+      "ts": 1772753064953,
+      "type": "translate_enqueue_low",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "ES",
+        "requested": 116,
+        "newlyEnqueued": 0
+      }
+    },
+    {
+      "ts": 1772753069537,
+      "type": "chapter_content_effect_cleanup",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "ES"
+      }
+    },
+    {
+      "ts": 1772753069543,
+      "type": "api_request_start",
+      "data": {
+        "path": "/api/books/08e63de6-37a2-4517-9bcb-2950bdedc194/reading-position",
+        "method": "GET"
+      }
+    },
+    {
+      "ts": 1772753069544,
+      "type": "api_request_start",
+      "data": {
+        "path": "/api/books/4fc07966-b1ff-4814-b8f8-e8ef68366d72/reading-position",
+        "method": "GET"
+      }
+    },
+    {
+      "ts": 1772753069545,
+      "type": "api_request_start",
+      "data": {
+        "path": "/api/books/c6cadd89-ee56-4c9f-89be-e10d5404daa5/reading-position",
+        "method": "GET"
+      }
+    },
+    {
+      "ts": 1772753069547,
+      "type": "api_request_start",
+      "data": {
+        "path": "/api/books/6edf2291-22cc-4478-afa4-4afff7e97210/reading-position",
+        "method": "GET"
+      }
+    },
+    {
+      "ts": 1772753069922,
+      "type": "api_request_done",
+      "data": {
+        "path": "/api/books/08e63de6-37a2-4517-9bcb-2950bdedc194/reading-position",
+        "method": "GET",
+        "status": 200,
+        "durationMs": 378
+      }
+    },
+    {
+      "ts": 1772753069944,
+      "type": "api_request_done",
+      "data": {
+        "path": "/api/books/c6cadd89-ee56-4c9f-89be-e10d5404daa5/reading-position",
+        "method": "GET",
+        "status": 200,
+        "durationMs": 398
+      }
+    },
+    {
+      "ts": 1772753069956,
+      "type": "api_request_done",
+      "data": {
+        "path": "/api/books/6edf2291-22cc-4478-afa4-4afff7e97210/reading-position",
+        "method": "GET",
+        "status": 200,
+        "durationMs": 410
+      }
+    },
+    {
+      "ts": 1772753069970,
+      "type": "api_request_done",
+      "data": {
+        "path": "/api/books/4fc07966-b1ff-4814-b8f8-e8ef68366d72/reading-position",
+        "method": "GET",
+        "status": 200,
+        "durationMs": 425
+      }
+    },
+    {
+      "ts": 1772753087186,
+      "type": "reader_ctx",
+      "data": {
+        "bookId": "308f7700-54c8-4e7c-b056-957c1794c208",
+        "chapterId": "c0cf2da1-9625-4bdc-8815-dbe86ddd7322",
+        "lang": "ES",
+        "chapterIndex": 1
+      }
+    },
+    {
+      "ts": 1772753087187,
+      "type": "chapter_content_effect_start",
+      "data": {
+        "chapterId": "c0cf2da1-9625-4bdc-8815-dbe86ddd7322",
+        "lang": "ES"
+      }
+    },
+    {
+      "ts": 1772753087192,
+      "type": "chapter_content_effect_cleanup",
+      "data": {
+        "chapterId": "c0cf2da1-9625-4bdc-8815-dbe86ddd7322",
+        "lang": "ES"
+      }
+    },
+    {
+      "ts": 1772753087193,
+      "type": "reader_ctx",
+      "data": {
+        "bookId": "308f7700-54c8-4e7c-b056-957c1794c208",
+        "chapterId": "c0cf2da1-9625-4bdc-8815-dbe86ddd7322",
+        "lang": "ES",
+        "chapterIndex": 1
+      }
+    },
+    {
+      "ts": 1772753087193,
+      "type": "chapter_content_effect_start",
+      "data": {
+        "chapterId": "c0cf2da1-9625-4bdc-8815-dbe86ddd7322",
+        "lang": "ES"
+      }
+    },
+    {
+      "ts": 1772753087193,
+      "type": "chapter_content_abort_previous",
+      "data": {
+        "chapterId": "c0cf2da1-9625-4bdc-8815-dbe86ddd7322",
+        "lang": "ES"
+      }
+    },
+    {
+      "ts": 1772753087214,
+      "type": "chapter_content_effect_cleanup",
+      "data": {
+        "chapterId": "c0cf2da1-9625-4bdc-8815-dbe86ddd7322",
+        "lang": "ES"
+      }
+    },
+    {
+      "ts": 1772753087214,
+      "type": "reader_ctx",
+      "data": {
+        "bookId": "308f7700-54c8-4e7c-b056-957c1794c208",
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "ES",
+        "chapterIndex": 17
+      }
+    },
+    {
+      "ts": 1772753087214,
+      "type": "chapter_content_effect_start",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "ES"
+      }
+    },
+    {
+      "ts": 1772753087214,
+      "type": "chapter_content_abort_previous",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "ES"
+      }
+    },
+    {
+      "ts": 1772753087271,
+      "type": "chapter_content_cache_hit",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "ES",
+        "hasPending": true,
+        "missingCount": 10
+      }
+    },
+    {
+      "ts": 1772753087271,
+      "type": "chapter_content_fetch_start",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "ES"
+      }
+    },
+    {
+      "ts": 1772753087271,
+      "type": "api_request_start",
+      "data": {
+        "path": "/api/chapters/0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a/content?lang=ES",
+        "method": "GET"
+      }
+    },
+    {
+      "ts": 1772753087474,
+      "type": "translate_flush_start",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "ES",
+        "batchSize": 10,
+        "overflowSize": 0
+      }
+    },
+    {
+      "ts": 1772753087476,
+      "type": "translate_enqueue_high",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "ES",
+        "requested": 24,
+        "newlyEnqueued": 10
+      }
+    },
+    {
+      "ts": 1772753087477,
+      "type": "translate_enqueue_low",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "ES",
+        "requested": 110,
+        "newlyEnqueued": 0
+      }
+    },
+    {
+      "ts": 1772753087949,
+      "type": "api_request_done",
+      "data": {
+        "path": "/api/chapters/0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a/content?lang=ES",
+        "method": "GET",
+        "status": 200,
+        "durationMs": 677
+      }
+    },
+    {
+      "ts": 1772753087949,
+      "type": "chapter_content_fetch_ok",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "ES",
+        "blockCount": 133
+      }
+    },
+    {
+      "ts": 1772753087976,
+      "type": "translate_enqueue_high",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "ES",
+        "requested": 18,
+        "newlyEnqueued": 0
+      }
+    },
+    {
+      "ts": 1772753087977,
+      "type": "translate_enqueue_low",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "ES",
+        "requested": 116,
+        "newlyEnqueued": 0
+      }
+    }
+  ]
+}

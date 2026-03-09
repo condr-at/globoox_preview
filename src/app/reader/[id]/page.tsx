@@ -24,34 +24,54 @@ export default function ReaderPage({ params }: ReaderPageProps) {
     // Mark book as "recently opened" immediately, so Library -> Continue Reading updates even if user doesn't turn a page.
     touchLastRead(id);
 
-    // Try persisted IDB cache first (guest scope, then user scope if authenticated).
     let cancelled = false;
-    const resolveFromIdb = async () => {
-      const guest = await getCachedBookMeta('guest', id);
-      if (!cancelled && guest) {
-        setBook(guest);
-        setLoading(false);
-      }
-
-      if (authLoading || !isAuthenticated || !user?.id) return;
-      const authed = await getCachedBookMeta(user.id, id);
-      if (!cancelled && authed) {
-        setBook(authed);
-        setLoading(false);
-      }
-    };
-    void resolveFromIdb();
-
-    // If we already have an in-memory cached book, the state initializer handled it.
-    if (getCachedBookById(id)) {
-      return () => { cancelled = true; };
+    const cachedBook = getCachedBookById(id);
+    if (cachedBook) {
+      setBook(cachedBook);
+      setLoading(false);
+      setNotFound(false);
+      return () => {
+        cancelled = true;
+      };
     }
 
-    // If we couldn't hydrate from memory, fall back to network.
-    fetchBook(id)
-      .then(setBook)
-      .catch(() => setNotFound(true))
-      .finally(() => setLoading(false));
+    const loadBook = async () => {
+      try {
+        const guest = await getCachedBookMeta('guest', id);
+        if (cancelled) return;
+        if (guest) {
+          setBook(guest);
+          setLoading(false);
+          setNotFound(false);
+          return;
+        }
+
+        if (!authLoading && isAuthenticated && user?.id) {
+          const authed = await getCachedBookMeta(user.id, id);
+          if (cancelled) return;
+          if (authed) {
+            setBook(authed);
+            setLoading(false);
+            setNotFound(false);
+            return;
+          }
+        }
+
+        const fetched = await fetchBook(id);
+        if (cancelled) return;
+        setBook(fetched);
+        setNotFound(false);
+      } catch {
+        if (cancelled) return;
+        setNotFound(true);
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void loadBook();
 
     return () => {
       cancelled = true;
@@ -60,8 +80,14 @@ export default function ReaderPage({ params }: ReaderPageProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 rounded-full bg-muted animate-pulse" />
+      <div className="min-h-screen flex items-center justify-center p-6 text-center">
+        <div className="max-w-sm">
+          <div className="mx-auto mb-4 h-8 w-8 rounded-full bg-muted animate-pulse" />
+          <p className="text-lg font-semibold">Loading your book...</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Downloading the file and checking compatibility.
+          </p>
+        </div>
       </div>
     );
   }
@@ -84,6 +110,7 @@ export default function ReaderPage({ params }: ReaderPageProps) {
       key={book.id}
       bookId={book.id}
       title={book.title}
+      author={book.author}
       availableLanguages={book.available_languages}
       originalLanguage={book.original_language}
       serverLanguage={book.selected_language}

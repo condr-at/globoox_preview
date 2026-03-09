@@ -23,6 +23,7 @@ export const metadata: Metadata = {
   description: 'Reading app that translates ebooks into your language with AI',
   keywords: ['reading', 'books', 'translation', 'language learning', 'ebooks'],
   manifest: '/manifest.json',
+  icons: { icon: '/favicon.ico' },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',

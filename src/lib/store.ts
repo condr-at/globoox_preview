@@ -21,6 +21,7 @@ export const languageFlags: Record<Language, string> = {
 
 interface ReaderSettings {
   fontSize: number;
+  lineHeightScale: number;
   theme: 'dark' | 'light';
   language: Language;
 }
@@ -37,6 +38,7 @@ interface ReadingProgress {
 export interface ReadingAnchor {
   chapterId: string;
   blockId: string;
+  fragmentId?: string;
   blockPosition: number;
   sentenceIndex: number;
   updatedAt: string;
@@ -50,6 +52,7 @@ interface AppState {
   // Reader settings
   settings: ReaderSettings;
   setFontSize: (size: number) => void;
+  setLineHeightScale: (scale: number) => void;
   setTheme: (theme: 'dark' | 'light') => void;
   setLanguage: (language: Language) => void;
 
@@ -94,6 +97,7 @@ export const useAppStore = create<AppState>()(
       // Default settings
       settings: {
         fontSize: 16,
+        lineHeightScale: 1,
         theme: 'dark',
         language: 'en'
       },
@@ -101,6 +105,11 @@ export const useAppStore = create<AppState>()(
       setFontSize: (size) =>
         set((state) => ({
           settings: { ...state.settings, fontSize: size }
+        })),
+
+      setLineHeightScale: (scale) =>
+        set((state) => ({
+          settings: { ...state.settings, lineHeightScale: scale }
         })),
 
       setTheme: (theme) =>

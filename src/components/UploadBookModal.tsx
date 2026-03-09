@@ -2,7 +2,8 @@
 
 import { useState, useRef } from 'react';
 import { X, Upload, Loader2, CheckCircle, FileText } from 'lucide-react';
-import { getSignedUploadUrl, uploadToStorage, processBook, getJobStatus } from '@/lib/api';
+import IOSDialog from '@/components/ui/ios-dialog';
+import { getSignedUploadUrl, uploadToStorage, processBook } from '@/lib/api';
 import { trackBookUploadStarted, trackBookUploaded, trackBookUploadFailed } from '@/lib/posthog';
 import * as Sentry from '@sentry/nextjs';
 
@@ -12,8 +13,61 @@ interface UploadBookModalProps {
   onUploaded?: (bookId: string) => void;
 }
 
-const POLL_INTERVAL_MS = 2000
-const POLL_TIMEOUT_MS = 10 * 60 * 1000 // 10 minutes max
+const SUPPORT_EMAIL = 'support@globoox.co'
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message ? error.message : fallback
+}
+
+function createUploadFileName(originalName: string): string {
+  const slug = originalName
+    .replace(/\.epub$/i, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 60)
+  const uniqueSuffix = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).substring(2, 10)}`
+  return `${slug}-${uniqueSuffix}.epub`
+}
+
+function getUploadHelp(error: string | null) {
+  if (!error) return null
+
+  const normalized = error.toLowerCase()
+
+  if (normalized.includes('please select an epub file')) {
+    return {
+      title: 'This file does not look like a valid EPUB.',
+      tips: [
+        'Make sure the file ends in .epub.',
+        'If it opens in another reading app, export it again as EPUB and retry.',
+        'DRM-protected books usually cannot be imported.',
+      ],
+    }
+  }
+
+  if (normalized.includes('storage upload failed') || normalized.includes('network') || normalized.includes('failed to fetch')) {
+    return {
+      title: 'The upload did not finish.',
+      tips: [
+        'Check your connection and try again.',
+        'If the file is very large, wait a moment before retrying.',
+        `If this keeps happening, contact ${SUPPORT_EMAIL}.`,
+      ],
+    }
+  }
+
+  return {
+    title: 'This book may use an EPUB format we cannot read cleanly yet.',
+    tips: [
+      'Try opening the file in another EPUB reader to confirm it works.',
+      'If possible, re-export it as EPUB 2 or EPUB 3 and upload it again.',
+      `If you want us to look into it, contact ${SUPPORT_EMAIL}.`,
+    ],
+  }
+}
 
 export default function UploadBookModal({ isOpen, onClose, onUploaded }: UploadBookModalProps) {
   const [file, setFile] = useState<File | null>(null);
@@ -22,9 +76,7 @@ export default function UploadBookModal({ isOpen, onClose, onUploaded }: UploadB
   const [message, setMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  if (!isOpen) return null;
+  const uploadHelp = getUploadHelp(error)
 
   const isLikelyEpub = async (selectedFile: File): Promise<boolean> => {
     const normalizedName = selectedFile.name.trim().toLowerCase();
@@ -61,62 +113,6 @@ export default function UploadBookModal({ isOpen, onClose, onUploaded }: UploadB
     }
   };
 
-  const pollJobStatus = (jobId: string, bookId: string, fileSizeKb: number, fileName: string) => {
-    const startedAt = Date.now()
-
-    const tick = async () => {
-      try {
-        const status = await getJobStatus(jobId)
-
-        // Map job progress (0–100) to upload bar range 40–95
-        const mappedProgress = 40 + Math.round((status.progress / 100) * 55)
-        setProgress(Math.min(mappedProgress, 95))
-
-        if (status.state === 'active' || status.state === 'waiting' || status.state === 'delayed') {
-          setMessage('Processing book…')
-          if (Date.now() - startedAt < POLL_TIMEOUT_MS) {
-            pollTimerRef.current = setTimeout(tick, POLL_INTERVAL_MS)
-          } else {
-            setError('Processing is taking longer than expected. Check back soon — the book will appear in your library when ready.')
-            setUploading(false)
-          }
-          return
-        }
-
-        if (status.state === 'completed' && status.result) {
-          trackBookUploaded({
-            title: status.result.title || fileName,
-            author: status.result.author || 'Unknown',
-            language: 'unknown',
-            chapter_count: status.result.chapterCount ?? 0,
-            file_size_kb: fileSizeKb,
-          })
-          Sentry.addBreadcrumb({ category: 'upload', message: 'upload.success', data: { bookId }, level: 'info' })
-          setProgress(100)
-          setMessage('Book uploaded successfully!')
-          setTimeout(() => { onUploaded?.(bookId); handleClose() }, 1500)
-          return
-        }
-
-        if (status.state === 'failed') {
-          throw new Error(status.failReason || 'Processing failed')
-        }
-
-        // Unknown state — retry
-        if (Date.now() - startedAt < POLL_TIMEOUT_MS) {
-          pollTimerRef.current = setTimeout(tick, POLL_INTERVAL_MS)
-        }
-      } catch (err: any) {
-        Sentry.captureException(err)
-        trackBookUploadFailed({ error: err.message || 'Processing failed', file_size_kb: fileSizeKb })
-        setError(err.message || 'Processing failed')
-        setUploading(false)
-      }
-    }
-
-    tick()
-  }
-
   const handleUpload = async () => {
     if (!file) return;
 
@@ -137,13 +133,7 @@ export default function UploadBookModal({ isOpen, onClose, onUploaded }: UploadB
       });
 
       // Generate unique file path
-      const slug = file.name
-        .replace(/\.epub$/i, '')
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-|-$/g, '')
-        .slice(0, 60);
-      const fileName = `${slug}-${Date.now()}-${Math.random().toString(36).substring(7)}.epub`;
+      const fileName = createUploadFileName(file.name);
 
       // Step 1: Get signed URL for direct upload
       setProgress(15);
@@ -174,19 +164,19 @@ export default function UploadBookModal({ isOpen, onClose, onUploaded }: UploadB
       setMessage('Book uploaded successfully!');
 
       setTimeout(() => { onUploaded?.(response.id); handleClose() }, 1500);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message = getErrorMessage(err, 'Upload failed')
       console.error('Upload error:', err);
       Sentry.captureException(err, {
         contexts: { upload: { fileName: file.name, fileSize: file.size, fileSizeKb } },
       });
-      trackBookUploadFailed({ error: err.message || 'Upload failed', file_size_kb: fileSizeKb });
-      setError(err.message || 'Upload failed');
+      trackBookUploadFailed({ error: message, file_size_kb: fileSizeKb });
+      setError(message);
       setUploading(false);
     }
   };
 
   const handleClose = () => {
-    if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
     setFile(null);
     setUploading(false);
     setProgress(0);
@@ -196,10 +186,12 @@ export default function UploadBookModal({ isOpen, onClose, onUploaded }: UploadB
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleClose} />
-
-      <div className="relative bg-card border rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
+    <IOSDialog
+      open={isOpen}
+      onOpenChange={(nextOpen) => !nextOpen && handleClose()}
+      className="bg-card sm:max-w-md"
+    >
+      <div className="relative p-6">
         <button
           onClick={handleClose}
           className="absolute top-4 right-4 p-1 rounded-full hover:bg-muted transition-colors"
@@ -234,7 +226,19 @@ export default function UploadBookModal({ isOpen, onClose, onUploaded }: UploadB
             />
 
             {error && (
-              <p className="text-sm text-destructive mt-3">{error}</p>
+              <div className="mt-3 space-y-3">
+                <p className="text-sm text-destructive">{error}</p>
+                {uploadHelp && (
+                  <div className="rounded-lg border border-border bg-muted/40 p-3 text-left">
+                    <p className="text-sm font-medium">{uploadHelp.title}</p>
+                    <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
+                      {uploadHelp.tips.map((tip) => (
+                        <li key={tip}>{tip}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
             )}
 
             <button
@@ -262,6 +266,6 @@ export default function UploadBookModal({ isOpen, onClose, onUploaded }: UploadB
           </div>
         )}
       </div>
-    </div>
+    </IOSDialog>
   );
 }

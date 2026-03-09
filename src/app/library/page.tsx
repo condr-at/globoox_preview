@@ -2,12 +2,14 @@
 
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import BookCard from '@/components/Store/BookCard';
+import DeleteBookConfirmDialog from '@/components/Store/DeleteBookConfirmDialog';
 import UploadBookModal from '@/components/UploadBookModal';
 import SignInToUploadModal from '@/components/SignInToUploadModal';
 import { useAppStore } from '@/lib/store';
 import { useBooks } from '@/lib/useBooks';
 import { useAuth } from '@/lib/hooks/useAuth';
 import GoogleOneTap from '@/components/GoogleOneTap';
+import PageHeader from '@/components/ui/PageHeader';
 import { trackBookOpened } from '@/lib/posthog';
 import { fetchReadingPosition, BookReadingProgress, ApiBook } from '@/lib/api';
 import { getCachedReadingPosition } from '@/lib/contentCache';
@@ -25,8 +27,9 @@ export default function LibraryPage() {
   const [isSignInOpen, setIsSignInOpen] = useState(false);
   const [progressData, setProgressData] = useState<Record<string, BookReadingProgress>>({});
   const [progressFetchedOnce, setProgressFetchedOnce] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const [justReadBookId, setJustReadBookId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
+  const [isDeletingBook, setIsDeletingBook] = useState(false);
 
   useEffect(() => {
     try {
@@ -42,15 +45,13 @@ export default function LibraryPage() {
     }
   }, []);
 
-  // Collapse header past 60px, expand when back under 20px
   useEffect(() => {
-    const onScroll = () => {
-      const y = window.scrollY;
-      if (y > 60) setIsCollapsed(true);
-      else if (y < 20) setIsCollapsed(false);
+    document.documentElement.classList.add('library-scroll-lock-x');
+    document.body.classList.add('library-scroll-lock-x');
+    return () => {
+      document.documentElement.classList.remove('library-scroll-lock-x');
+      document.body.classList.remove('library-scroll-lock-x');
     };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
   // After OAuth redirect back with ?upload=1, auto-open upload modal
@@ -70,6 +71,32 @@ export default function LibraryPage() {
       setIsSignInOpen(true);
     }
   };
+
+  const handleRequestDelete = useCallback((bookId: string) => {
+    const book = books.find((entry) => entry.id === bookId);
+    if (!book) return;
+    setDeleteTarget({ id: book.id, title: book.title });
+  }, [books]);
+
+  const handleCancelDelete = useCallback(() => {
+    if (isDeletingBook) return;
+    setDeleteTarget(null);
+  }, [isDeletingBook]);
+
+  const handleConfirmDelete = useCallback(async () => {
+    if (!deleteTarget) return;
+
+    setIsDeletingBook(true);
+    const targetId = deleteTarget.id;
+    try {
+      setDeleteTarget(null);
+      await removeBook(targetId);
+    } catch {
+      // useBooks already restores the removed book and exposes the error to the page
+    } finally {
+      setIsDeletingBook(false);
+    }
+  }, [deleteTarget, removeBook]);
 
   // Fetch reading positions for all books (authenticated users only)
   const fetchAllProgress = useCallback(async (bookIds: string[]) => {
@@ -225,30 +252,17 @@ export default function LibraryPage() {
     )[0];
   }, [progressData, progress, isAuthenticated, progressFetchedOnce, justReadBookId]);
 
-  const lastBook = lastReadEntry ? books.find((b) => b.id === lastReadEntry[0]) : null;
+      const lastBook = lastReadEntry ? books.find((b) => b.id === lastReadEntry[0]) : null;
 
   return (
     <div className="min-h-screen bg-background pb-[calc(60px+env(safe-area-inset-bottom))]">
       <GoogleOneTap />
-      <header className="pt-[env(safe-area-inset-top)] sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b">
-        <div className="container max-w-2xl mx-auto px-4 sm:px-6 flex items-center justify-between gap-3 transition-[padding] duration-300 ease-in-out" style={{ paddingTop: isCollapsed ? 8 : 16, paddingBottom: isCollapsed ? 8 : 16 }}>
-          <h1 className={`font-medium transition-[font-size,line-height] duration-300 ease-in-out -mt-1 ${isCollapsed ? 'text-base' : 'text-2xl'}`}>Library</h1>
-          <button
-            onClick={handleUploadClick}
-            className="text-[15px] font-medium text-[var(--system-blue)] active:opacity-50 transition-[opacity,transform] duration-300 ease-in-out px-2 py-2"
-            style={{
-              opacity: isCollapsed ? 0 : 1,
-              transform: isCollapsed ? 'scale(0)' : 'scale(1)',
-              pointerEvents: isCollapsed ? 'none' : 'auto',
-            }}
-            tabIndex={isCollapsed ? -1 : 0}
-          >
-            Add
-          </button>
-        </div>
-      </header>
+      <PageHeader
+        title="Library"
+        action={{ label: 'Add', onClick: handleUploadClick }}
+      />
 
-      <div className="container max-w-2xl mx-auto px-4 sm:px-6 pt-8 pb-4 space-y-6">
+      <div className="container max-w-2xl mx-auto px-4 sm:px-6 pt-[calc(2rem+env(safe-area-inset-top)+72px)] pb-4 space-y-6">
         {error && <p className="text-sm text-destructive">{error}</p>}
 
         {lastBook && lastReadEntry && (
@@ -262,7 +276,7 @@ export default function LibraryPage() {
                 cover={lastBook.cover_url ?? FALLBACK_COVER}
                 progress={getBookProgress(lastBook)}
                 onHide={hideBook}
-                onDelete={removeBook}
+                onDelete={handleRequestDelete}
                 hideLabel="Hide"
                 onOpen={() => {
                   touchLastRead(lastBook.id);
@@ -294,7 +308,7 @@ export default function LibraryPage() {
                   cover={book.cover_url ?? FALLBACK_COVER}
                   progress={getBookProgress(book)}
                   onHide={hideBook}
-                  onDelete={removeBook}
+                  onDelete={handleRequestDelete}
                   hideLabel="Hide"
                   onOpen={() => {
                     touchLastRead(book.id);
@@ -323,6 +337,14 @@ export default function LibraryPage() {
       <SignInToUploadModal
         isOpen={isSignInOpen}
         onClose={() => setIsSignInOpen(false)}
+      />
+
+      <DeleteBookConfirmDialog
+        open={deleteTarget !== null}
+        title={deleteTarget?.title ?? ''}
+        deleting={isDeletingBook}
+        onCancel={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
       />
     </div>
   );

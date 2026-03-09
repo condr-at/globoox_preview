@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
-import { List, X, Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import Image from 'next/image';
+import { List } from 'lucide-react';
+import IOSSheet from '@/components/ui/ios-sheet';
+import IOSSheetHeader from '@/components/ui/ios-sheet-header';
 
 interface Chapter {
     number: number;
@@ -11,120 +13,37 @@ interface Chapter {
 }
 
 interface TableOfContentsProps {
+    bookTitle: string;
+    bookAuthor?: string | null;
+    isContentPending?: boolean;
+    coverUrl?: string | null;
     chapters: Chapter[];
     currentChapter: number;
     onSelectChapter: (chapter: number) => void;
     open?: boolean;
     onOpenChange?: (open: boolean) => void;
-    isTranslating?: boolean;
 }
 
 export default function TableOfContents({
+    bookTitle,
+    bookAuthor,
+    isContentPending = false,
+    coverUrl,
     chapters,
     currentChapter,
     onSelectChapter,
     open: externalOpen,
     onOpenChange: setExternalOpen,
-    isTranslating = false,
 }: TableOfContentsProps) {
     const [internalOpen, setInternalOpen] = useState(false);
 
     const isOpen = externalOpen !== undefined ? externalOpen : internalOpen;
     const setIsOpen = setExternalOpen !== undefined ? setExternalOpen : setInternalOpen;
 
-    const [mounted, setMounted] = useState(false);
-
-    useEffect(() => {
-        setMounted(true);
-    }, []);
-
-    // Close on escape
-    useEffect(() => {
-        const handleEscape = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') setIsOpen(false);
-        };
-        window.addEventListener('keydown', handleEscape);
-        return () => window.removeEventListener('keydown', handleEscape);
-    }, [setIsOpen]);
-
     const handleSelect = (chapterNum: number) => {
         onSelectChapter(chapterNum);
         setIsOpen(false);
     };
-
-    const modal = isOpen ? (
-        <>
-            {/* Backdrop */}
-            <div
-                onClick={() => setIsOpen(false)}
-                className="fixed inset-0 bg-black/50 z-[200]"
-            />
-
-            {/* Side panel */}
-            <div className="fixed inset-y-0 left-0 w-[320px] max-w-[85vw] bg-[var(--bg-grouped-secondary)] z-[201] flex flex-col safe-area-inset-top">
-                {/* Header */}
-                <div className="flex items-center justify-between p-[16px] border-b border-[var(--separator)]">
-                    <div className="flex items-center gap-2">
-                        <h3 className="text-[20px] font-semibold">Contents</h3>
-                        {isTranslating && (
-                            <Loader2 className="w-[16px] h-[16px] text-[var(--system-blue)] animate-spin" />
-                        )}
-                    </div>
-                    <button
-                        onClick={() => setIsOpen(false)}
-                        className="p-[8px] -mr-[8px] rounded-full active:bg-[var(--fill-tertiary)] transition-colors"
-                    >
-                        <X className="w-[20px] h-[20px] text-[var(--label-secondary)]" />
-                    </button>
-                </div>
-
-                {/* Chapters list */}
-                <div className="flex-1 overflow-y-auto">
-                    {chapters.map((chapter) => {
-                        const depth = chapter.depth || 1;
-                        const indentPx = (depth - 1) * 16;
-                        const isActive = currentChapter === chapter.number;
-                        
-                        return (
-                            <button
-                                key={chapter.number}
-                                onClick={() => handleSelect(chapter.number)}
-                                className={`
-                                    w-full flex items-center gap-[12px] py-[12px] text-left min-h-[44px]
-                                    transition-colors active:bg-[var(--fill-tertiary)]
-                                    ${isActive ? 'bg-[var(--system-blue)]/10' : ''}
-                                `}
-                                style={{ paddingLeft: `${16 + indentPx}px`, paddingRight: '16px' }}
-                            >
-                                {depth === 1 && (
-                                    <span className={`
-                                        w-[28px] text-[15px] font-medium transition-colors flex-shrink-0
-                                        ${isActive
-                                            ? 'text-[var(--system-blue)]'
-                                            : 'text-[var(--label-tertiary)]'
-                                        }
-                                    `}>
-                                        {chapter.number}
-                                    </span>
-                                )}
-                                <span className={`
-                                    ${depth === 1 ? 'text-[17px]' : depth === 2 ? 'text-[16px]' : 'text-[15px]'}
-                                    ${isActive
-                                        ? 'text-[var(--system-blue)] font-semibold'
-                                        : depth === 1
-                                            ? 'text-[var(--label-primary)]'
-                                            : 'text-[var(--label-secondary)]'
-                                    }
-                                `}>
-                                    {chapter.title}
-                                </span>
-                            </button>
-                        );
-                    })}
-                </div>
-            </div>
-        </>
-    ) : null;
 
     return (
         <>
@@ -137,7 +56,94 @@ export default function TableOfContents({
                 </button>
             )}
 
-            {mounted && modal && createPortal(modal, document.body)}
+            <IOSSheet
+                open={isOpen}
+                onOpenChange={setIsOpen}
+                side="bottom"
+                enableDragDismiss
+                dragHandle={<div className="h-1 w-12 rounded-full bg-black/12 dark:bg-white/16" />}
+                dragRegion={(
+                    <IOSSheetHeader
+                        title={<span className={isContentPending ? 'blur-[3px] opacity-40' : ''}>{bookTitle}</span>}
+                        subtitle={(
+                            <div className={`space-y-1 ${isContentPending ? 'blur-[3px] opacity-40' : ''}`}>
+                                {bookAuthor && <div>{bookAuthor}</div>}
+                                <div>Chapter {currentChapter} of {chapters.length}</div>
+                            </div>
+                        )}
+                        leading={(
+                            <div className="relative h-[94px] w-[64px] overflow-hidden rounded-[6px] bg-[var(--fill-secondary)] shadow-[0_3px_10px_rgba(0,0,0,0.18)]">
+                                {coverUrl ? (
+                                    <Image
+                                        src={coverUrl}
+                                        alt={bookTitle}
+                                        fill
+                                        sizes="64px"
+                                        className="object-cover"
+                                    />
+                                ) : (
+                                    <div className="flex h-full w-full items-center justify-center bg-[linear-gradient(180deg,#cfcfcd,#aaaaa8)] text-[8px] font-medium uppercase tracking-[0.14em] text-white/70">
+                                        EPUB
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                        onClose={() => setIsOpen(false)}
+                    />
+                )}
+                className="mt-[max(56px,calc(env(safe-area-inset-top)+18px))] flex h-[calc(100dvh-max(56px,calc(env(safe-area-inset-top)+18px)))] max-h-none flex-col overflow-hidden rounded-t-[20px] border-0 bg-[#f3f3f1] shadow-[0_-12px_40px_rgba(0,0,0,0.16)] dark:bg-[#1c1c1e]"
+            >
+                <div className="relative flex-1 overflow-hidden">
+                    <div className={`h-full overflow-y-auto ${isContentPending ? 'blur-[3px] opacity-40' : ''}`}>
+                        {chapters.map((chapter) => {
+                            const depth = chapter.depth || 1;
+                            const indentPx = (depth - 1) * 22;
+                            const isActive = currentChapter === chapter.number;
+
+                            return (
+                                <button
+                                    key={chapter.number}
+                                    onClick={() => handleSelect(chapter.number)}
+                                    disabled={isContentPending}
+                                    className="relative flex min-h-[72px] w-full items-center gap-4 border-t border-black/[0.07] px-5 text-left transition-colors active:bg-black/[0.035] dark:border-white/[0.08] dark:active:bg-white/[0.03]"
+                                    style={{ paddingLeft: `${20 + indentPx}px`, paddingRight: '20px' }}
+                                >
+                                    <span className="min-w-0 flex-1">
+                                        <span
+                                            className={`
+                                                block
+                                                ${depth === 1 ? 'text-[18px]' : 'text-[16px]'}
+                                                ${isActive
+                                                    ? 'text-[var(--label-primary)] font-semibold'
+                                                    : depth === 1
+                                                        ? 'text-[var(--label-primary)]'
+                                                        : 'text-[var(--label-secondary)]'
+                                                }
+                                            `}
+                                        >
+                                            {chapter.title}
+                                        </span>
+                                    </span>
+                                    <span className="shrink-0 text-[15px] text-[var(--label-secondary)]">
+                                        {depth === 1 ? chapter.number : ''}
+                                    </span>
+                                </button>
+                            );
+                        })}
+                        <div
+                            aria-hidden="true"
+                            className="min-h-[72px] border-t border-black/[0.07] dark:border-white/[0.08]"
+                        />
+                    </div>
+                    {isContentPending && (
+                        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+                            <span className="text-sm font-medium text-white/90 animate-pulse-text">
+                                Translating...
+                            </span>
+                        </div>
+                    )}
+                </div>
+            </IOSSheet>
         </>
     );
 }

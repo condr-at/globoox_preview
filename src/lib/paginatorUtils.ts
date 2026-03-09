@@ -1,10 +1,10 @@
 import { ContentBlock, ParagraphBlock } from './api'
+import { getLineHeightStyle } from './readerTypography'
 import { hyphenateSync as hyphenRu } from 'hyphen/ru'
 import { hyphenateSync as hyphenEn } from 'hyphen/en-us'
 import { hyphenateSync as hyphenFr } from 'hyphen/fr'
 import { hyphenateSync as hyphenDe } from 'hyphen/de'
 import { hyphenateSync as hyphenEs } from 'hyphen/es'
-
 
 const hyphenators: Record<string, (text: string) => string> = {
   ru: hyphenRu,
@@ -14,14 +14,28 @@ const hyphenators: Record<string, (text: string) => string> = {
   es: hyphenEs,
 }
 
+const PAGE_HEIGHT_BUFFER_PX = 6
+const PARAGRAPH_FRAGMENT_LAST_CLASS = 'mb-2'
+const PARAGRAPH_FRAGMENT_MIDDLE_CLASS = 'mb-0'
+
+interface SplitResult {
+  firstPart: string
+  restPart: string
+}
+
+export interface ComputedPagesResult {
+  pages: string[][]
+  finalBlocks: ContentBlock[]
+  fragmentMap: Map<string, string>
+}
+
+type MeasuredBlockRoots = Map<string, HTMLElement>
+
 function hyphenateWord(word: string, lang: string): string[] {
-  const hyphenator = hyphenators[lang] ?? hyphenators['en']
+  const hyphenator = hyphenators[lang] ?? hyphenators.en
   return hyphenator(word).split('\u00AD')
 }
 
-/**
- * Pre-split lists into separate items for pagination
- */
 export function normalizeBlocks(blocks: ContentBlock[]): ContentBlock[] {
   const result: ContentBlock[] = []
   for (const block of blocks) {
@@ -32,11 +46,14 @@ export function normalizeBlocks(blocks: ContentBlock[]): ContentBlock[] {
           type: 'list',
           position: block.position,
           ordered: block.ordered,
-          items: [item], // single item
+          items: [item],
           parentId: block.id,
           partIndex: index,
           isFirstPart: index === 0,
           isLastPart: index === block.items.length - 1,
+          targetLangReady: block.targetLangReady,
+          isTranslated: block.isTranslated,
+          is_pending: block.is_pending,
         })
       })
     } else {
@@ -46,9 +63,490 @@ export function normalizeBlocks(blocks: ContentBlock[]): ContentBlock[] {
   return result
 }
 
-interface SplitResult {
-  firstPart: string
-  restPart: string
+export function splitSentences(text: string): string[] {
+  const protected_ = text.replace(/\b(Mr|Mrs|Ms|Dr|Prof|Sr|Jr|vs|etc|e\.g|i\.e|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\./gi, '$1\x00')
+  const sentences: string[] = []
+  const parts = protected_.split(/(?<=[.!?])\s+/)
+  for (const part of parts) {
+    const s = part.replace(/\x00/g, '.').trim()
+    if (s) sentences.push(s)
+  }
+  return sentences.length > 0 ? sentences : [text]
+}
+
+function applyParagraphStyles(el: HTMLElement, fontSize: number, lang: string, isLastPart: boolean, lineHeightScale: number) {
+  el.className = isLastPart ? PARAGRAPH_FRAGMENT_LAST_CLASS : PARAGRAPH_FRAGMENT_MIDDLE_CLASS
+  if (fontSize) el.style.fontSize = `${fontSize}px`
+  el.style.lineHeight = getLineHeightStyle(fontSize, lineHeightScale)
+  el.setAttribute('lang', lang)
+  el.style.hyphens = 'auto'
+  el.style.setProperty('-webkit-hyphens', 'auto')
+}
+
+function createBlockElement(block: ContentBlock, fontSize: number, lang: string, lineHeightScale: number): HTMLElement {
+  switch (block.type) {
+    case 'paragraph': {
+      const el = document.createElement('p')
+      applyParagraphStyles(el, fontSize, lang, block.isLastPart ?? true, lineHeightScale)
+      el.textContent = block.text
+      return el
+    }
+    case 'heading': {
+      const tag = `h${block.level}` as 'h1' | 'h2' | 'h3'
+      const el = document.createElement(tag)
+      el.className =
+        block.level === 1
+          ? 'text-xxl font-bold mb-3 mt-6'
+          : block.level === 2
+            ? 'text-xl font-semibold mb-2 mt-5'
+            : 'text-lg font-semibold mb-2 mt-4'
+      if (fontSize) el.style.fontSize = `${fontSize}px`
+      el.textContent = block.text
+      return el
+    }
+    case 'quote': {
+      const el = document.createElement('blockquote')
+      el.className = 'border-l-1 border-primary pl-3 my-4 italic text-foreground/80'
+      if (fontSize) el.style.fontSize = `${fontSize}px`
+      el.textContent = block.text
+      return el
+    }
+    case 'list': {
+      const tag = block.ordered ? 'ol' : 'ul'
+      const el = document.createElement(tag)
+      el.className = `${block.ordered ? 'list-decimal' : 'list-disc'} pl-6 ${(block.isLastPart ?? true) ? 'mb-3' : 'mb-1'} space-y-1`
+      if (fontSize) el.style.fontSize = `${fontSize}px`
+      if (block.ordered && block.partIndex !== undefined) {
+        el.setAttribute('start', String(block.partIndex + 1))
+      }
+      for (const item of block.items) {
+        const li = document.createElement('li')
+        li.style.lineHeight = getLineHeightStyle(fontSize, lineHeightScale)
+        li.style.hyphens = 'auto'
+        li.style.setProperty('-webkit-hyphens', 'auto')
+        li.textContent = item
+        el.appendChild(li)
+      }
+      return el
+    }
+    case 'image': {
+      const el = document.createElement('figure')
+      el.className = 'my-4'
+      return el
+    }
+    case 'hr': {
+      const el = document.createElement('hr')
+      el.className = 'my-5 border-border'
+      return el
+    }
+  }
+}
+
+function wrapMeasuredElement(child: HTMLElement): HTMLDivElement {
+  const wrapper = document.createElement('div')
+  wrapper.className = 'flow-root'
+  wrapper.appendChild(child)
+  return wrapper
+}
+
+function cloneMeasuredWrapper(
+  blockId: string,
+  measuredBlockRoots?: MeasuredBlockRoots,
+): HTMLDivElement | null {
+  const source = measuredBlockRoots?.get(blockId)
+  if (!source) return null
+  return source.cloneNode(true) as HTMLDivElement
+}
+
+function createMeasuredWrapper(
+  block: ContentBlock,
+  fontSize: number,
+  lang: string,
+  lineHeightScale: number,
+  measuredBlockRoots?: MeasuredBlockRoots,
+): HTMLDivElement {
+  return cloneMeasuredWrapper(block.id, measuredBlockRoots) ?? wrapMeasuredElement(createBlockElement(block, fontSize, lang, lineHeightScale))
+}
+
+function createParagraphMeasuredWrapper(
+  sourceBlockId: string,
+  text: string,
+  fontSize: number,
+  lang: string,
+  isLastPart: boolean,
+  lineHeightScale: number,
+  measuredBlockRoots?: MeasuredBlockRoots,
+): HTMLDivElement {
+  const clone = cloneMeasuredWrapper(sourceBlockId, measuredBlockRoots)
+  if (clone) {
+    const paragraph = clone.querySelector('p')
+    if (paragraph) {
+      applyParagraphStyles(paragraph, fontSize, lang, isLastPart, lineHeightScale)
+      paragraph.textContent = text
+      return clone
+    }
+  }
+
+  const paragraph = document.createElement('p')
+  applyParagraphStyles(paragraph, fontSize, lang, isLastPart, lineHeightScale)
+  paragraph.textContent = text
+  return wrapMeasuredElement(paragraph)
+}
+
+interface ProbeHandle {
+  host: HTMLDivElement
+  page: HTMLDivElement
+}
+
+function createProbe(containerRef: HTMLElement, effectiveHeight: number, lang: string): ProbeHandle {
+  const doc = containerRef.ownerDocument
+  const host = doc.createElement('div')
+  host.style.position = 'fixed'
+  host.style.left = '0'
+  host.style.right = '0'
+  host.style.top = '-20000px'
+  host.style.visibility = 'hidden'
+  host.style.pointerEvents = 'none'
+  host.style.zIndex = '-1'
+  host.style.overflow = 'hidden'
+
+  const page = doc.createElement('div')
+  page.className = 'container max-w-2xl mx-auto px-4 h-full'
+  page.setAttribute('lang', lang)
+  page.style.height = `${effectiveHeight}px`
+  page.style.overflowY = 'hidden'
+  page.style.overflowX = 'hidden'
+
+  host.appendChild(page)
+  doc.body.appendChild(host)
+  return { host, page }
+}
+
+function fitsProbe(probe: HTMLElement, effectiveHeight: number): boolean {
+  const lastChild = probe.lastElementChild as HTMLElement | null
+  const fitsByScroll = probe.scrollHeight <= effectiveHeight + 0.5
+  if (!lastChild) return fitsByScroll
+  const probeRect = probe.getBoundingClientRect()
+  const lastRect = lastChild.getBoundingClientRect()
+  const fitsByRect = lastRect.bottom <= probeRect.top + effectiveHeight + 0.5
+  return fitsByRect && fitsByScroll
+}
+
+function isWhitespace(char: string): boolean {
+  return /\s/.test(char)
+}
+
+function trimSplitParts(text: string, splitIndex: number): SplitResult {
+  return {
+    firstPart: text.slice(0, splitIndex).trimEnd(),
+    restPart: text.slice(splitIndex).trimStart(),
+  }
+}
+
+function findSafeWordBoundary(text: string, preferredIndex: number): number {
+  if (preferredIndex <= 0 || preferredIndex >= text.length) {
+    return preferredIndex
+  }
+
+  let boundary = preferredIndex
+  while (boundary > 0 && !isWhitespace(text[boundary - 1]!)) {
+    boundary--
+  }
+
+  if (boundary <= 0) return preferredIndex
+
+  const minAcceptedBoundary = Math.max(16, Math.floor(preferredIndex * 0.65))
+  return boundary >= minAcceptedBoundary ? boundary : preferredIndex
+}
+
+function isTinyParagraphFragment(text: string): boolean {
+  const trimmed = text.trim()
+  if (!trimmed) return true
+  const words = trimmed.split(/\s+/).filter(Boolean)
+  return words.length <= 2 || trimmed.length < 24
+}
+
+function fitParagraphByDom(
+  text: string,
+  probe: HTMLElement,
+  effectiveHeight: number,
+  fontSize: number,
+  lang: string,
+  lineHeightScale: number,
+  sourceBlockId: string,
+  measuredBlockRoots?: MeasuredBlockRoots,
+): SplitResult {
+  const normalizedText = text.trim()
+  if (!normalizedText) {
+    return { firstPart: '', restPart: '' }
+  }
+
+  const wrapper = createParagraphMeasuredWrapper(sourceBlockId, '', fontSize, lang, false, lineHeightScale, measuredBlockRoots)
+  const candidate = wrapper.querySelector('p') as HTMLParagraphElement | null
+  if (!candidate) {
+    return { firstPart: '', restPart: normalizedText }
+  }
+  probe.appendChild(wrapper)
+
+  const fitsText = (candidateText: string, isLastPart = false): boolean => {
+    candidate.className = isLastPart ? PARAGRAPH_FRAGMENT_LAST_CLASS : PARAGRAPH_FRAGMENT_MIDDLE_CLASS
+    candidate.textContent = candidateText
+    return fitsProbe(probe, effectiveHeight)
+  }
+
+  let low = 1
+  let high = normalizedText.length
+  let bestSplit = 0
+
+  while (low <= high) {
+    const mid = Math.floor((low + high) / 2)
+    const testText = normalizedText.slice(0, mid).trimEnd()
+    if (!testText) {
+      low = mid + 1
+      continue
+    }
+    if (fitsText(testText, mid >= normalizedText.length)) {
+      bestSplit = mid
+      low = mid + 1
+    } else {
+      high = mid - 1
+    }
+  }
+
+  if (bestSplit <= 0) {
+    probe.removeChild(wrapper)
+    return { firstPart: '', restPart: normalizedText }
+  }
+
+  let bestResult = trimSplitParts(normalizedText, bestSplit)
+  const safeBoundary = findSafeWordBoundary(normalizedText, bestSplit)
+  if (safeBoundary > 0 && safeBoundary < normalizedText.length) {
+    const safeResult = trimSplitParts(normalizedText, safeBoundary)
+    if (safeResult.firstPart && fitsText(safeResult.firstPart, false)) {
+      bestResult = safeResult
+    }
+  }
+
+  if (!bestResult.restPart) {
+    probe.removeChild(wrapper)
+    return bestResult
+  }
+
+  const consumedChars = bestResult.firstPart.length
+  let wordStart = consumedChars
+  while (wordStart > 0 && !isWhitespace(normalizedText[wordStart - 1]!)) {
+    wordStart--
+  }
+  let wordEnd = consumedChars
+  while (wordEnd < normalizedText.length && !isWhitespace(normalizedText[wordEnd]!)) {
+    wordEnd++
+  }
+
+  if (wordStart < consumedChars && wordEnd > consumedChars) {
+    const prefix = normalizedText.slice(0, wordStart).trimEnd()
+    const word = normalizedText.slice(wordStart, wordEnd)
+    const suffix = normalizedText.slice(wordEnd).trimStart()
+    const parts = hyphenateWord(word, lang)
+    if (parts.length > 1) {
+      let chunk = ''
+      let bestHyphenated: SplitResult | null = null
+      for (let i = 0; i < parts.length - 1; i++) {
+        chunk += parts[i]
+        const hyphenatedPrefix = prefix ? `${prefix} ${chunk}-` : `${chunk}-`
+        if (fitsText(hyphenatedPrefix, false)) {
+          bestHyphenated = {
+            firstPart: hyphenatedPrefix,
+            restPart: [parts.slice(i + 1).join(''), suffix].filter(Boolean).join(' ').trim(),
+          }
+        } else {
+          break
+        }
+      }
+      if (bestHyphenated) {
+        bestResult = bestHyphenated
+      }
+    }
+  }
+
+  probe.removeChild(wrapper)
+  return bestResult
+}
+
+function computePagesDom(
+  blocks: ContentBlock[],
+  pageHeight: number,
+  containerRef: HTMLElement,
+  fontSize: number,
+  lang: string,
+  lineHeightScale: number,
+  minBlocksPerPage: number,
+  measuredBlockRoots?: MeasuredBlockRoots,
+): ComputedPagesResult {
+  const effectiveHeight = Math.max(1, pageHeight - PAGE_HEIGHT_BUFFER_PX)
+  const pages: string[][] = []
+  const finalBlocks: ContentBlock[] = []
+  const fragmentMap = new Map<string, string>()
+  const probeHandle = createProbe(containerRef, effectiveHeight, lang)
+  const probe = probeHandle.page
+
+  let currentPage: string[] = []
+
+  const resetProbe = () => {
+    probe.replaceChildren()
+  }
+
+  const pushCurrentPage = () => {
+    if (currentPage.length > 0) {
+      pages.push(currentPage)
+      currentPage = []
+      resetProbe()
+    }
+  }
+
+  try {
+    for (const block of blocks) {
+      if (block.type !== 'paragraph') {
+        const node = createMeasuredWrapper(block, fontSize, lang, lineHeightScale, measuredBlockRoots)
+        probe.appendChild(node)
+        if (fitsProbe(probe, effectiveHeight) || currentPage.length < minBlocksPerPage) {
+          currentPage.push(block.id)
+          finalBlocks.push(block)
+          continue
+        }
+
+        probe.removeChild(node)
+        pushCurrentPage()
+        probe.appendChild(node)
+        currentPage.push(block.id)
+        finalBlocks.push(block)
+        continue
+      }
+
+      let remainingText = block.text
+      let partIndex = block.partIndex ?? 0
+      const allSentences = splitSentences(block.text)
+
+      while (remainingText.trim()) {
+        const wholeNode = createParagraphMeasuredWrapper(
+          block.id,
+          remainingText,
+          fontSize,
+          lang,
+          block.isLastPart ?? true,
+          lineHeightScale,
+          measuredBlockRoots,
+        )
+        probe.appendChild(wholeNode)
+        if (fitsProbe(probe, effectiveHeight)) {
+          const finalId = partIndex === (block.partIndex ?? 0) ? block.id : `${block.id}-part-${partIndex}`
+          const isFirstPart = (block.isFirstPart ?? true) && partIndex === (block.partIndex ?? 0)
+          const finalBlock: ParagraphBlock & { sentenceIndex: number } = {
+            ...block,
+            id: finalId,
+            text: remainingText,
+            parentId: block.parentId ?? block.id,
+            partIndex,
+            isFirstPart,
+            isLastPart: true,
+            sentenceIndex: Math.min(allSentences.length - 1, 0),
+          }
+          if (finalId !== block.id) {
+            fragmentMap.set(finalId, finalBlock.parentId!)
+          }
+          currentPage.push(finalBlock.id)
+          finalBlocks.push(finalBlock)
+          remainingText = ''
+          break
+        }
+        probe.removeChild(wholeNode)
+
+        const split = fitParagraphByDom(
+          remainingText,
+          probe,
+          effectiveHeight,
+          fontSize,
+          lang,
+          lineHeightScale,
+          block.id,
+          measuredBlockRoots,
+        )
+        const forcedFirstWord = !split.firstPart.trim()
+        const firstText = forcedFirstWord
+          ? remainingText.split(/\s+/).slice(0, 1).join(' ')
+          : split.firstPart.trim()
+        const restText = forcedFirstWord
+          ? remainingText.split(/\s+/).slice(1).join(' ')
+          : split.restPart.trim()
+
+        if (!firstText) {
+          pushCurrentPage()
+          continue
+        }
+
+        if (currentPage.length > 0 && restText && isTinyParagraphFragment(firstText)) {
+          pushCurrentPage()
+          continue
+        }
+
+        const isFirstPart = (block.isFirstPart ?? true) && partIndex === (block.partIndex ?? 0)
+        const isLastPart = (block.isLastPart ?? true) && !restText
+        const fragmentId = `${block.id}-part-${partIndex}`
+
+        const offsetInBlock = block.text.length - remainingText.length
+        let sentenceIndex = 0
+        let runningLen = 0
+        for (let si = 0; si < allSentences.length; si++) {
+          if (runningLen >= offsetInBlock) {
+            sentenceIndex = si
+            break
+          }
+          runningLen += allSentences[si].length + 1
+          sentenceIndex = si + 1
+        }
+        sentenceIndex = Math.min(sentenceIndex, allSentences.length - 1)
+
+        const fragmentBlock: ParagraphBlock & { sentenceIndex: number } = {
+          ...block,
+          id: fragmentId,
+          text: firstText,
+          parentId: block.parentId ?? block.id,
+          partIndex,
+          isFirstPart,
+          isLastPart,
+          sentenceIndex,
+        }
+
+        const fragmentNode = createParagraphMeasuredWrapper(
+          block.id,
+          fragmentBlock.text,
+          fontSize,
+          lang,
+          fragmentBlock.isLastPart ?? false,
+          lineHeightScale,
+          measuredBlockRoots,
+        )
+        probe.appendChild(fragmentNode)
+        currentPage.push(fragmentId)
+        finalBlocks.push(fragmentBlock)
+        fragmentMap.set(fragmentId, fragmentBlock.parentId!)
+
+        if (restText) {
+          pushCurrentPage()
+        }
+
+        remainingText = restText
+        partIndex++
+      }
+    }
+
+    if (currentPage.length > 0) {
+      pages.push(currentPage)
+    }
+
+    return { pages, finalBlocks, fragmentMap }
+  } finally {
+    probeHandle.host.remove()
+  }
 }
 
 function measureTextHeight(text: string, tempEl: HTMLElement): number {
@@ -56,17 +554,32 @@ function measureTextHeight(text: string, tempEl: HTMLElement): number {
   return tempEl.offsetHeight
 }
 
-/**
- * Binary search to find how many words fit into `availableHeight`.
- * Includes hyphenation logic for the border word.
- */
+function measureParagraphFragmentHeight(
+  text: string,
+  fontSize: number,
+  lang: string,
+  lineHeightScale: number,
+  containerRef: HTMLElement,
+  isLastPart: boolean,
+): number {
+  const temp = document.createElement('p')
+  applyParagraphStyles(temp, fontSize, lang, isLastPart, lineHeightScale)
+  temp.style.position = 'absolute'
+  temp.style.visibility = 'hidden'
+  temp.style.width = '100%'
+  containerRef.appendChild(temp)
+  const height = measureTextHeight(text, temp)
+  containerRef.removeChild(temp)
+  return height
+}
+
 function splitParagraphByHeight(
   text: string,
   availableHeight: number,
-  blockId: string,
   fontSize: number,
   lang: string,
-  containerRef: HTMLElement
+  lineHeightScale: number,
+  containerRef: HTMLElement,
 ): SplitResult {
   const words = text.split(/\s+/)
   if (words.length <= 1) {
@@ -74,15 +587,10 @@ function splitParagraphByHeight(
   }
 
   const temp = document.createElement('p')
-  temp.className = 'mb-0 leading-relaxed' // No bottom margin for fragments except last, but we measure tight!
-  if (fontSize) temp.style.fontSize = `${fontSize}px`
-  temp.setAttribute('lang', lang)
-  temp.style.hyphens = 'auto'
-  temp.style.setProperty('-webkit-hyphens', 'auto')
+  applyParagraphStyles(temp, fontSize, lang, false, lineHeightScale)
   temp.style.position = 'absolute'
   temp.style.visibility = 'hidden'
   temp.style.width = '100%'
-
   containerRef.appendChild(temp)
 
   let low = 0
@@ -92,6 +600,7 @@ function splitParagraphByHeight(
   while (low <= high) {
     const mid = Math.floor((low + high) / 2)
     const testText = words.slice(0, mid).join(' ')
+    temp.className = mid === words.length ? PARAGRAPH_FRAGMENT_LAST_CLASS : PARAGRAPH_FRAGMENT_MIDDLE_CLASS
     const h = measureTextHeight(testText, temp)
 
     if (h <= availableHeight) {
@@ -103,137 +612,49 @@ function splitParagraphByHeight(
   }
 
   let firstPart = words.slice(0, best).join(' ')
-  let restWords = words.slice(best)
+  const restWords = words.slice(best)
 
-  // Try to hyphenate the very next word to fit slightly more on the page
-  if (best < words.length && best > 0) {
-    // Only if not the very last word of the paragraph
-    if (best < words.length - 1) {
-      const nextWord = words[best]
-      const parts = hyphenateWord(nextWord, lang)
-
-      if (parts.length > 1) {
-        let maxFittingSyllables = 0
-        let currentSyllableStr = ''
-        for (let i = 0; i < parts.length - 1; i++) {
-          currentSyllableStr += parts[i]
-          const testStr = `${firstPart} ${currentSyllableStr}-`
-          const h = measureTextHeight(testStr, temp)
-          if (h <= availableHeight) {
-            maxFittingSyllables = i + 1
-          } else {
-            break
-          }
+  if (best < words.length && best > 0 && best < words.length - 1) {
+    const nextWord = words[best]
+    const parts = hyphenateWord(nextWord, lang)
+    if (parts.length > 1) {
+      let maxFittingSyllables = 0
+      let currentSyllableStr = ''
+      for (let i = 0; i < parts.length - 1; i++) {
+        currentSyllableStr += parts[i]
+        const testStr = `${firstPart} ${currentSyllableStr}-`
+        const h = measureTextHeight(testStr, temp)
+        if (h <= availableHeight) {
+          maxFittingSyllables = i + 1
+        } else {
+          break
         }
+      }
 
-        if (maxFittingSyllables > 0) {
-          const fittingSyllables = parts.slice(0, maxFittingSyllables).join('')
-          const remainingSyllables = parts.slice(maxFittingSyllables).join('')
-          firstPart += ` ${fittingSyllables}-`
-          restWords[0] = remainingSyllables
-        }
+      if (maxFittingSyllables > 0) {
+        const fittingSyllables = parts.slice(0, maxFittingSyllables).join('')
+        const remainingSyllables = parts.slice(maxFittingSyllables).join('')
+        firstPart += ` ${fittingSyllables}-`
+        restWords[0] = remainingSyllables
       }
     }
   }
 
   containerRef.removeChild(temp)
-
-  return {
-    firstPart: firstPart,
-    restPart: restWords.join(' '),
-  }
+  return { firstPart, restPart: restWords.join(' ') }
 }
 
-export interface ComputedPagesResult {
-  pages: string[][]
-  finalBlocks: ContentBlock[]
-  fragmentMap: Map<string, string> // maps fragmentId -> parentId
-}
-
-/**
- * Split text into sentences using punctuation boundaries.
- * Handles common abbreviations to avoid false splits (Mr., Dr., etc.).
- */
-export function splitSentences(text: string): string[] {
-  // Protect common abbreviations by replacing their periods temporarily
-  const protected_ = text.replace(/\b(Mr|Mrs|Ms|Dr|Prof|Sr|Jr|vs|etc|e\.g|i\.e|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\./gi, '$1\x00')
-
-  const sentences: string[] = []
-  // Split on sentence-ending punctuation followed by space/end
-  const parts = protected_.split(/(?<=[.!?])\s+/)
-  for (const part of parts) {
-    const s = part.replace(/\x00/g, '.').trim()
-    if (s) sentences.push(s)
-  }
-  return sentences.length > 0 ? sentences : [text]
-}
-
-/**
- * Find the page index containing a fragment with the given blockId and
- * the highest sentenceIndex that is <= targetSentenceIndex.
- * Falls back to findPageForBlock if no sentence-level data is available.
- */
-export function findPageForBlockAndSentence(
-  pages: string[][],
-  finalBlocks: ContentBlock[],
-  blockId: string,
-  targetSentenceIndex: number,
-  fragmentMap?: Map<string, string>,
-): number {
-  // Build map: fragmentId -> sentenceIndex for fragments of the target block
-  const sentenceMap = new Map<string, number>()
-  for (const block of finalBlocks) {
-    const parentId = block.parentId ?? block.id
-    if (parentId === blockId && (block as any).sentenceIndex != null) {
-      sentenceMap.set(block.id, (block as any).sentenceIndex as number)
-    }
-  }
-
-  if (sentenceMap.size === 0) {
-    // No sentence data: fall back to block-level search
-    return findPageForBlock(pages, blockId, fragmentMap)
-  }
-
-  // Find the page whose fragment has the best (largest ≤ target) sentenceIndex
-  let bestPage = -1
-  let bestSentIdx = -1
-
-  for (let i = 0; i < pages.length; i++) {
-    for (const id of pages[i]) {
-      const sIdx = sentenceMap.get(id)
-      if (sIdx == null) continue
-      if (sIdx <= targetSentenceIndex && sIdx > bestSentIdx) {
-        bestSentIdx = sIdx
-        bestPage = i
-      }
-    }
-  }
-
-  if (bestPage >= 0) return bestPage
-
-  // Nothing matched: fall back to any fragment of the block
-  return findPageForBlock(pages, blockId, fragmentMap)
-}
-
-/**
- * Split blocks into pages so each page fits within `pageHeight` pixels.
- */
-export function computePages(
+function computePagesFallback(
   blocks: ContentBlock[],
   blockHeights: Map<string, number>,
   pageHeight: number,
   containerRef: HTMLElement | null,
   fontSize: number,
   lang: string,
-  minBlocksPerPage = 1,
+  lineHeightScale: number,
+  minBlocksPerPage: number,
 ): ComputedPagesResult {
-  if (blocks.length === 0 || pageHeight <= 0) {
-    return { pages: [], finalBlocks: [], fragmentMap: new Map() }
-  }
-
-  const effectiveHeight = pageHeight
-
-
+  const effectiveHeight = containerRef ? Math.max(1, pageHeight - PAGE_HEIGHT_BUFFER_PX) : pageHeight
   const pages: string[][] = []
   let currentPage: string[] = []
   let currentHeight = 0
@@ -242,11 +663,8 @@ export function computePages(
 
   for (let i = 0; i < blocks.length; i++) {
     const block = blocks[i]
-    const originalH = blockHeights.get(block.id) ?? 48
-    let h = originalH
+    const h = blockHeights.get(block.id) ?? 48
 
-    // Heading keep-with-next logic:
-    // If it's a heading and it fits, check if next block fits too
     if (block.type === 'heading' && i < blocks.length - 1) {
       const nextBlock = blocks[i + 1]
       let nextH = blockHeights.get(nextBlock.id) ?? 48
@@ -254,7 +672,6 @@ export function computePages(
         nextH = Math.min(nextH, 60)
       }
       if (currentHeight + h + nextH > effectiveHeight && currentPage.length > 0) {
-        // Start new page early to avoid orphaned heading
         pages.push(currentPage)
         currentPage = []
         currentHeight = 0
@@ -274,55 +691,46 @@ export function computePages(
     if (block.type === 'paragraph' && containerRef) {
       let remainingText = block.text
       let partIndex = block.partIndex ?? 0
-
-      // Track sentence index: first sentence of each fragment in the original block
       const allSentences = splitSentences(block.text)
 
       while (remainingText.trim()) {
-        const availableHeight = effectiveHeight - currentHeight
-
-        // If we have literally negative or 0 room, we MUST start a new page
-        if (availableHeight <= 0) {
-          if (currentPage.length > 0) {
-            pages.push(currentPage)
-            currentPage = []
-            currentHeight = 0
-          }
-          // Now on empty page, we assume it'll take full effectiveHeight
+        if (effectiveHeight - currentHeight <= 0 && currentPage.length > 0) {
+          pages.push(currentPage)
+          currentPage = []
+          currentHeight = 0
         }
 
-        const freshAvailHeight = effectiveHeight - currentHeight
-
-        // Split text
         const split = splitParagraphByHeight(
           remainingText,
-          freshAvailHeight,
-          block.id,
+          effectiveHeight - currentHeight,
           fontSize,
           lang,
-          containerRef
+          lineHeightScale,
+          containerRef,
         )
 
-        // If nothing fits (e.g. single giant word or very low height) and we're not empty
         if (!split.firstPart.trim() && currentPage.length > 0) {
           pages.push(currentPage)
           currentPage = []
           currentHeight = 0
-          continue // retry splitting remaining text on new page
+          continue
         }
 
-        // If nothing fits even on an empty page, force at least one word to avoid infinite loop
         const forcedFirstWord = !split.firstPart.trim()
         const firstText = split.firstPart.trim() || remainingText.split(/\s+/).slice(0, 1).join(' ')
-        const restText = forcedFirstWord
-          ? remainingText.split(/\s+/).slice(1).join(' ')
-          : split.restPart.trim()
+        const restText = forcedFirstWord ? remainingText.split(/\s+/).slice(1).join(' ') : split.restPart.trim()
+
+        if (currentPage.length > 0 && restText && isTinyParagraphFragment(firstText)) {
+          pages.push(currentPage)
+          currentPage = []
+          currentHeight = 0
+          continue
+        }
 
         const fragmentId = `${block.id}-part-${partIndex}`
         const isFirstPart = (block.isFirstPart ?? true) && partIndex === 0
         const isLastPart = (block.isLastPart ?? true) && !restText
 
-        // Compute sentenceIndex: how many sentences of the original block precede this fragment
         const offsetInBlock = block.text.length - remainingText.length
         let sentenceIndex = 0
         let runningLen = 0
@@ -331,7 +739,7 @@ export function computePages(
             sentenceIndex = si
             break
           }
-          runningLen += allSentences[si].length + 1 // +1 for separator space
+          runningLen += allSentences[si].length + 1
           sentenceIndex = si + 1
         }
         sentenceIndex = Math.min(sentenceIndex, allSentences.length - 1)
@@ -351,35 +759,18 @@ export function computePages(
         finalBlocks.push(fragmentBlock)
         currentPage.push(fragmentId)
 
-        // Find how much height the fragment took to add it maybe?
-        // Since it filled the page or we are going to break anyway, if not last part:
         if (restText) {
           pages.push(currentPage)
           currentPage = []
           currentHeight = 0
         } else {
-          const temp = document.createElement('p')
-          const mbClass = isLastPart ? 'mb-5' : 'mb-0'
-          temp.className = `${mbClass} leading-relaxed`
-          if (fontSize) temp.style.fontSize = `${fontSize}px`
-          temp.setAttribute('lang', lang)
-          temp.style.hyphens = 'auto'
-          temp.style.setProperty('-webkit-hyphens', 'auto')
-          temp.style.position = 'absolute'
-          temp.style.visibility = 'hidden'
-          temp.style.width = '100%'
-          containerRef.appendChild(temp)
-          const finalH = measureTextHeight(firstText, temp)
-          containerRef.removeChild(temp)
-
-          currentHeight += finalH
+          currentHeight += measureParagraphFragmentHeight(firstText, fontSize, lang, lineHeightScale, containerRef, isLastPart)
         }
 
         remainingText = restText
         partIndex++
       }
     } else {
-      // Not a paragraph or no container to split
       pages.push(currentPage)
       currentPage = [block.id]
       finalBlocks.push(block)
@@ -394,13 +785,69 @@ export function computePages(
   return { pages, finalBlocks, fragmentMap }
 }
 
-/**
- * Return the page index that contains `blockId`, or -1 if not found.
- */
+export function computePages(
+  blocks: ContentBlock[],
+  blockHeights: Map<string, number>,
+  pageHeight: number,
+  containerRef: HTMLElement | null,
+  fontSize: number,
+  lang: string,
+  lineHeightScale = 1,
+  minBlocksPerPage = 1,
+  measuredBlockRoots?: MeasuredBlockRoots,
+): ComputedPagesResult {
+  if (blocks.length === 0 || pageHeight <= 0) {
+    return { pages: [], finalBlocks: [], fragmentMap: new Map() }
+  }
+
+  if (containerRef) {
+    return computePagesDom(blocks, pageHeight, containerRef, fontSize, lang, lineHeightScale, minBlocksPerPage, measuredBlockRoots)
+  }
+
+  return computePagesFallback(blocks, blockHeights, pageHeight, containerRef, fontSize, lang, lineHeightScale, minBlocksPerPage)
+}
+
+export function findPageForBlockAndSentence(
+  pages: string[][],
+  finalBlocks: ContentBlock[],
+  blockId: string,
+  targetSentenceIndex: number,
+  fragmentMap?: Map<string, string>,
+): number {
+  const sentenceMap = new Map<string, number>()
+  for (const block of finalBlocks) {
+    const parentId = block.parentId ?? block.id
+    const sentenceIndex = 'sentenceIndex' in block ? block.sentenceIndex : undefined
+    if (parentId === blockId && typeof sentenceIndex === 'number') {
+      sentenceMap.set(block.id, sentenceIndex)
+    }
+  }
+
+  if (sentenceMap.size === 0) {
+    return findPageForBlock(pages, blockId, fragmentMap)
+  }
+
+  let bestPage = -1
+  let bestSentIdx = -1
+  for (let i = 0; i < pages.length; i++) {
+    for (const id of pages[i]) {
+      const sIdx = sentenceMap.get(id)
+      if (sIdx == null) continue
+      if (sIdx <= targetSentenceIndex && sIdx > bestSentIdx) {
+        bestSentIdx = sIdx
+        bestPage = i
+      }
+    }
+  }
+
+  if (bestPage >= 0) return bestPage
+  return findPageForBlock(pages, blockId, fragmentMap)
+}
+
 export function findPageForBlock(
   pages: string[][],
   blockId: string,
-  fragmentMap?: Map<string, string>
+  fragmentMap?: Map<string, string>,
 ): number {
   for (let i = 0; i < pages.length; i++) {
     if (pages[i].includes(blockId)) return i
@@ -415,12 +862,10 @@ export function findPageForBlock(
       }
     }
   }
+
   return -1
 }
 
-/**
- * Find the page index that best contains `targetPosition`.
- */
 export function findPageByBlockPosition(
   pages: string[][],
   blocks: ContentBlock[],

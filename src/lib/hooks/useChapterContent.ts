@@ -17,7 +17,7 @@ export function useChapterContent(chapterId: string | null, lang?: string) {
 
   useEffect(() => {
     if (!chapterId) return
-    
+
     // Abort any previous request
     if (abortControllerRef.current) {
       abortControllerRef.current.abort()
@@ -37,8 +37,9 @@ export function useChapterContent(chapterId: string | null, lang?: string) {
       if (cached) {
         setBlocks(cached.blocks)
         setBlocksLang(lang)
-        // Cached full chapter is good enough to avoid false "translating" bursts on reopen.
-        if (!cached.hasPending) setHasServerSnapshot(true)
+        // Cached content is enough to allow viewport translation to run immediately on reopen.
+        // Server snapshot fetch remains best-effort and is skipped when cache is fresh.
+        setHasServerSnapshot(true)
       }
 
       // Only show the loading spinner if we have nothing cached to show immediately.

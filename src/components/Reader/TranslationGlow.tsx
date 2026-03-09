@@ -1,8 +1,5 @@
 'use client';
 
-import { useAppStore } from '@/lib/store';
-import { Loader2 } from 'lucide-react';
-
 interface TranslationGlowProps {
     children: React.ReactNode;
 }

@@ -36,7 +36,7 @@ export default function BookDetailPage({ params }: BookDetailPageProps) {
     return (
         <div className="min-h-screen bg-[var(--bg-grouped)]">
             {/* Navigation Bar */}
-            <header className="nav-bar sticky top-0 z-40 safe-area-inset-top">
+            <header className="nav-bar fixed top-0 left-0 right-0 z-40 safe-area-inset-top">
                 <div className="flex items-center h-[44px] px-[16px]">
                     <Link href="/store" className="flex items-center gap-[4px] text-[var(--system-blue)] -ml-[8px] min-w-[44px] min-h-[44px] pl-[8px]">
                         <ChevronLeft className="w-[20px] h-[20px]" strokeWidth={2.5} />
@@ -45,7 +45,7 @@ export default function BookDetailPage({ params }: BookDetailPageProps) {
                 </div>
             </header>
 
-            <div className="px-[16px] pb-[32px]">
+            <div className="px-[16px] pt-[calc(env(safe-area-inset-top)+44px)] pb-[32px]">
                 {/* Cover */}
                 <div className="relative mx-auto max-w-[200px] mb-[24px]">
                     <div className="relative aspect-[2/3] rounded-[12px] overflow-hidden shadow-lg">

@@ -7,6 +7,7 @@ import { User, Settings, HelpCircle, LogOut, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import PageHeader from '@/components/ui/PageHeader';
 import { createClient } from '@/lib/supabase/client';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { useAuth } from '@/lib/hooks/useAuth';
@@ -41,13 +42,9 @@ export default function ProfilePage() {
     return (
         <div className="min-h-screen bg-background pb-[calc(60px+env(safe-area-inset-bottom))]">
             {/* Header */}
-            <header className="pt-[env(safe-area-inset-top)] sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b">
-                <div className="container max-w-2xl mx-auto px-4 sm:px-6">
-                    <h1 className="text-2xl font-bold py-4">Profile</h1>
-                </div>
-            </header>
+            <PageHeader title="Profile" />
 
-            <div className="container max-w-2xl mx-auto px-4 sm:px-6 py-4 space-y-4">
+            <div className="container max-w-2xl mx-auto px-4 sm:px-6 pt-[calc(1rem+env(safe-area-inset-top)+76px)] pb-4 space-y-4">
                 {loading ? (
                     <Card>
                         <CardContent className="flex items-center justify-center p-12">

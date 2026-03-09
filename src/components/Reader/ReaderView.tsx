@@ -4,15 +4,25 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useAppStore, Language, ReadingAnchor } from '@/lib/store';
-import { fetchReadingPosition, saveReadingPosition, updateBookLanguage, translateChapterTitles } from '@/lib/api';
+import { fetchContent, fetchReadingPosition, saveReadingPosition, updateBookLanguage } from '@/lib/api';
 import { useChapters } from '@/lib/hooks/useChapters';
 import { useChapterContent } from '@/lib/hooks/useChapterContent';
+import { useReaderMetadataTranslations } from '@/lib/hooks/useReaderMetadataTranslations';
 import { useViewportTranslation } from '@/lib/hooks/useViewportTranslation';
 import { usePageGestures } from '@/lib/hooks/usePageGestures';
 import { computePages, findPageForBlock, findPageForBlockAndSentence, findPageByBlockPosition, normalizeBlocks } from '@/lib/paginatorUtils';
 import { ContentBlock } from '@/lib/api';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { getCachedReadingPosition, setCachedReadingPosition, getCachedTocTitles, setCachedTocTitles } from '@/lib/contentCache';
+import {
+    getCachedChapterBlockIds,
+    getCachedChapterLayout,
+    getCachedReadingPosition,
+    setCachedChapterContent,
+    setCachedChapterLayout,
+    setCachedReadingPosition,
+} from '@/lib/contentCache';
+import { mergeDisplayBlocksPreservingTranslations } from '@/lib/reader/mergeDisplayBlocks';
+import { isBlockPendingForActiveLang, isTranslatableBlock } from '@/lib/translationState';
 import {
   trackReadingSessionStarted,
   trackReadingSessionEnded,
@@ -26,6 +36,7 @@ import AppleIntelligenceGlow from './AppleIntelligenceGlow';
 import LanguageSwitch from './LanguageSwitch';
 import ContentBlockRenderer from './ContentBlockRenderer';
 import { Button } from '@/components/ui/button';
+import IOSAlertDialog from '@/components/ui/ios-alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 
 // Source of a navigation event. Any source other than manual_scroll is a "jump"
@@ -36,6 +47,7 @@ const LAST_PAGE_SENTINEL = '__LAST_PAGE__';
 interface ReaderViewProps {
     bookId: string;
     title: string;
+    author?: string | null;
     availableLanguages: string[];
     originalLanguage?: string | null;
     serverLanguage?: string | null;
@@ -50,13 +62,71 @@ type PaginationCacheEntry = {
     savedAt: number;
 };
 
+async function waitForMeasuredImages(container: HTMLElement | null): Promise<void> {
+    if (!container) return;
+
+    const images = Array.from(container.querySelectorAll('img'));
+    if (images.length === 0) return;
+
+    await Promise.all(images.map((img) => {
+        if (img.complete) return Promise.resolve();
+
+        return new Promise<void>((resolve) => {
+            const cleanup = () => {
+                img.removeEventListener('load', handleDone);
+                img.removeEventListener('error', handleDone);
+            };
+
+            const handleDone = () => {
+                cleanup();
+                resolve();
+            };
+
+            img.addEventListener('load', handleDone, { once: true });
+            img.addEventListener('error', handleDone, { once: true });
+        });
+    }));
+}
+
+function getSentenceIndex(block: ContentBlock): number {
+    return 'sentenceIndex' in block && typeof block.sentenceIndex === 'number' ? block.sentenceIndex : 0;
+}
+
+function hashString(value: string): string {
+    let hash = 5381;
+    for (let i = 0; i < value.length; i += 1) {
+        hash = ((hash << 5) + hash) ^ value.charCodeAt(i);
+    }
+    return (hash >>> 0).toString(36);
+}
+
+function getLayoutContentSignature(blocks: ContentBlock[]): string {
+    const serialized = blocks.map((block) => {
+        switch (block.type) {
+            case 'paragraph':
+            case 'quote':
+                return `${block.id}|${block.type}|${block.position}|${block.text ?? ''}`;
+            case 'heading':
+                return `${block.id}|${block.type}|${block.position}|${block.level}|${block.text ?? ''}`;
+            case 'list':
+                return `${block.id}|${block.type}|${block.position}|${block.ordered ? '1' : '0'}|${(block.items ?? []).join('\u001f')}`;
+            case 'image':
+                return `${block.id}|${block.type}|${block.position}|${block.src ?? ''}|${block.alt ?? ''}|${block.caption ?? ''}`;
+            case 'hr':
+                return `${block.id}|${block.type}|${block.position}`;
+        }
+    }).join('\u001e');
+    return hashString(serialized);
+}
+
 // Module-level cache so it survives route navigation (unmount/remount).
 const paginationCache = new Map<string, PaginationCacheEntry>();
 
-export default function ReaderView({ bookId, title, availableLanguages, originalLanguage, serverLanguage, coverUrl }: ReaderViewProps) {
+export default function ReaderView({ bookId, title, author, availableLanguages, originalLanguage, serverLanguage, coverUrl }: ReaderViewProps) {
     const { user, isAuthenticated, loading: authLoading } = useAuth();
     const {
         settings,
+        perBookLanguages,
         syncVersions,
         setBookLanguage,
         setIsTranslatingForBook,
@@ -68,47 +138,47 @@ export default function ReaderView({ bookId, title, availableLanguages, original
 
     const [currentChapterIndex, setCurrentChapterIndex] = useState(1);
     const [pendingLang, setPendingLang] = useState<Language | null>(null);
+    const [isLanguageSwitching, setIsLanguageSwitching] = useState(false);
+    const [isChapterEntryTransitionActive, setIsChapterEntryTransitionActive] = useState(false);
 
     const resolvedServerLang = useMemo<Language>(() => {
-        const candidates = [serverLanguage, originalLanguage];
+        const localBookLang = perBookLanguages[bookId];
+        const candidates = [localBookLang, serverLanguage, originalLanguage];
         for (const c of candidates) {
             const l = c?.toLowerCase() as Language;
             if (l && ['en', 'fr', 'es', 'de', 'ru'].includes(l)) return l;
         }
         return settings.language;
-    }, [serverLanguage, originalLanguage, settings.language]);
+    }, [perBookLanguages, bookId, serverLanguage, originalLanguage, settings.language]);
     const activeLang = pendingLang ?? resolvedServerLang;
 
     const { chapters, loading: chaptersLoading, error: chaptersError } = useChapters(bookId);
     const currentChapter = chapters[currentChapterIndex - 1] ?? null;
+    const currentChapterId = currentChapter?.id ?? null;
 
-    // Chapter title translation state
-    const [translatedChapterTitles, setTranslatedChapterTitles] = useState<Map<string, string>>(new Map());
-    const [isTranslatingChapterTitles, setIsTranslatingChapterTitles] = useState(false);
-    const translatingTitlesLangRef = useRef<string | null>(null);
-
-    // Reset translated titles when active language changes
-    useEffect(() => {
-        setTranslatedChapterTitles(new Map());
-        translatingTitlesLangRef.current = null;
-    }, [activeLang]);
-
-    // Best-effort: hydrate translated chapter titles from IndexedDB for fast reloads.
-    useEffect(() => {
-        let cancelled = false;
-        const scopeKey = user?.id ?? 'guest';
-        void getCachedTocTitles(scopeKey, bookId, activeLang).then((titles) => {
-            if (cancelled) return;
-            if (!titles) return;
-            setTranslatedChapterTitles(new Map(Object.entries(titles)));
-        });
-        return () => {
-            cancelled = true;
-        };
-    }, [bookId, activeLang, user?.id]);
+    const {
+        isBookMetaPending,
+        isTocContentPending,
+        readerBookTitle,
+        readerBookAuthor,
+        getResolvedChapterTitle,
+        ensureTocTranslations,
+    } = useReaderMetadataTranslations({
+        userScope: user?.id ?? 'guest',
+        bookId,
+        activeLang,
+        originalLanguage,
+        title,
+        author,
+        chapters: chapters.map((chapter) => ({
+            id: chapter.id,
+            title: chapter.title,
+            translations: chapter.translations,
+        })),
+    });
 
     const { blocks, loading: contentLoading, error: contentError, isStale, blocksLang, hasServerSnapshot } = useChapterContent(
-        currentChapter?.id ?? null,
+        currentChapterId,
         activeLang.toUpperCase()
     );
     
@@ -121,10 +191,15 @@ export default function ReaderView({ bookId, title, availableLanguages, original
     useEffect(() => {
         // Only update if blocks are for the correct language (not stale)
         if (blocksLang === activeLang.toUpperCase()) {
-            setDisplayBlocks(blocks);
+            setDisplayBlocks((prev) =>
+                mergeDisplayBlocksPreservingTranslations(prev, blocks, {
+                    // Never preserve translated text across different target languages.
+                    preserve: displayBlocksLang === blocksLang,
+                })
+            );
             setDisplayBlocksLang(blocksLang);
         }
-    }, [blocks, blocksLang, activeLang]);
+    }, [blocks, blocksLang, activeLang, displayBlocksLang]);
 
     // Content is effectively loading if:
     // - fetch is in progress
@@ -141,9 +216,9 @@ export default function ReaderView({ bookId, title, availableLanguages, original
         });
     }, []);
 
-    const { getRefCallback, isTranslatingAny, abortAll, enqueueBlocks, enqueueBlocksImmediate, pendingBlockIds } = useViewportTranslation({
+    const { getRefCallback, isTranslatingAny, abortAll, enqueueBlocks, enqueueBlocksImmediate, pendingBlockIds, reconcileBlocks } = useViewportTranslation({
         bookId,
-        chapterId: currentChapter?.id ?? null,
+        chapterId: currentChapterId,
         lang: activeLang.toUpperCase(),
         blocks: displayBlocks,
         sourceLanguage: originalLanguage ?? null,
@@ -157,24 +232,12 @@ export default function ReaderView({ bookId, title, availableLanguages, original
         ? originalLanguage.toUpperCase() === activeLang.toUpperCase()
         : false;
 
-    // Clear translation glow when content finishes loading
-    const wasLoadingRef = useRef(false);
     useEffect(() => {
-        if (isContentLoading) {
-            wasLoadingRef.current = true;
-        } else if (wasLoadingRef.current) {
-            wasLoadingRef.current = false;
-            setIsTranslatingForBook(bookId, false);
-        }
-    }, [bookId, isContentLoading, setIsTranslatingForBook]);
-
-    useEffect(() => {
+        if (perBookLanguages[bookId]) return;
         setBookLanguage(bookId, resolvedServerLang);
-    }, [bookId, resolvedServerLang, setBookLanguage]);
+    }, [bookId, perBookLanguages, resolvedServerLang, setBookLanguage]);
 
-    useEffect(() => {
-        setIsTranslatingForBook(bookId, false);
-    }, [bookId, setIsTranslatingForBook]);
+    // NOTE: glow state is derived later, once pagination + currentPageBlocks are available.
 
     // ─── Reading session tracking ─────────────────────────────────────────────
     const sessionStartRef = useRef(Date.now());
@@ -192,10 +255,11 @@ export default function ReaderView({ bookId, title, availableLanguages, original
     }, []);
 
     useEffect(() => {
+        const sessionStartedAt = sessionStartRef.current;
         return () => {
             trackReadingSessionEnded({
                 book_id: bookId,
-                duration_seconds: Math.round((Date.now() - sessionStartRef.current) / 1000),
+                duration_seconds: Math.round((Date.now() - sessionStartedAt) / 1000),
                 pages_read: pagesReadRef.current,
                 chapters_navigated: chaptersNavigatedRef.current,
             });
@@ -231,6 +295,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
     const blockMeasureRefs = useRef<Map<string, HTMLElement>>(new Map());
 
     const [pageHeight, setPageHeight] = useState(0);
+    const [pageWidth, setPageWidth] = useState(0);
     const [pages, setPages] = useState<string[][]>([]);
     const [paginatedBlocks, setPaginatedBlocks] = useState<ContentBlock[]>([]);
     const fragmentMapRef = useRef<Map<string, string>>(new Map());
@@ -240,10 +305,13 @@ export default function ReaderView({ bookId, title, availableLanguages, original
     const [pagesReady, setPagesReady] = useState(false);
     const [visiblePagesReady, setVisiblePagesReady] = useState(false);
     const [remoteAnchorReady, setRemoteAnchorReady] = useState(false);
+    const [layoutCacheReadyKey, setLayoutCacheReadyKey] = useState('');
+    const currentPageIdxRef = useRef(0);
 
-    // On every page change: translate current page immediately (HIGH PRIORITY), prefetch next pages (LOW PRIORITY)
-    // Extend prefetch window up to 10 pages ahead to ensure continuous translation pipeline
-    const PREFETCH_PAGES_AHEAD = 10;
+    // Translation windows are block-based around the current reading position.
+    const PREFETCH_BLOCKS_FORWARD = 20;
+    const PREFETCH_BLOCKS_BACKWARD = 10;
+    const HIGH_PRIORITY_VISIBLE_BLOCKS = 2;
 
     // Helper to convert fragment IDs to original block IDs for translation
     const resolveBlockIds = useCallback((fragmentIds: string[]): string[] => {
@@ -263,31 +331,92 @@ export default function ReaderView({ bookId, title, availableLanguages, original
     }, [paginatedBlocks]);
 
     useEffect(() => {
-        // Don't enqueue translations while content is loading - wait for fresh data
         if (!pagesReady || isSourceLang || isContentLoading) return;
-        const currentFragmentIds = pages[currentPageIdx] ?? [];
-        // Convert fragment IDs to original block IDs for the backend
-        const currentIds = resolveBlockIds(currentFragmentIds);
 
-        // Current page blocks get HIGH priority - translate immediately
-        if (currentIds.length > 0) {
-            console.log(JSON.stringify({ event: 'translate_current_page', pageIdx: currentPageIdx, blockCount: currentIds.length }));
-            enqueueBlocksImmediate(currentIds);
-        }
+        let cancelled = false;
 
-        // Prefetch next N pages (LOW priority) - ensures we always have a translation pipeline
-        const prefetchFragmentIds: string[] = [];
-        for (let i = 1; i <= PREFETCH_PAGES_AHEAD; i++) {
-            const pageIds = pages[currentPageIdx + i] ?? [];
-            prefetchFragmentIds.push(...pageIds);
-        }
-        const prefetchIds = resolveBlockIds(prefetchFragmentIds);
+        const run = async () => {
+            const currentFragmentIds = pages[currentPageIdx] ?? [];
+            const currentIds = resolveBlockIds(currentFragmentIds);
+            const anchorBlockId = currentIds[0] ?? null;
+            const anchorIdx = anchorBlockId ? displayBlocks.findIndex((block) => block.id === anchorBlockId) : -1;
+            const chapterIdx = currentChapterIndex - 1;
 
-        if (prefetchIds.length > 0) {
-            console.log(JSON.stringify({ event: 'prefetch_enqueue', pageIdx: currentPageIdx, pagesAhead: PREFETCH_PAGES_AHEAD, totalBlocks: prefetchIds.length }));
-            enqueueBlocks(prefetchIds);
-        }
-    }, [currentPageIdx, pagesReady, pages, enqueueBlocks, enqueueBlocksImmediate, isSourceLang, isContentLoading, resolveBlockIds]);
+            const loadChapterIds = async (idx: number): Promise<string[]> => {
+                const chapter = chapters[idx];
+                if (!chapter) return [];
+                const cachedIds = await getCachedChapterBlockIds(chapter.id);
+                if (cachedIds.length > 0) return cachedIds;
+                try {
+                    const nextBlocks = await fetchContent(chapter.id, activeLang.toUpperCase());
+                    await setCachedChapterContent(chapter.id, activeLang.toUpperCase(), nextBlocks);
+                    return nextBlocks.map((block) => block.id);
+                } catch {
+                    return [];
+                }
+            };
+
+            const forwardIds: string[] = [];
+            if (anchorIdx >= 0) {
+                forwardIds.push(...displayBlocks.slice(anchorIdx + 1).map((block) => block.id));
+            }
+            for (let idx = chapterIdx + 1; forwardIds.length < PREFETCH_BLOCKS_FORWARD && idx < chapters.length; idx += 1) {
+                forwardIds.push(...(await loadChapterIds(idx)));
+            }
+
+            const backwardIds: string[] = [];
+            if (anchorIdx >= 0) {
+                backwardIds.unshift(...displayBlocks.slice(Math.max(0, anchorIdx - PREFETCH_BLOCKS_BACKWARD), anchorIdx).map((block) => block.id));
+            }
+            for (let idx = chapterIdx - 1; backwardIds.length < PREFETCH_BLOCKS_BACKWARD && idx >= 0; idx -= 1) {
+                const ids = await loadChapterIds(idx);
+                backwardIds.unshift(...ids);
+            }
+
+            const boundedForwardIds = forwardIds.slice(0, PREFETCH_BLOCKS_FORWARD);
+            const boundedBackwardIds = backwardIds.slice(Math.max(0, backwardIds.length - PREFETCH_BLOCKS_BACKWARD));
+
+            if (cancelled) return;
+
+            const reconcileIds = Array.from(new Set([...currentIds, ...boundedForwardIds, ...boundedBackwardIds]));
+            if (reconcileIds.length > 0) {
+                void reconcileBlocks(reconcileIds);
+            }
+
+            if (currentIds.length > 0) {
+                const visibleHighIds = currentIds.slice(0, HIGH_PRIORITY_VISIBLE_BLOCKS);
+                const visibleRemainingIds = currentIds.slice(HIGH_PRIORITY_VISIBLE_BLOCKS);
+                console.log(JSON.stringify({
+                    event: 'translate_current_page',
+                    pageIdx: currentPageIdx,
+                    blockCount: currentIds.length,
+                    visibleHighCount: visibleHighIds.length,
+                    visibleDeferredCount: visibleRemainingIds.length,
+                }));
+                if (visibleHighIds.length > 0) {
+                    enqueueBlocksImmediate(visibleHighIds);
+                }
+                if (visibleRemainingIds.length > 0) {
+                    enqueueBlocks(visibleRemainingIds);
+                }
+            }
+
+            if (boundedForwardIds.length > 0) {
+                console.log(JSON.stringify({ event: 'prefetch_forward_enqueue', pageIdx: currentPageIdx, totalBlocks: boundedForwardIds.length }));
+                enqueueBlocks(boundedForwardIds);
+            }
+            if (boundedBackwardIds.length > 0) {
+                console.log(JSON.stringify({ event: 'prefetch_backward_enqueue', pageIdx: currentPageIdx, totalBlocks: boundedBackwardIds.length }));
+                enqueueBlocks(boundedBackwardIds);
+            }
+        };
+
+        void run();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [currentPageIdx, pagesReady, pages, enqueueBlocks, enqueueBlocksImmediate, isSourceLang, isContentLoading, resolveBlockIds, displayBlocks, reconcileBlocks, chapters, currentChapterIndex, activeLang]);
 
     // Measure the available height for content after the header
     useEffect(() => {
@@ -295,6 +424,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
         const updateHeight = () => {
             if (pageViewportRef.current) {
                 setPageHeight(pageViewportRef.current.clientHeight);
+                setPageWidth(pageViewportRef.current.clientWidth);
             }
         };
         const ro = new ResizeObserver(updateHeight);
@@ -318,15 +448,10 @@ export default function ReaderView({ bookId, title, availableLanguages, original
     // (translated text has different length than original → page breaks shift).
     const blockStructureKey = useMemo(
         () => {
-            const parts = normalizedBlocks.map((b) => {
-                let tl = 0;
-                if ('text' in b && typeof b.text === 'string') tl = b.text.length;
-                else if ('items' in b && Array.isArray(b.items)) tl = b.items.join('').length;
-                return `${b.id}:${tl}`;
-            });
-            return `${parts.join(',')}__${pageHeight}__${settings.fontSize}__${displayBlocksLang}`;
+            const contentSignature = getLayoutContentSignature(normalizedBlocks);
+            return `${contentSignature}__${pageWidth}__${pageHeight}__${settings.fontSize}__${settings.lineHeightScale}__${displayBlocksLang}`;
         },
-        [normalizedBlocks, pageHeight, settings.fontSize, displayBlocksLang]
+        [normalizedBlocks, pageWidth, pageHeight, settings.fontSize, settings.lineHeightScale, displayBlocksLang]
     );
     const prevBlockStructureKey = useRef('');
     const lastProgressFetchAtRef = useRef<Map<string, number>>(new Map());
@@ -338,18 +463,38 @@ export default function ReaderView({ bookId, title, availableLanguages, original
         const chapterId = currentChapter?.id ?? '';
         return `${bookId}::${chapterId}::${blockStructureKey}`;
     }, [bookId, currentChapter?.id, blockStructureKey]);
+    const localAnchorChapterAppliedRef = useRef<string | null>(null);
+    const restoredFromPaginationCacheRef = useRef(false);
 
     useEffect(() => {
+        if (chaptersLoading || chapters.length === 0) return;
+        const anchor = getAnchor(bookId);
+        if (!anchor?.chapterId) return;
+
+        const applyKey = `${bookId}::${anchor.chapterId}`;
+        if (localAnchorChapterAppliedRef.current === applyKey) return;
+
+        const chapterIdx = chapters.findIndex((chapter) => chapter.id === anchor.chapterId);
+        if (chapterIdx < 0) return;
+
+        localAnchorChapterAppliedRef.current = applyKey;
+        setCurrentChapterIndex((prev) => (prev === chapterIdx + 1 ? prev : chapterIdx + 1));
+    }, [bookId, chapters, chaptersLoading, getAnchor]);
+
+    useEffect(() => {
+        if (layoutCacheReadyKey !== paginationCacheKey) return;
         if (blockStructureKey === prevBlockStructureKey.current) return;
-        if (pageHeight === 0 || normalizedBlocks.length === 0) return;
+        if (pageHeight === 0 || pageWidth === 0 || normalizedBlocks.length === 0) return;
 
         let cancelled = false;
+        setVisiblePagesReady(false);
 
         async function measureAndCompute() {
             // Ensure fonts are loaded before measuring
             if (document.fonts && document.fonts.ready) {
                 await document.fonts.ready;
             }
+            await waitForMeasuredImages(measureContainerRef.current);
             if (cancelled) return;
 
             prevBlockStructureKey.current = blockStructureKey;
@@ -363,7 +508,10 @@ export default function ReaderView({ bookId, title, availableLanguages, original
                 pageHeight,
                 measureContainerRef.current,
                 settings.fontSize,
-                displayBlocksLang ?? activeLang
+                displayBlocksLang ?? activeLang,
+                settings.lineHeightScale,
+                1,
+                blockMeasureRefs.current,
             );
 
             setPages(computed.pages);
@@ -376,17 +524,30 @@ export default function ReaderView({ bookId, title, availableLanguages, original
                 pages: computed.pages,
                 finalBlocks: computed.finalBlocks,
                 fragmentMap: computed.fragmentMap,
-                currentPageIdx,
+                currentPageIdx: currentPageIdxRef.current,
                 savedAt: Date.now(),
+            });
+
+            void setCachedChapterLayout({
+                key: paginationCacheKey,
+                bookId,
+                chapterId: currentChapter?.id ?? '',
+                layoutKey: blockStructureKey,
+                pages: computed.pages,
+                finalBlocks: computed.finalBlocks,
+                fragmentEntries: Array.from(computed.fragmentMap.entries()),
+                currentPageIdx: currentPageIdxRef.current,
+            }).catch(() => {
+                // Ignore IDB failures; memory cache still keeps navigation smooth.
             });
         }
 
-        measureAndCompute();
+        void measureAndCompute();
 
         return () => {
             cancelled = true;
         };
-    }, [blockStructureKey, pageHeight, normalizedBlocks, settings.fontSize, displayBlocksLang, activeLang]);
+    }, [layoutCacheReadyKey, paginationCacheKey, blockStructureKey, pageHeight, pageWidth, normalizedBlocks, settings.fontSize, settings.lineHeightScale, displayBlocksLang, activeLang, currentChapter?.id, bookId]);
 
     // ─── Anchor restore ──────────────────────────────────────────────────────
     // Set by language-switch handler: blockId + sentenceIndex to jump to on next page recompute
@@ -398,22 +559,56 @@ export default function ReaderView({ bookId, title, availableLanguages, original
         const chapterId = currentChapter?.id ?? '';
         if (!chapterId) return;
 
+        let cancelled = false;
+        setLayoutCacheReadyKey('');
+        restoredFromPaginationCacheRef.current = false;
+        setPagesReady(false);
+        setVisiblePagesReady(false);
+        setPages([]);
+        setPaginatedBlocks([]);
+        fragmentMapRef.current = new Map();
+        setCurrentPageIdx(0);
+
         const cached = paginationCache.get(paginationCacheKey);
         if (cached) {
+            restoredFromPaginationCacheRef.current = true;
+            prevBlockStructureKey.current = blockStructureKey;
             setPages(cached.pages);
             setPaginatedBlocks(cached.finalBlocks);
             fragmentMapRef.current = cached.fragmentMap;
             setPagesReady(true);
             setCurrentPageIdx(Math.max(0, Math.min(cached.currentPageIdx, cached.pages.length - 1)));
-            setVisiblePagesReady(true);
+            setVisiblePagesReady(false);
+            setLayoutCacheReadyKey(paginationCacheKey);
             return;
         }
 
-        setPagesReady(false);
-        setVisiblePagesReady(false);
-        setPages([]);
-        setCurrentPageIdx(0);
-    }, [currentChapter?.id]);
+        void getCachedChapterLayout(paginationCacheKey)
+            .then((cachedLayout) => {
+                if (cancelled) return;
+                if (cachedLayout && cachedLayout.layoutKey === blockStructureKey) {
+                    restoredFromPaginationCacheRef.current = true;
+                    prevBlockStructureKey.current = blockStructureKey;
+                    setPages(cachedLayout.pages);
+                    setPaginatedBlocks(cachedLayout.finalBlocks);
+                    fragmentMapRef.current = new Map(cachedLayout.fragmentEntries);
+                    setPagesReady(true);
+                    setCurrentPageIdx(Math.max(0, Math.min(cachedLayout.currentPageIdx, cachedLayout.pages.length - 1)));
+                    setVisiblePagesReady(false);
+                }
+            })
+            .catch(() => {
+                // Ignore cache hydration failures; a fresh compute will follow.
+            })
+            .finally(() => {
+                if (cancelled) return;
+                setLayoutCacheReadyKey(paginationCacheKey);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [currentChapter?.id, paginationCacheKey, blockStructureKey]);
 
     useEffect(() => {
         if (!pagesReady || pages.length === 0) return;
@@ -425,6 +620,14 @@ export default function ReaderView({ bookId, title, availableLanguages, original
     // Authenticated users: local-first anchor restore + conditional server revalidation.
     useEffect(() => {
         let cancelled = false;
+        const localAnchor = getAnchor(bookId);
+        const localAnchorChapterId = localAnchor?.chapterId;
+        if (localAnchorChapterId) {
+            const localChapterIdx = chapters.findIndex((c) => c.id === localAnchorChapterId);
+            if (localChapterIdx >= 0) {
+                setCurrentChapterIndex(localChapterIdx + 1);
+            }
+        }
 
         if (authLoading || chaptersLoading) return;
         if (!isAuthenticated) {
@@ -433,7 +636,6 @@ export default function ReaderView({ bookId, title, availableLanguages, original
         }
 
         const scopeKey = user?.id ?? 'guest';
-        const localAnchor = getAnchor(bookId);
         const hasLocalAnchor = !!localAnchor;
         const currentProgressScope = syncVersions.progress;
         const scopeChanged =
@@ -549,6 +751,20 @@ export default function ReaderView({ bookId, title, availableLanguages, original
     useEffect(() => {
         if (!remoteAnchorReady) return;
         if (!pagesReady || pages.length === 0) return;
+        if (visiblePagesReady && pendingAnchorBlockId.current === null) return;
+
+        const savedAnchor = getAnchor(bookId);
+        const hasSavedAnchorForCurrentChapter =
+            !!savedAnchor && savedAnchor.chapterId === (currentChapter?.id ?? '');
+
+        if (
+            restoredFromPaginationCacheRef.current &&
+            pendingAnchorBlockId.current === null &&
+            !hasSavedAnchorForCurrentChapter
+        ) {
+            setVisiblePagesReady(true);
+            return;
+        }
 
         // If there's a pending anchor (from language switch), use it
         const targetBlockId = pendingAnchorBlockId.current;
@@ -580,8 +796,16 @@ export default function ReaderView({ bookId, title, availableLanguages, original
         }
 
         // Initial load: restore from saved anchor
-        const anchor = getAnchor(bookId);
+        const anchor = savedAnchor;
         if (anchor && anchor.chapterId === (currentChapter?.id ?? '')) {
+            if (anchor.fragmentId) {
+                const exactPageIdx = pages.findIndex((page) => page.includes(anchor.fragmentId!));
+                if (exactPageIdx >= 0) {
+                    setCurrentPageIdx(exactPageIdx);
+                    setVisiblePagesReady(true);
+                    return;
+                }
+            }
             const idx = findPageForBlockAndSentence(pages, paginatedBlocks, anchor.blockId, anchor.sentenceIndex ?? 0, fragmentMapRef.current);
             if (idx >= 0) {
                 setCurrentPageIdx(idx);
@@ -592,7 +816,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
             setCurrentPageIdx(Math.max(0, byPos));
         }
         setVisiblePagesReady(true);
-    }, [remoteAnchorReady, pagesReady, pages, bookId, currentChapter?.id, displayBlocks, getAnchor]);
+    }, [remoteAnchorReady, pagesReady, pages, bookId, currentChapter?.id, displayBlocks, getAnchor, paginatedBlocks, visiblePagesReady]);
 
     // ─── Anchor save (throttled ~1 s) ────────────────────────────────────────
     const lastSavedAnchorAt = useRef(0);
@@ -681,11 +905,12 @@ export default function ReaderView({ bookId, title, availableLanguages, original
         });
     }, [bookId, storeSetAnchor, isAuthenticated, activeLang, updateServerProgress, user?.id]);
 
-    const saveAnchor = useCallback((blockId: string, blockPosition: number, sentenceIndex = 0) => {
+    const saveAnchor = useCallback((blockId: string, blockPosition: number, sentenceIndex = 0, fragmentId?: string) => {
         if (!currentChapter) return;
         const anchor: ReadingAnchor = {
             chapterId: currentChapter.id,
             blockId,
+            fragmentId,
             blockPosition,
             sentenceIndex,
             updatedAt: new Date().toISOString(),
@@ -720,10 +945,6 @@ export default function ReaderView({ bookId, title, availableLanguages, original
         };
     }, [persistAnchor]);
 
-    // ─── Page navigation ─────────────────────────────────────────────────────
-    const prevChapter = currentChapterIndex > 1 ? chapters[currentChapterIndex - 2] : null;
-    const nextChapter = currentChapterIndex < chapters.length ? chapters[currentChapterIndex] : null;
-
     // ─── Current page blocks (needed for goToChapter) ───────────────────────
     const currentPageBlockIds = useMemo(() => (
         pagesReady && pages[currentPageIdx] ? new Set(pages[currentPageIdx]) : new Set<string>()
@@ -734,6 +955,148 @@ export default function ReaderView({ bookId, title, availableLanguages, original
         [paginatedBlocks, currentPageBlockIds]
     );
 
+    const currentPageTranslatableBlocks = useMemo(
+        () => currentPageBlocks.filter(isTranslatableBlock),
+        [currentPageBlocks]
+    );
+
+    const currentPageHasReadyBlock = useMemo(
+        () => currentPageTranslatableBlocks.some((block) => !isBlockPendingForActiveLang(block, pendingBlockIds)),
+        [currentPageTranslatableBlocks, pendingBlockIds]
+    );
+
+    const isCurrentPageReadable = useMemo(() => {
+        if (isSourceLang) return true;
+        if (isContentLoading) return false;
+        if (!pagesReady || !visiblePagesReady) return false;
+        if (!currentPageBlocks.length) return false;
+        if (currentPageTranslatableBlocks.length === 0) return true;
+        return currentPageHasReadyBlock;
+    }, [
+        isSourceLang,
+        isContentLoading,
+        pagesReady,
+        visiblePagesReady,
+        currentPageBlocks,
+        currentPageTranslatableBlocks,
+        currentPageHasReadyBlock,
+    ]);
+
+    useEffect(() => {
+        currentPageIdxRef.current = currentPageIdx;
+    }, [currentPageIdx]);
+
+    const chapterEntryTransitionKey = currentChapterId
+        ? `${currentChapterId}::${activeLang.toLowerCase()}`
+        : null;
+    const initializedChapterEntryTransitionKeyRef = useRef<string | null>(null);
+
+    useEffect(() => {
+        if (isSourceLang || !chapterEntryTransitionKey) {
+            initializedChapterEntryTransitionKeyRef.current = null;
+            setIsChapterEntryTransitionActive(false);
+            return;
+        }
+        if (initializedChapterEntryTransitionKeyRef.current === chapterEntryTransitionKey) return;
+        if (!blocksLang || blocksLang.toLowerCase() !== activeLang.toLowerCase()) return;
+
+        const hasMissingTranslation = displayBlocks.some((block) => (
+            isTranslatableBlock(block) && isBlockPendingForActiveLang(block, pendingBlockIds)
+        ));
+
+        setIsChapterEntryTransitionActive(hasMissingTranslation);
+        initializedChapterEntryTransitionKeyRef.current = chapterEntryTransitionKey;
+    }, [chapterEntryTransitionKey, isSourceLang, blocksLang, activeLang, displayBlocks, pendingBlockIds]);
+
+    const isTranslationTransitionActive = isLanguageSwitching || isChapterEntryTransitionActive;
+
+    const pageReadabilityGate = useMemo(() => {
+        if (isSourceLang) return false;
+        if (isContentLoading) return true;
+        if (!pagesReady || !visiblePagesReady) return true;
+        if (!currentPageBlocks.length) return true;
+        if (currentPageTranslatableBlocks.length === 0) return false;
+        return !currentPageHasReadyBlock;
+    }, [
+        isSourceLang,
+        isContentLoading,
+        pagesReady,
+        visiblePagesReady,
+        currentPageBlocks,
+        currentPageTranslatableBlocks,
+        currentPageHasReadyBlock,
+    ]);
+
+    // Glow policy:
+    // - Only during an explicit language switch OR when entering/re-entering
+    //   a not-yet-readable target-language chapter.
+    // - And only while the current page still has zero ready translatable blocks.
+    const shouldShowGlow = useMemo(() => {
+        return isTranslationTransitionActive && pageReadabilityGate;
+    }, [isTranslationTransitionActive, pageReadabilityGate]);
+    const translationAlertKey = currentChapterId
+        ? `${bookId}::${currentChapterId}::${activeLang.toLowerCase()}`
+        : null;
+    const [dismissedTranslationAlertKeys, setDismissedTranslationAlertKeys] = useState<string[]>([]);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        try {
+            const raw = window.sessionStorage.getItem('globoox:translation-alert-dismissed');
+            if (!raw) return;
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+                setDismissedTranslationAlertKeys(parsed.filter((value): value is string => typeof value === 'string'));
+            }
+        } catch {
+            // ignore malformed session state
+        }
+    }, []);
+
+    const shouldShowTranslationNotice = Boolean(
+        shouldShowGlow
+        && translationAlertKey
+        && !dismissedTranslationAlertKeys.includes(translationAlertKey)
+    );
+
+    const dismissTranslationNotice = useCallback(() => {
+        if (!translationAlertKey) return;
+        setDismissedTranslationAlertKeys((previous) => {
+            if (previous.includes(translationAlertKey)) return previous;
+            const next = [...previous, translationAlertKey];
+            try {
+                window.sessionStorage.setItem('globoox:translation-alert-dismissed', JSON.stringify(next));
+            } catch {
+                // ignore storage failures
+            }
+            return next;
+        });
+    }, [translationAlertKey]);
+
+    useEffect(() => {
+        setIsTranslatingForBook(bookId, shouldShowGlow);
+    }, [bookId, shouldShowGlow, setIsTranslatingForBook]);
+
+    // Consider the transition "done" once the current page becomes readable:
+    // - explicit language switch stops here
+    // - chapter-entry glow restoration also stops here
+    useEffect(() => {
+        if (!isTranslationTransitionActive) return;
+        if (!isCurrentPageReadable) return;
+
+        if (isLanguageSwitching) {
+            setIsLanguageSwitching(false);
+        }
+        if (isChapterEntryTransitionActive) {
+            setIsChapterEntryTransitionActive(false);
+        }
+    }, [
+        isTranslationTransitionActive,
+        isCurrentPageReadable,
+        isLanguageSwitching,
+        isChapterEntryTransitionActive,
+    ]);
+
     const currentPageBlocksRef = useRef<ContentBlock[]>([]);
 
     // Keep ref updated with current page blocks
@@ -741,14 +1104,17 @@ export default function ReaderView({ bookId, title, availableLanguages, original
         currentPageBlocksRef.current = currentPageBlocks;
     }, [currentPageBlocks]);
 
-    const goToChapter = useCallback((index: number) => {
+    const goToChapter = useCallback((index: number, options?: { targetPage?: 'start' | 'end' }) => {
         if (index >= 1 && index <= chapters.length) {
             // Save current anchor before switching chapters
             if (currentPageBlocksRef.current.length > 0) {
                 const currentBlock = currentPageBlocksRef.current[0];
                 const blockId = currentBlock.parentId ?? currentBlock.id;
-                saveAnchor(blockId, currentBlock.position, (currentBlock as any).sentenceIndex ?? 0);
+                saveAnchor(blockId, currentBlock.position, getSentenceIndex(currentBlock), currentBlock.id);
             }
+
+            pendingAnchorBlockId.current = options?.targetPage === 'end' ? LAST_PAGE_SENTINEL : null;
+            pendingAnchorSentenceIndex.current = 0;
 
             setCurrentPageIdx(0);
             setPagesReady(false);
@@ -763,7 +1129,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
         setCurrentPageIdx(idx);
         const anchorBlockId = pages[idx][0];
         const block = paginatedBlocks.find((b) => b.id === anchorBlockId);
-        if (block) saveAnchor(block.parentId ?? block.id, block.position, (block as any).sentenceIndex ?? 0);
+        if (block) saveAnchor(block.parentId ?? block.id, block.position, getSentenceIndex(block), block.id);
         // Translation enqueue is handled by the useEffect on currentPageIdx change.
         // No direct enqueue here to avoid double-enqueuing (which would cause an
         // unnecessary abort of the batch the useEffect just started).
@@ -772,20 +1138,22 @@ export default function ReaderView({ bookId, title, availableLanguages, original
     const goToNextPage = useCallback(() => {
         if (currentPageIdx < pages.length - 1) {
             goToPage(currentPageIdx + 1);
-        } else if (nextChapter) {
-            goToChapter(currentChapterIndex + 1);
+            return;
         }
-    }, [currentPageIdx, pages.length, nextChapter, currentChapterIndex, goToPage, goToChapter]);
+        if (currentChapterIndex < chapters.length) {
+            goToChapter(currentChapterIndex + 1, { targetPage: 'start' });
+        }
+    }, [currentPageIdx, pages.length, goToPage, currentChapterIndex, chapters.length, goToChapter]);
 
     const goToPrevPage = useCallback(() => {
         if (currentPageIdx > 0) {
             goToPage(currentPageIdx - 1);
-        } else if (prevChapter) {
-            pendingAnchorBlockId.current = LAST_PAGE_SENTINEL;
-            pendingAnchorSentenceIndex.current = 0;
-            goToChapter(currentChapterIndex - 1);
+            return;
         }
-    }, [currentPageIdx, prevChapter, currentChapterIndex, goToPage, goToChapter]);
+        if (currentChapterIndex > 1) {
+            goToChapter(currentChapterIndex - 1, { targetPage: 'end' });
+        }
+    }, [currentPageIdx, goToPage, currentChapterIndex, goToChapter]);
 
     // ─── Navigation intent API ────────────────────────────────────────────────
     // Single entry point for all navigation events. Any source other than
@@ -804,7 +1172,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
                     chapterId: currentChapter.id,
                     blockId: block.parentId ?? block.id,
                     blockPosition: block.position,
-                    sentenceIndex: (block as any).sentenceIndex ?? 0,
+                    sentenceIndex: getSentenceIndex(block),
                     updatedAt: new Date().toISOString(),
                 });
             }
@@ -823,7 +1191,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
             const byPos = findPageByBlockPosition(pages, paginatedBlocks, block.position);
             setCurrentPageIdx(Math.max(0, byPos));
         }
-    }, [abortAll, currentChapter, displayBlocks, bookId, storeSetAnchor, pages, pagesReady]);
+    }, [abortAll, currentChapter, displayBlocks, bookId, storeSetAnchor, pages, pagesReady, paginatedBlocks]);
 
     // TOC selects chapters (not blocks). Abort prefetch immediately, then switch chapter.
     const handleSelectChapterFromToc = useCallback((chapterIndex: number) => {
@@ -833,38 +1201,21 @@ export default function ReaderView({ bookId, title, availableLanguages, original
 
     // ─── TOC open: translate chapter titles if needed ─────────────────────────
     const handleTocOpen = useCallback(async () => {
-        const lang = activeLang.toUpperCase();
         if (isSourceLang || !chapters.length) return;
-        // Skip if already translated or in progress for this lang
-        if (translatingTitlesLangRef.current === lang) return;
-        const missing = chapters.some((c) => c.title && !c.translations?.[lang]);
-        if (!missing) return;
-
-        translatingTitlesLangRef.current = lang;
-        setIsTranslatingChapterTitles(true);
-        try {
-            const { results } = await translateChapterTitles(bookId, lang);
-            const map = new Map<string, string>();
-            for (const r of results) map.set(r.id, r.title);
-            setTranslatedChapterTitles(map);
-            const scopeKey = user?.id ?? 'guest';
-            void setCachedTocTitles(scopeKey, bookId, lang, Object.fromEntries(map.entries()));
-        } catch {
-            // silently fail — original titles remain visible
-        } finally {
-            setIsTranslatingChapterTitles(false);
-        }
-    }, [activeLang, isSourceLang, chapters, bookId, user?.id]);
+        await ensureTocTranslations();
+    }, [isSourceLang, chapters.length, ensureTocTranslations]);
 
     // ─── Language switch (lock anchor before, restore after) ─────────────────
     const handleLanguageChange = (lang: Language) => {
+        if (lang.toLowerCase() === activeLang.toLowerCase()) return;
+
         trackLanguageSwitched({ book_id: bookId, from_language: activeLang, to_language: lang });
         // Lock the current anchor so we can restore it after the language reloads
         if (pages.length > 0 && currentChapter) {
             const anchorBlockId = pages[currentPageIdx]?.[0];
             const block = paginatedBlocks.find((b) => b.id === anchorBlockId);
             if (block) {
-                const sentenceIndex = (block as any).sentenceIndex ?? 0;
+                const sentenceIndex = getSentenceIndex(block);
                 const anchor: ReadingAnchor = {
                     chapterId: currentChapter.id,
                     blockId: block.parentId ?? block.id,
@@ -887,22 +1238,28 @@ export default function ReaderView({ bookId, title, availableLanguages, original
         setPages([]);
         setPaginatedBlocks([]);
         
+        setBookLanguage(bookId, lang);
         setPendingLang(lang);
-        setIsTranslatingForBook(bookId, true);
+        setIsLanguageSwitching(true);
+        setIsChapterEntryTransitionActive(false);
+        initializedChapterEntryTransitionKeyRef.current = currentChapter?.id
+            ? `${currentChapter.id}::${lang.toLowerCase()}`
+            : null;
 
         updateBookLanguage(bookId, lang)
             .then(() => {
-                setBookLanguage(bookId, lang);
+                // local state was already updated optimistically
             })
             .catch(() => {
                 // Only revert if the user hasn't switched to another language since
                 setPendingLang((current) => {
                     if (current === lang) {
+                        setBookLanguage(bookId, previousLang as Language);
                         return previousLang === resolvedServerLang ? null : previousLang;
                     }
                     return current;
                 });
-                setIsTranslatingForBook(bookId, false);
+                setIsLanguageSwitching(false);
                 pendingAnchorBlockId.current = null;
             });
     };
@@ -910,6 +1267,11 @@ export default function ReaderView({ bookId, title, availableLanguages, original
     const languages = availableLanguages
         .map((l) => l.toLowerCase())
         .filter((l): l is Language => ['en', 'fr', 'es', 'de', 'ru'].includes(l));
+
+    const currentChapterFooterTitle = currentChapter
+        ? getResolvedChapterTitle(currentChapter)
+        : `Ch. ${currentChapterIndex}`
+    ;
 
     // ─── Chrome visibility (header + footer toggle) ───────────────────────────
     const [chromeVisible, setChromeVisible] = useState(true);
@@ -919,7 +1281,7 @@ export default function ReaderView({ bookId, title, availableLanguages, original
     }, []);
 
     // ─── Gesture handler ──────────────────────────────────────────────────────
-    const allowInternalScroll = true;
+    const allowInternalScroll = false;
     const gestures = usePageGestures({
         onPrev: goToPrevPage,
         onNext: goToNextPage,
@@ -981,6 +1343,17 @@ export default function ReaderView({ bookId, title, availableLanguages, original
     return (
         <div className="bg-background" style={{ position: 'fixed', inset: 0, overflow: 'hidden', overscrollBehavior: 'none' } as React.CSSProperties}>
             <AppleIntelligenceGlow bookId={bookId} />
+            <IOSAlertDialog
+                open={shouldShowTranslationNotice}
+                onOpenChange={(nextOpen) => {
+                    if (!nextOpen) dismissTranslationNotice();
+                }}
+                title="Translation takes a moment"
+                description="The first pages may take about 30 seconds. After that, the rest will keep translating as you read."
+                confirmLabel="OK"
+                onConfirm={dismissTranslationNotice}
+                icon={null}
+            />
 
             {/* ── Header (fixed, slides out upward) ── */}
             <header
@@ -991,28 +1364,39 @@ export default function ReaderView({ bookId, title, availableLanguages, original
                     transform: chromeVisible ? 'translateY(0)' : 'translateY(-100%)',
                 }}
             >
-                <div className="flex items-center justify-between h-11 px-4">
-                    <Button variant="ghost" size="icon" asChild className="text-[var(--system-blue)] -ml-2 flex-shrink-0 relative after:absolute after:inset-y-[-10px] after:left-[-10px] after:right-[-4px]">
-                        <Link
-                            href="/library"
-                            onClick={() => {
-                                try {
-                                    sessionStorage.setItem(
-                                        'globoox:last_read_book',
-                                        JSON.stringify({ bookId, at: Date.now() })
-                                    );
-                                } catch { /* ignore */ }
-                            }}
-                        >
-                            <ChevronLeft className="w-6 h-6 text-[var(--system-blue)]" strokeWidth={2.5} />
-                        </Link>
-                    </Button>
-
-                    <div className="flex-1 min-w-0 text-center px-1">
-                        <h1 className="text-sm font-semibold truncate">{title}</h1>
+                <div className="flex h-11 items-center px-4">
+                    <div className="flex h-full items-center justify-start shrink-0">
+                        <Button variant="ghost" size="icon" asChild className="text-[var(--system-blue)] -ml-2 flex-shrink-0 relative after:absolute after:inset-y-[-10px] after:left-[-10px] after:right-[-4px]">
+                            <Link
+                                href="/library"
+                                onClick={() => {
+                                    try {
+                                        sessionStorage.setItem(
+                                            'globoox:last_read_book',
+                                            JSON.stringify({ bookId, at: Date.now() })
+                                        );
+                                    } catch { /* ignore */ }
+                                }}
+                            >
+                                <ChevronLeft className="w-6 h-6 text-[var(--system-blue)]" strokeWidth={2.5} />
+                            </Link>
+                        </Button>
                     </div>
 
-                    <div className="flex items-center flex-shrink-0">
+                    <div className="min-w-0 flex-1 px-2">
+                        <div className="flex max-w-full flex-col justify-center text-left">
+                            <h1 className={`max-w-full text-sm font-semibold truncate ${isBookMetaPending ? 'blur-[3px] opacity-40' : ''}`}>
+                                {readerBookTitle}
+                            </h1>
+                            {readerBookAuthor && (
+                                <p className={`max-w-full text-[11px] leading-3 text-[var(--label-secondary)] truncate ${isBookMetaPending ? 'blur-[3px] opacity-40' : ''}`}>
+                                    {readerBookAuthor}
+                                </p>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="flex h-full items-center justify-end shrink-0">
                         <LanguageSwitch
                             availableLanguages={languages}
                             currentLanguage={activeLang}
@@ -1022,12 +1406,14 @@ export default function ReaderView({ bookId, title, availableLanguages, original
                         <ReaderActionsMenu
                             book={{
                                 id: bookId,
+                                title: readerBookTitle,
+                                author: readerBookAuthor,
+                                isTocContentPending,
+                                coverUrl,
                                 languages,
                                 chapters: chapters.map((c) => ({
                                     number: c.index,
-                                    title: translatedChapterTitles.get(c.id)
-                                        || (activeLang && c.translations?.[activeLang.toUpperCase()])
-                                        || c.title,
+                                    title: getResolvedChapterTitle(c),
                                     depth: c.depth,
                                 })),
                             }}
@@ -1035,7 +1421,6 @@ export default function ReaderView({ bookId, title, availableLanguages, original
                             onSelectChapter={handleSelectChapterFromToc}
                             disabled={false}
                             onTocOpen={handleTocOpen}
-                            isTranslatingChapterTitles={isTranslatingChapterTitles}
                         />
                     </div>
                 </div>
@@ -1077,19 +1462,28 @@ export default function ReaderView({ bookId, title, availableLanguages, original
                         {normalizedBlocks.map((block) => (
                             <div
                                 key={block.id}
+                                className="flow-root"
+                                data-measure-block-id={block.id}
                                 ref={(el) => {
                                     if (el) blockMeasureRefs.current.set(block.id, el);
                                     else blockMeasureRefs.current.delete(block.id);
                                 }}
                             >
-                                <ContentBlockRenderer block={block} fontSize={settings.fontSize} coverUrl={coverUrl} isCoverImage={block.id === firstImageBlockId} />
+                                <ContentBlockRenderer
+                                    block={block}
+                                    fontSize={settings.fontSize}
+                                    coverUrl={coverUrl}
+                                    isCoverImage={block.id === firstImageBlockId}
+                                    imageMaxHeight={pageHeight}
+                                    lineHeightScale={settings.lineHeightScale}
+                                />
                             </div>
                         ))}
                     </div>
 
                     {/* Visible page */}
                     <TranslationGlow>
-                        <div className="container max-w-2xl mx-auto px-4 h-full" lang={activeLang}>
+                        <div className="container max-w-2xl mx-auto px-4 h-full select-none md:select-text" lang={activeLang}>
                             {isLoading || !visiblePagesReady ? (
                                 <>
                                     <Skeleton className="h-7 w-64 mb-5" />
@@ -1112,16 +1506,27 @@ export default function ReaderView({ bookId, title, availableLanguages, original
                                         const isCoverImage = block.id === firstImageBlockId;
                                         // Skip image blocks that cannot be rendered to avoid empty divs in the DOM
                                         if (block.type === 'image') {
-                                            const src = (block as any).src as string | undefined;
+                                            const src = block.src;
                                             const isAbsolute = src?.startsWith('http://') || src?.startsWith('https://') || src?.startsWith('data:');
                                             if (!isAbsolute && !(isCoverImage && coverUrl)) return null;
                                         }
-                                        const isPending = block.is_pending || pendingBlockIds.has(blockId);
+                                        const isPending = isBlockPendingForActiveLang(block, pendingBlockIds);
                                         const showTranslatingLabel = isPending && !firstPendingFound;
+                                        const pendingLabel = isSourceLang ? 'Loading...' : 'Translating...';
                                         if (isPending && !firstPendingFound) firstPendingFound = true;
                                         return (
-                                            <div key={block.id} ref={getRefCallback(blockId, block.type)}>
-                                                <ContentBlockRenderer block={block} fontSize={settings.fontSize} isPending={isPending} showTranslatingLabel={showTranslatingLabel} coverUrl={coverUrl} isCoverImage={isCoverImage} />
+                                            <div key={block.id} className="flow-root" ref={getRefCallback(blockId, block.type)}>
+                                                <ContentBlockRenderer
+                                                    block={block}
+                                                    fontSize={settings.fontSize}
+                                                    isPending={isPending}
+                                                    showTranslatingLabel={showTranslatingLabel}
+                                                    pendingLabel={pendingLabel}
+                                                    coverUrl={coverUrl}
+                                                    isCoverImage={isCoverImage}
+                                                    imageMaxHeight={pageHeight}
+                                                    lineHeightScale={settings.lineHeightScale}
+                                                />
                                             </div>
                                         );
                                     });
@@ -1145,27 +1550,31 @@ export default function ReaderView({ bookId, title, availableLanguages, original
                     variant="ghost"
                     size="sm"
                     onClick={goToPrevPage}
-                    disabled={currentPageIdx === 0 && !prevChapter}
+                    disabled={currentPageIdx === 0 && currentChapterIndex === 1}
                     className="hidden md:flex items-center gap-0.5 text-xs text-[var(--system-blue)] disabled:opacity-30 px-1"
                 >
-                    <span className="truncate">{currentPageIdx === 0 ? '← Previous chapter' : '← Previous page'}</span>
+                    <span className="truncate">← Previous page</span>
                 </Button>
 
-                <span className="text-center tabular-nums">
-                    Ch.&nbsp;{currentChapterIndex}
+                <div className="min-w-0 max-w-[70vw] md:max-w-[50vw] flex items-center gap-2 text-center">
+                    <span className="min-w-0 truncate text-center">
+                        {currentChapterFooterTitle}
+                    </span>
                     {pagesReady && displayBlocks.length > 0 && (
-                        <>&nbsp;·&nbsp;{blockProgressPct}%</>
+                        <span className="shrink-0 tabular-nums">
+                            {blockProgressPct}%
+                        </span>
                     )}
-                </span>
+                </div>
 
                 <Button
                     variant="ghost"
                     size="sm"
                     onClick={goToNextPage}
-                    disabled={currentPageIdx >= pages.length - 1 && !nextChapter}
+                    disabled={currentPageIdx >= pages.length - 1 && currentChapterIndex === chapters.length}
                     className="hidden md:flex items-center gap-0.5 text-xs text-[var(--system-blue)] disabled:opacity-30 px-1"
                 >
-                    <span className="truncate">{currentPageIdx >= pages.length - 1 ? 'Next chapter →' : 'Next page →'}</span>
+                    <span className="truncate">Next page →</span>
                 </Button>
             </div>
         </div>

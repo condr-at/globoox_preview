@@ -180,6 +180,7 @@ body {
   line-height: 1.41;
 }
 
+
 /* ============================================
    iOS Typography - Dynamic Type
    ============================================ */
@@ -641,6 +642,11 @@ body {
 
 .safe-area-inset-bottom {
   padding-bottom: env(safe-area-inset-bottom);
+}
+
+.library-scroll-lock-x {
+  overscroll-behavior-x: none;
+  overflow-x: clip;
 }
 
 /* ============================================

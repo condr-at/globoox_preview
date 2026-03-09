@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ApiBook, fetchBooks, createBook, updateBook, deleteBook as apiDeleteBook } from './api'
-import { clearCachedBookMeta, clearCachedBooksList, getCachedBooksList, setCachedBookMeta, setCachedBooksList } from './contentCache'
+import { clearCachedBookMeta, clearCachedBookMetaEntry, clearCachedBooksList, getCachedBooksList, setCachedBookMeta, setCachedBooksList } from './contentCache'
 
 // Stale-While-Revalidate cache — module-level so it survives component remounts (route navigation)
 const STALE_TIME_MS = 5 * 60 * 1000 // 5 minutes — background refresh only if older
@@ -135,11 +135,30 @@ export function useBooks(options?: { scopeKey?: string }) {
   }, [refresh])
 
   const removeBook = useCallback(async (id: string) => {
-    await apiDeleteBook(id)
-    setBooks((prev) => prev.filter((b) => b.id !== id))
-    booksCache.delete('all')
-    // Leave IDB cache as-is; next refresh(force=true) will overwrite.
-  }, [])
+    const previousBooks = booksCache.get('all')?.data ?? books
+    const nextBooks = previousBooks.filter((b) => b.id !== id)
+
+    setError(null)
+    setBooks(nextBooks)
+    booksCache.set('all', { data: nextBooks, fetchedAt: Date.now() })
+    void setCachedBooksList(scopeKey, 'active', nextBooks)
+    void clearCachedBookMetaEntry(scopeKey, id)
+
+    try {
+      await apiDeleteBook(id)
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to delete book'
+      setBooks(previousBooks)
+      booksCache.set('all', { data: previousBooks, fetchedAt: Date.now() })
+      void setCachedBooksList(scopeKey, 'active', previousBooks)
+      const restored = previousBooks.find((book) => book.id === id)
+      if (restored) {
+        void setCachedBookMeta(scopeKey, restored)
+      }
+      setError(message)
+      throw err
+    }
+  }, [books, scopeKey])
 
   return { books, loading, error, refresh, addBook, hideBook, unhideBook, removeBook }
 }

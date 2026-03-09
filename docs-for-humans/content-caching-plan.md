@@ -2,6 +2,17 @@
 
 Цель: чтобы приложение ощущалось “нативным” — минимум сетевых запросов и минимум “loading” при навигации, при этом без залипания на частично переведённом контенте.
 
+## Translation v2 (в работе)
+
+Новая цель: **никогда не показывать “не target язык” без blur** и гарантировать reconcile после ухода/возврата.
+
+См.:
+- `docs-for-humans/translation-v2-invariants-and-ui.md`
+- `docs-for-humans/translation-v2-reconcile-api.md`
+- `docs-for-humans/translation-v2-migration-and-test-checklist.md`
+
+**Важно:** этот документ остаётся источником правды про **структуру** кеша (skeleton + `(blockId, lang)`), но правила “pending/translated/blur/reconcile” для Reader должны читаться из `translation-v2-*`.
+
 ## Текущее состояние (как реализовано)
 
 - Контент главы (`GET /api/chapters/:id/content?lang=XX`) кешируется на клиенте **по блокам** (IndexedDB), чтобы partial-переводы не “залипали” целиком.
@@ -10,6 +21,8 @@
   - Сборка `ContentBlock[]` из кеша: `src/lib/hooks/useChapterContent.ts`
   - Дозапись переводов по мере стрима: `src/lib/hooks/useViewportTranslation.ts`
   - Инвалидация: `useSyncCheck` при изменении `library` scope очищает кеш контента.
+  - ⚠️ **Legacy (до Translation v2):** автоперевод в Reader запускается только после серверного snapshot для текущих `(chapterId, lang)` (`hasServerSnapshot`).
+    - В Translation v2 семантика “готовности” и reconcile меняются (см. `docs-for-humans/translation-v2-invariants-and-ui.md`).
 
 ### 1) Скелет главы (language-agnostic)
 
@@ -44,6 +57,9 @@
    - IndexedDB запись `(blockId, lang)`
 
 ### 4) Правила “freshness” (чтобы не было гонок и залипания)
+
+⚠️ **Legacy (частично):** раздел ниже описывает текущий TTL/“freshness” подход.
+Translation v2 вводит reconcile по окну blockIds и строгую семантику pending/blur, поэтому часть правил будет пересмотрена.
 
 Для **оригинального языка**:
 - если `book.original_language` известен, можно считать контент “complete” и кешировать смело.

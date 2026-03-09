@@ -10,6 +10,10 @@ import { useAdaptiveDropdown } from '@/components/ui/useAdaptiveDropdown';
 interface ReaderActionsMenuProps {
   book: {
     id: string;
+    title: string;
+    author?: string | null;
+    isTocContentPending?: boolean;
+    coverUrl?: string | null;
     languages: Language[];
     chapters: { number: number; title: string; depth?: number }[];
   };
@@ -17,7 +21,6 @@ interface ReaderActionsMenuProps {
   onSelectChapter: (num: number) => void;
   disabled?: boolean;
   onTocOpen?: () => void;
-  isTranslatingChapterTitles?: boolean;
 }
 
 export default function ReaderActionsMenu({
@@ -26,7 +29,6 @@ export default function ReaderActionsMenu({
   onSelectChapter,
   disabled,
   onTocOpen,
-  isTranslatingChapterTitles,
 }: ReaderActionsMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeModal, setActiveModal] = useState<'none' | 'toc' | 'settings'>('none');
@@ -95,12 +97,15 @@ export default function ReaderActionsMenu({
       )}
 
       <TableOfContents
+        bookTitle={book.title}
+        bookAuthor={book.author}
+        isContentPending={book.isTocContentPending}
+        coverUrl={book.coverUrl}
         chapters={book.chapters}
         currentChapter={currentChapter}
         onSelectChapter={onSelectChapter}
         open={activeModal === 'toc'}
         onOpenChange={(open) => !open && setActiveModal('none')}
-        isTranslating={isTranslatingChapterTitles}
       />
 
       <ReaderSettings

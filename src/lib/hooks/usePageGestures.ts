@@ -29,7 +29,7 @@ const DRAG_SAFE_MAX = 0.85
 // px from the very left edge reserved for the iOS system back gesture
 const IOS_SYSTEM_EDGE = 20
 
-export function usePageGestures({ onPrev, onNext, onToggleChrome, enabled = true, preserveScroll = false }: UsePageGesturesOptions) {
+export function usePageGestures({ onPrev, onNext, onToggleChrome, enabled = true }: UsePageGesturesOptions) {
   const touchStart = useRef<TouchPoint | null>(null)
   const lastTouchAtRef = useRef(0)
   const isInteractiveTarget = useCallback((target: EventTarget | null) => {
@@ -55,20 +55,17 @@ export function usePageGestures({ onPrev, onNext, onToggleChrome, enabled = true
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     if (!enabled) return
     lastTouchAtRef.current = Date.now()
-    if (!preserveScroll) e.preventDefault()
     const t = e.touches[0]
     touchStart.current = { x: t.clientX, y: t.clientY }
-  }, [enabled, preserveScroll])
+  }, [enabled])
 
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+  const handleTouchMove = useCallback(() => {
     if (!enabled) return
-    if (!preserveScroll) e.preventDefault()
-  }, [enabled, preserveScroll])
+  }, [enabled])
 
   const handleTouchEnd = useCallback((e: React.TouchEvent) => {
     if (!enabled || !touchStart.current) return
     lastTouchAtRef.current = Date.now()
-    if (!preserveScroll) e.preventDefault()
 
     const t = e.changedTouches[0]
     const start = touchStart.current
@@ -99,7 +96,7 @@ export function usePageGestures({ onPrev, onNext, onToggleChrome, enabled = true
       if (dx > 0) onPrev()   // swipe right → previous
       else onNext()           // swipe left  → next
     }
-  }, [enabled, onPrev, onNext, handleTapZoneAction, preserveScroll])
+  }, [enabled, onPrev, onNext, handleTapZoneAction])
 
   const handleClick = useCallback((e: React.MouseEvent) => {
     // Ignore synthetic click that can follow touchend on mobile.

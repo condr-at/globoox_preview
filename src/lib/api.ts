@@ -44,6 +44,7 @@ interface BaseBlock {
   partIndex?: number
   isFirstPart?: boolean
   isLastPart?: boolean
+  targetLangReady?: boolean
   isTranslated?: boolean // True if block already has translation for requested language
   is_pending?: boolean // True if translation is pending on the server
 }
@@ -118,7 +119,38 @@ export interface TranslateDoneEvent {
   fallbacks: number
 }
 
+function normalizeContentBlock(block: ContentBlock): ContentBlock {
+  if (block.type === 'image' || block.type === 'hr') {
+    return {
+      ...block,
+      targetLangReady: true,
+      isTranslated: true,
+      is_pending: false,
+    }
+  }
+
+  const targetLangReady = block.targetLangReady ?? (block.isTranslated === true)
+  return {
+    ...block,
+    targetLangReady,
+    isTranslated: targetLangReady,
+    is_pending: !targetLangReady,
+  }
+}
+
 export type TranslateStreamMessage = TranslatedBlockResult | TranslateDoneEvent
+
+export type BlockTextPayload =
+  | { blockId: string; type: 'paragraph' | 'quote' | 'heading'; text: string }
+  | { blockId: string; type: 'list'; items: string[] }
+
+export interface FetchBlockTextsResponse {
+  chapterId: string
+  lang: string
+  ok: BlockTextPayload[]
+  missing: string[]
+  pending?: string[]
+}
 
 export interface ReadingPosition {
   book_id: string
@@ -166,6 +198,7 @@ export interface BookReadingProgress {
 const GET_CACHE_TTL_MS = 2000
 const inflightGetRequests = new Map<string, Promise<unknown>>()
 const recentGetResponses = new Map<string, { expiresAt: number; value: unknown }>()
+const inflightChromeTranslationRequests = new Map<string, Promise<unknown>>()
 
 // Reading position cache with TTL (30 seconds)
 const POSITION_CACHE_TTL_MS = 30000
@@ -297,15 +330,69 @@ export function translateChapterTitles(
   bookId: string,
   lang: string,
 ): Promise<{ results: { id: string; title: string }[] }> {
-  return request<{ results: { id: string; title: string }[] }>(
+  const normalizedLang = lang.toUpperCase()
+  const key = `chapter_titles::${bookId}::${normalizedLang}`
+  const inflight = inflightChromeTranslationRequests.get(key)
+  if (inflight) return inflight as Promise<{ results: { id: string; title: string }[] }>
+
+  const promise = request<{ results: { id: string; title: string }[] }>(
     `/api/books/${bookId}/chapters/translate-titles`,
-    { method: 'POST', body: JSON.stringify({ lang: lang.toUpperCase() }) },
-  )
+    { method: 'POST', body: JSON.stringify({ lang: normalizedLang }) },
+  ).finally(() => {
+    inflightChromeTranslationRequests.delete(key)
+  })
+
+  inflightChromeTranslationRequests.set(key, promise)
+  return promise
+}
+
+export function translateBookMetadata(
+  bookId: string,
+  lang: string,
+): Promise<{ title: string; author: string | null }> {
+  const normalizedLang = lang.toUpperCase()
+  const key = `book_meta::${bookId}::${normalizedLang}`
+  const inflight = inflightChromeTranslationRequests.get(key)
+  if (inflight) return inflight as Promise<{ title: string; author: string | null }>
+
+  const promise = request<{ title: string; author: string | null }>(
+    `/api/books/${bookId}/translate-meta`,
+    { method: 'POST', body: JSON.stringify({ lang: normalizedLang }) },
+  ).finally(() => {
+    inflightChromeTranslationRequests.delete(key)
+  })
+
+  inflightChromeTranslationRequests.set(key, promise)
+  return promise
+}
+
+export function translateReaderMetadata(
+  bookId: string,
+  lang: string,
+): Promise<{ title: string; author: string | null; chapterTitles: { id: string; title: string }[] }> {
+  const normalizedLang = lang.toUpperCase()
+  const key = `reader_metadata::${bookId}::${normalizedLang}`
+  const inflight = inflightChromeTranslationRequests.get(key)
+  if (inflight) {
+    return inflight as Promise<{ title: string; author: string | null; chapterTitles: { id: string; title: string }[] }>
+  }
+
+  const promise = request<{ title: string; author: string | null; chapterTitles: { id: string; title: string }[] }>(
+    `/api/books/${bookId}/reader-metadata/translate`,
+    { method: 'POST', body: JSON.stringify({ lang: normalizedLang }) },
+  ).finally(() => {
+    inflightChromeTranslationRequests.delete(key)
+  })
+
+  inflightChromeTranslationRequests.set(key, promise)
+  return promise
 }
 
 export function fetchContent(chapterId: string, lang?: string, signal?: AbortSignal): Promise<ContentBlock[]> {
   const params = lang ? `?lang=${encodeURIComponent(lang.toUpperCase())}` : ''
-  return request<ContentBlock[]>(`/api/chapters/${chapterId}/content${params}`, { signal })
+  return request<ContentBlock[]>(`/api/chapters/${chapterId}/content${params}`, { signal }).then((blocks) =>
+    blocks.map(normalizeContentBlock),
+  )
 }
 
 export function translateBlocks(
@@ -345,8 +432,15 @@ export async function translateBlocksStreaming(
   })
 
   if (!res.ok) {
-    const errBody = await res.json().catch(() => ({}))
-    throw new Error((errBody as any).message || `Request failed: ${res.status}`)
+    const errBody = await res.json().catch((): unknown => ({}))
+    const message =
+      typeof errBody === 'object' &&
+      errBody !== null &&
+      'message' in errBody &&
+      typeof errBody.message === 'string'
+        ? errBody.message
+        : `Request failed: ${res.status}`
+    throw new Error(message)
   }
 
   if (!res.body) throw new Error('No response body')
@@ -402,11 +496,18 @@ export async function translateBlocksStreaming(
     const data = await res.json() as ContentBlock[]
     for (const block of data) {
       let translatedText = ''
-      if ('text' in block && typeof (block as any).text === 'string') translatedText = (block as any).text
-      else if ('items' in block && Array.isArray((block as any).items)) translatedText = (block as any).items.join('\n')
+      if ('text' in block && typeof block.text === 'string') translatedText = block.text
+      else if ('items' in block && Array.isArray(block.items)) translatedText = block.items.join('\n')
       onBlock({ blockId: block.id, status: 'ok', cache: 'miss', translatedText })
     }
   }
+}
+
+export function fetchBlockTexts(chapterId: string, lang: string, blockIds: string[]): Promise<FetchBlockTextsResponse> {
+  return request<FetchBlockTextsResponse>(`/api/chapters/${chapterId}/blocks/text`, {
+    method: 'POST',
+    body: JSON.stringify({ lang: lang.toUpperCase(), blockIds }),
+  })
 }
 
 export function updateBookLanguage(bookId: string, lang: string): Promise<ApiBook> {

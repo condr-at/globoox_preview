@@ -1,0 +1,716 @@
+{
+  "capturedAt": "2026-03-05T23:29:07.434Z",
+  "href": "http://localhost:3001/reader/308f7700-54c8-4e7c-b056-957c1794c208",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36",
+  "ctx": {
+    "bookId": "308f7700-54c8-4e7c-b056-957c1794c208",
+    "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+    "lang": "RU"
+  },
+  "events": [
+    {
+      "ts": 1772753297054,
+      "type": "api_request_start",
+      "data": {
+        "path": "/api/books?status=active",
+        "method": "GET"
+      }
+    },
+    {
+      "ts": 1772753297865,
+      "type": "api_request_done",
+      "data": {
+        "path": "/api/books?status=active",
+        "method": "GET",
+        "status": 200,
+        "durationMs": 811
+      }
+    },
+    {
+      "ts": 1772753301303,
+      "type": "api_request_start",
+      "data": {
+        "path": "/api/books/308f7700-54c8-4e7c-b056-957c1794c208/chapters",
+        "method": "GET"
+      }
+    },
+    {
+      "ts": 1772753301305,
+      "type": "reader_ctx",
+      "data": {
+        "bookId": "308f7700-54c8-4e7c-b056-957c1794c208",
+        "chapterId": null,
+        "lang": "ES",
+        "chapterIndex": 1
+      }
+    },
+    {
+      "ts": 1772753301310,
+      "type": "reader_ctx",
+      "data": {
+        "bookId": "308f7700-54c8-4e7c-b056-957c1794c208",
+        "chapterId": null,
+        "lang": "ES",
+        "chapterIndex": 1
+      }
+    },
+    {
+      "ts": 1772753301466,
+      "type": "api_request_done",
+      "data": {
+        "path": "/api/books/308f7700-54c8-4e7c-b056-957c1794c208/chapters",
+        "method": "GET",
+        "status": 200,
+        "durationMs": 163
+      }
+    },
+    {
+      "ts": 1772753301474,
+      "type": "reader_ctx",
+      "data": {
+        "bookId": "308f7700-54c8-4e7c-b056-957c1794c208",
+        "chapterId": "c0cf2da1-9625-4bdc-8815-dbe86ddd7322",
+        "lang": "ES",
+        "chapterIndex": 1
+      }
+    },
+    {
+      "ts": 1772753301474,
+      "type": "chapter_content_effect_start",
+      "data": {
+        "chapterId": "c0cf2da1-9625-4bdc-8815-dbe86ddd7322",
+        "lang": "ES"
+      }
+    },
+    {
+      "ts": 1772753301477,
+      "type": "api_request_start",
+      "data": {
+        "path": "/api/books/308f7700-54c8-4e7c-b056-957c1794c208/reading-position",
+        "method": "GET"
+      }
+    },
+    {
+      "ts": 1772753301507,
+      "type": "chapter_content_fetch_start",
+      "data": {
+        "chapterId": "c0cf2da1-9625-4bdc-8815-dbe86ddd7322",
+        "lang": "ES"
+      }
+    },
+    {
+      "ts": 1772753301507,
+      "type": "api_request_start",
+      "data": {
+        "path": "/api/chapters/c0cf2da1-9625-4bdc-8815-dbe86ddd7322/content?lang=ES",
+        "method": "GET"
+      }
+    },
+    {
+      "ts": 1772753301791,
+      "type": "api_request_done",
+      "data": {
+        "path": "/api/books/308f7700-54c8-4e7c-b056-957c1794c208/reading-position",
+        "method": "GET",
+        "status": 200,
+        "durationMs": 314
+      }
+    },
+    {
+      "ts": 1772753301800,
+      "type": "chapter_content_effect_cleanup",
+      "data": {
+        "chapterId": "c0cf2da1-9625-4bdc-8815-dbe86ddd7322",
+        "lang": "ES"
+      }
+    },
+    {
+      "ts": 1772753301800,
+      "type": "reader_ctx",
+      "data": {
+        "bookId": "308f7700-54c8-4e7c-b056-957c1794c208",
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "ES",
+        "chapterIndex": 17
+      }
+    },
+    {
+      "ts": 1772753301800,
+      "type": "chapter_content_effect_start",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "ES"
+      }
+    },
+    {
+      "ts": 1772753301800,
+      "type": "chapter_content_abort_previous",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "ES"
+      }
+    },
+    {
+      "ts": 1772753301801,
+      "type": "api_request_abort",
+      "data": {
+        "path": "/api/chapters/c0cf2da1-9625-4bdc-8815-dbe86ddd7322/content?lang=ES",
+        "method": "GET",
+        "durationMs": 294,
+        "message": "signal is aborted without reason"
+      }
+    },
+    {
+      "ts": 1772753301814,
+      "type": "chapter_content_cache_hit",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "ES",
+        "hasPending": false,
+        "missingCount": 0
+      }
+    },
+    {
+      "ts": 1772753301814,
+      "type": "chapter_content_cache_fresh_skip_fetch",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "ES",
+        "hasPending": false
+      }
+    },
+    {
+      "ts": 1772753301959,
+      "type": "translate_enqueue_high",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "ES",
+        "requested": 17,
+        "newlyEnqueued": 0
+      }
+    },
+    {
+      "ts": 1772753301961,
+      "type": "translate_enqueue_low",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "ES",
+        "requested": 117,
+        "newlyEnqueued": 0
+      }
+    },
+    {
+      "ts": 1772753306889,
+      "type": "api_request_start",
+      "data": {
+        "path": "/api/books/308f7700-54c8-4e7c-b056-957c1794c208/reading-position",
+        "method": "PUT"
+      }
+    },
+    {
+      "ts": 1772753306890,
+      "type": "api_request_start",
+      "data": {
+        "path": "/api/books/308f7700-54c8-4e7c-b056-957c1794c208/language",
+        "method": "PATCH"
+      }
+    },
+    {
+      "ts": 1772753306963,
+      "type": "chapter_content_effect_cleanup",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "ES"
+      }
+    },
+    {
+      "ts": 1772753306964,
+      "type": "reader_ctx",
+      "data": {
+        "bookId": "308f7700-54c8-4e7c-b056-957c1794c208",
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "FR",
+        "chapterIndex": 17
+      }
+    },
+    {
+      "ts": 1772753306965,
+      "type": "chapter_content_effect_start",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "FR"
+      }
+    },
+    {
+      "ts": 1772753306965,
+      "type": "chapter_content_abort_previous",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "FR"
+      }
+    },
+    {
+      "ts": 1772753307087,
+      "type": "chapter_content_cache_hit",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "FR",
+        "hasPending": false,
+        "missingCount": 0
+      }
+    },
+    {
+      "ts": 1772753307087,
+      "type": "chapter_content_cache_fresh_skip_fetch",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "FR",
+        "hasPending": false
+      }
+    },
+    {
+      "ts": 1772753307275,
+      "type": "api_request_done",
+      "data": {
+        "path": "/api/books/308f7700-54c8-4e7c-b056-957c1794c208/language",
+        "method": "PATCH",
+        "status": 200,
+        "durationMs": 385
+      }
+    },
+    {
+      "ts": 1772753307278,
+      "type": "translate_enqueue_high",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "FR",
+        "requested": 17,
+        "newlyEnqueued": 0
+      }
+    },
+    {
+      "ts": 1772753307280,
+      "type": "translate_enqueue_low",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "FR",
+        "requested": 117,
+        "newlyEnqueued": 0
+      }
+    },
+    {
+      "ts": 1772753307643,
+      "type": "api_request_done",
+      "data": {
+        "path": "/api/books/308f7700-54c8-4e7c-b056-957c1794c208/reading-position",
+        "method": "PUT",
+        "status": 200,
+        "durationMs": 754
+      }
+    },
+    {
+      "ts": 1772753310562,
+      "type": "api_request_start",
+      "data": {
+        "path": "/api/books/308f7700-54c8-4e7c-b056-957c1794c208/reading-position",
+        "method": "PUT"
+      }
+    },
+    {
+      "ts": 1772753310632,
+      "type": "translate_enqueue_high",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "FR",
+        "requested": 12,
+        "newlyEnqueued": 0
+      }
+    },
+    {
+      "ts": 1772753310633,
+      "type": "translate_enqueue_low",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "FR",
+        "requested": 105,
+        "newlyEnqueued": 0
+      }
+    },
+    {
+      "ts": 1772753311132,
+      "type": "translate_enqueue_high",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "FR",
+        "requested": 16,
+        "newlyEnqueued": 0
+      }
+    },
+    {
+      "ts": 1772753311133,
+      "type": "translate_enqueue_low",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "FR",
+        "requested": 89,
+        "newlyEnqueued": 0
+      }
+    },
+    {
+      "ts": 1772753311249,
+      "type": "api_request_done",
+      "data": {
+        "path": "/api/books/308f7700-54c8-4e7c-b056-957c1794c208/reading-position",
+        "method": "PUT",
+        "status": 200,
+        "durationMs": 687
+      }
+    },
+    {
+      "ts": 1772753311567,
+      "type": "api_request_start",
+      "data": {
+        "path": "/api/books/308f7700-54c8-4e7c-b056-957c1794c208/reading-position",
+        "method": "PUT"
+      }
+    },
+    {
+      "ts": 1772753312249,
+      "type": "api_request_done",
+      "data": {
+        "path": "/api/books/308f7700-54c8-4e7c-b056-957c1794c208/reading-position",
+        "method": "PUT",
+        "status": 200,
+        "durationMs": 682
+      }
+    },
+    {
+      "ts": 1772753322799,
+      "type": "api_request_start",
+      "data": {
+        "path": "/api/books/308f7700-54c8-4e7c-b056-957c1794c208/reading-position",
+        "method": "PUT"
+      }
+    },
+    {
+      "ts": 1772753322870,
+      "type": "translate_enqueue_high",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "FR",
+        "requested": 21,
+        "newlyEnqueued": 0
+      }
+    },
+    {
+      "ts": 1772753322871,
+      "type": "translate_enqueue_low",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "FR",
+        "requested": 69,
+        "newlyEnqueued": 0
+      }
+    },
+    {
+      "ts": 1772753323514,
+      "type": "api_request_done",
+      "data": {
+        "path": "/api/books/308f7700-54c8-4e7c-b056-957c1794c208/reading-position",
+        "method": "PUT",
+        "status": 200,
+        "durationMs": 714
+      }
+    },
+    {
+      "ts": 1772753327229,
+      "type": "api_request_start",
+      "data": {
+        "path": "/api/books/308f7700-54c8-4e7c-b056-957c1794c208/reading-position",
+        "method": "PUT"
+      }
+    },
+    {
+      "ts": 1772753327230,
+      "type": "api_request_start",
+      "data": {
+        "path": "/api/books/308f7700-54c8-4e7c-b056-957c1794c208/language",
+        "method": "PATCH"
+      }
+    },
+    {
+      "ts": 1772753327299,
+      "type": "chapter_content_effect_cleanup",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "FR"
+      }
+    },
+    {
+      "ts": 1772753327300,
+      "type": "reader_ctx",
+      "data": {
+        "bookId": "308f7700-54c8-4e7c-b056-957c1794c208",
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "EN",
+        "chapterIndex": 17
+      }
+    },
+    {
+      "ts": 1772753327301,
+      "type": "chapter_content_effect_start",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "EN"
+      }
+    },
+    {
+      "ts": 1772753327301,
+      "type": "chapter_content_abort_previous",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "EN"
+      }
+    },
+    {
+      "ts": 1772753327367,
+      "type": "chapter_content_cache_hit",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "EN",
+        "hasPending": false,
+        "missingCount": 0
+      }
+    },
+    {
+      "ts": 1772753327367,
+      "type": "chapter_content_cache_fresh_skip_fetch",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "EN",
+        "hasPending": false
+      }
+    },
+    {
+      "ts": 1772753327549,
+      "type": "api_request_done",
+      "data": {
+        "path": "/api/books/308f7700-54c8-4e7c-b056-957c1794c208/language",
+        "method": "PATCH",
+        "status": 200,
+        "durationMs": 320
+      }
+    },
+    {
+      "ts": 1772753327926,
+      "type": "api_request_done",
+      "data": {
+        "path": "/api/books/308f7700-54c8-4e7c-b056-957c1794c208/reading-position",
+        "method": "PUT",
+        "status": 200,
+        "durationMs": 697
+      }
+    },
+    {
+      "ts": 1772753330723,
+      "type": "api_request_start",
+      "data": {
+        "path": "/api/books/308f7700-54c8-4e7c-b056-957c1794c208/reading-position",
+        "method": "PUT"
+      }
+    },
+    {
+      "ts": 1772753330724,
+      "type": "api_request_start",
+      "data": {
+        "path": "/api/books/308f7700-54c8-4e7c-b056-957c1794c208/language",
+        "method": "PATCH"
+      }
+    },
+    {
+      "ts": 1772753330795,
+      "type": "chapter_content_effect_cleanup",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "EN"
+      }
+    },
+    {
+      "ts": 1772753330796,
+      "type": "reader_ctx",
+      "data": {
+        "bookId": "308f7700-54c8-4e7c-b056-957c1794c208",
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "RU",
+        "chapterIndex": 17
+      }
+    },
+    {
+      "ts": 1772753330797,
+      "type": "chapter_content_effect_start",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "RU"
+      }
+    },
+    {
+      "ts": 1772753330797,
+      "type": "chapter_content_abort_previous",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "RU"
+      }
+    },
+    {
+      "ts": 1772753330865,
+      "type": "chapter_content_cache_hit",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "RU",
+        "hasPending": false,
+        "missingCount": 0
+      }
+    },
+    {
+      "ts": 1772753330865,
+      "type": "chapter_content_cache_fresh_skip_fetch",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "RU",
+        "hasPending": false
+      }
+    },
+    {
+      "ts": 1772753331044,
+      "type": "api_request_done",
+      "data": {
+        "path": "/api/books/308f7700-54c8-4e7c-b056-957c1794c208/language",
+        "method": "PATCH",
+        "status": 200,
+        "durationMs": 320
+      }
+    },
+    {
+      "ts": 1772753331046,
+      "type": "translate_enqueue_high",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "RU",
+        "requested": 14,
+        "newlyEnqueued": 0
+      }
+    },
+    {
+      "ts": 1772753331047,
+      "type": "translate_enqueue_low",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "RU",
+        "requested": 92,
+        "newlyEnqueued": 0
+      }
+    },
+    {
+      "ts": 1772753331434,
+      "type": "api_request_done",
+      "data": {
+        "path": "/api/books/308f7700-54c8-4e7c-b056-957c1794c208/reading-position",
+        "method": "PUT",
+        "status": 200,
+        "durationMs": 711
+      }
+    },
+    {
+      "ts": 1772753335806,
+      "type": "api_request_start",
+      "data": {
+        "path": "/api/books/308f7700-54c8-4e7c-b056-957c1794c208/reading-position",
+        "method": "PUT"
+      }
+    },
+    {
+      "ts": 1772753335885,
+      "type": "translate_enqueue_high",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "RU",
+        "requested": 19,
+        "newlyEnqueued": 0
+      }
+    },
+    {
+      "ts": 1772753335886,
+      "type": "translate_enqueue_low",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "RU",
+        "requested": 74,
+        "newlyEnqueued": 0
+      }
+    },
+    {
+      "ts": 1772753336505,
+      "type": "api_request_done",
+      "data": {
+        "path": "/api/books/308f7700-54c8-4e7c-b056-957c1794c208/reading-position",
+        "method": "PUT",
+        "status": 200,
+        "durationMs": 698
+      }
+    },
+    {
+      "ts": 1772753347434,
+      "type": "idb_chapter_dump",
+      "data": {
+        "chapterId": "0bc4cd5b-88ea-4bf8-a494-f0bf1d9b8a8a",
+        "lang": "RU",
+        "hit": true,
+        "fetchedAt": 1772753289721,
+        "hasPending": false,
+        "missingCount": 0,
+        "sample": [
+          {
+            "id": "cd4eff6d-4135-40c5-a403-eb8d2d5328ef",
+            "type": "heading",
+            "isTranslated": true,
+            "is_pending": false,
+            "textPreview": "Глава вторая",
+            "itemsPreview": null
+          },
+          {
+            "id": "587873d4-9c68-4a51-9f86-5dc2d27cf396",
+            "type": "paragraph",
+            "isTranslated": true,
+            "is_pending": false,
+            "textPreview": "В дверь стучит Фрэнсис.",
+            "itemsPreview": null
+          },
+          {
+            "id": "81c444b7-5a09-47c6-8f99-b04fb8816ebe",
+            "type": "paragraph",
+            "isTranslated": true,
+            "is_pending": false,
+            "textPreview": "— Открыто.",
+            "itemsPreview": null
+          },
+          {
+            "id": "ef6a4198-613f-4acd-92af-ea0306141162",
+            "type": "paragraph",
+            "isTranslated": true,
+            "is_pending": false,
+            "textPreview": "— Нет, закрыто, — отзывается она из-за двери.",
+            "itemsPreview": null
+          },
+          {
+            "id": "edd2fd19-2957-473d-a236-11ed743a69b7",
+            "type": "paragraph",
+            "isTranslated": true,
+            "is_pending": false,
+            "textPreview": "— Черт.",
+            "itemsPreview": null
+          }
+        ]
+      }
+    }
+  ]
+}
