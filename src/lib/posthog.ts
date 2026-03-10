@@ -121,6 +121,7 @@ export function trackTranslationSessionSummary(props: {
   session_id: string
   book_id: string
   language: string
+  source_language: string | null
   llm_calls: number
   tokens_in: number
   tokens_out: number
@@ -129,6 +130,16 @@ export function trackTranslationSessionSummary(props: {
   request_count: number
 }) {
   posthog.capture('translation_session_summary', props)
+}
+
+// Fired once per user per book per target language (localStorage-deduped).
+// Used for "avg translated books per user" metric.
+export function trackBookTranslationStarted(props: {
+  book_id: string
+  source_language: string | null
+  target_language: string
+}) {
+  posthog.capture('book_translation_started', props)
 }
 
 // ─── Reader Settings ───────────────────────────────────────────────────────────

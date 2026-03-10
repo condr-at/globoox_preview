@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ContentBlock, fetchBlockTexts, TranslatedBlockResult, translateBlocksStreaming } from '@/lib/api'
-import { trackTranslationBatch, trackTranslationSessionSummary } from '@/lib/posthog'
+import { trackTranslationBatch, trackTranslationSessionSummary, trackBookTranslationStarted } from '@/lib/posthog'
 import { setCachedTranslatedBlockText } from '@/lib/contentCache'
 import { hasTargetLangText } from '@/lib/translationState'
 
@@ -142,6 +142,8 @@ export function useViewportTranslation({
   const isMountedRef = useRef(true)
   const bookIdRef = useRef(bookId)
   bookIdRef.current = bookId
+  const sourceLanguageRef = useRef(sourceLanguage)
+  sourceLanguageRef.current = sourceLanguage
   const [isTranslatingAny, setIsTranslatingAny] = useState(false)
   // Expose pending block IDs as state for blur effect
   const [pendingBlockIds, setPendingBlockIds] = useState<Set<string>>(new Set())
@@ -271,6 +273,7 @@ export function useViewportTranslation({
       session_id: sessionIdRef.current,
       book_id: bookIdRef.current,
       language: langRef.current,
+      source_language: sourceLanguageRef.current,
       llm_calls: sessionLlmCallsRef.current,
       tokens_in: sessionTokensInRef.current,
       tokens_out: sessionTokensOutRef.current,
@@ -454,6 +457,7 @@ export function useViewportTranslation({
 
     const flushStart = performance.now()
     let hits = 0, misses = 0, errors = 0
+    let bookTranslationFiredThisFlush = false
     console.log(JSON.stringify({ event: 'flush_start', chapterId: requestChapterId, lang: requestLang, batchSize: ids.length, overflowSize: overflow.length }))
 
     try {
@@ -472,6 +476,19 @@ export function useViewportTranslation({
           if (result.status === 'ok') {
             if (result.cache === 'hit') hits += 1
             else misses += 1
+            // Fire book_translation_started once per book+lang (localStorage-deduped)
+            if (!bookTranslationFiredThisFlush) {
+              const lsKey = `ph_bts_${bookIdRef.current}_${requestLang}`
+              if (typeof localStorage !== 'undefined' && !localStorage.getItem(lsKey)) {
+                localStorage.setItem(lsKey, '1')
+                bookTranslationFiredThisFlush = true
+                trackBookTranslationStarted({
+                  book_id: bookIdRef.current,
+                  source_language: sourceLanguageRef.current,
+                  target_language: requestLang,
+                })
+              }
+            }
           } else {
             errors++
           }
