@@ -118,6 +118,11 @@ export interface TranslateDoneEvent {
   tokensOut: number
   retries: number
   fallbacks: number
+  totalTokens: number
+  totalBlocks: number
+  cacheHitRate: number
+  errorRate: number
+  estimatedCost: number
 }
 
 function normalizeContentBlock(block: ContentBlock): ContentBlock {
