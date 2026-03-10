@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ContentBlock, fetchBlockTexts, TranslatedBlockResult, translateBlocksStreaming } from '@/lib/api'
-import { trackTranslationBatch } from '@/lib/posthog'
+import { trackTranslationBatch, trackTranslationSessionSummary } from '@/lib/posthog'
 import { setCachedTranslatedBlockText } from '@/lib/contentCache'
 import { hasTargetLangText } from '@/lib/translationState'
 
@@ -251,6 +251,58 @@ export function useViewportTranslation({
     }
   }, [])
 
+  // ── Translation session tracking ─────────────────────────────────────────
+  // Session = same book + language. Spans multiple chapters and flushes.
+  // Ends after SESSION_INACTIVITY_MS of no LLM activity, or on book/lang change.
+  const SESSION_INACTIVITY_MS = 30 * 60 * 1000
+  const sessionIdRef = useRef<string>(crypto.randomUUID())
+  const sessionStartRef = useRef<number>(Date.now())
+  const sessionLlmCallsRef = useRef(0)
+  const sessionRequestCountRef = useRef(0)
+  const sessionTokensInRef = useRef(0)
+  const sessionTokensOutRef = useRef(0)
+  const sessionCostRef = useRef(0)
+  const inactivityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const flushSession = useCallback(() => {
+    if (sessionLlmCallsRef.current === 0) return
+    const durationSeconds = Math.round((Date.now() - sessionStartRef.current) / 1000)
+    trackTranslationSessionSummary({
+      session_id: sessionIdRef.current,
+      book_id: bookIdRef.current,
+      language: langRef.current,
+      llm_calls: sessionLlmCallsRef.current,
+      tokens_in: sessionTokensInRef.current,
+      tokens_out: sessionTokensOutRef.current,
+      estimated_cost: sessionCostRef.current,
+      duration_seconds: durationSeconds,
+      request_count: sessionRequestCountRef.current,
+    })
+  }, [])
+
+  const resetSession = useCallback(() => {
+    if (inactivityTimerRef.current) {
+      clearTimeout(inactivityTimerRef.current)
+      inactivityTimerRef.current = null
+    }
+    sessionIdRef.current = crypto.randomUUID()
+    sessionStartRef.current = Date.now()
+    sessionLlmCallsRef.current = 0
+    sessionRequestCountRef.current = 0
+    sessionTokensInRef.current = 0
+    sessionTokensOutRef.current = 0
+    sessionCostRef.current = 0
+  }, [])
+
+  // Flush + reset session when book or language changes (not on chapter change)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    return () => {
+      flushSession()
+      resetSession()
+    }
+  }, [bookId, lang])
+
   // Debounce timer
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -444,8 +496,21 @@ export function useViewportTranslation({
         },
         controller.signal,
         (doneEvent) => {
-          // Server sent translate_done event with final metrics
           console.log(JSON.stringify(doneEvent))
+          // Accumulate session-level LLM usage (session spans multiple chapters/flushes)
+          if (doneEvent.llmCalls > 0) {
+            sessionLlmCallsRef.current += doneEvent.llmCalls
+            sessionRequestCountRef.current += 1
+            sessionTokensInRef.current += doneEvent.tokensIn ?? 0
+            sessionTokensOutRef.current += doneEvent.tokensOut ?? 0
+            sessionCostRef.current += doneEvent.estimatedCost ?? 0
+            // Reset 30-min inactivity timer
+            if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current)
+            inactivityTimerRef.current = setTimeout(() => {
+              flushSession()
+              resetSession()
+            }, SESSION_INACTIVITY_MS)
+          }
         },
       )
       abortControllerRef.current = null
@@ -885,6 +950,8 @@ export function useViewportTranslation({
     const reconcileQueues = reconcileQueueRef.current
     return () => {
       isMountedRef.current = false
+      flushSession()
+      if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current)
       if (debounceTimer.current) {
         clearTimeout(debounceTimer.current)
       }

@@ -117,6 +117,20 @@ export function trackLanguageSwitched(props: {
   posthog.capture('language_switched', props)
 }
 
+export function trackTranslationSessionSummary(props: {
+  session_id: string
+  book_id: string
+  language: string
+  llm_calls: number
+  tokens_in: number
+  tokens_out: number
+  estimated_cost: number
+  duration_seconds: number
+  request_count: number
+}) {
+  posthog.capture('translation_session_summary', props)
+}
+
 // ─── Reader Settings ───────────────────────────────────────────────────────────
 
 export function trackFontSizeChanged(props: {
