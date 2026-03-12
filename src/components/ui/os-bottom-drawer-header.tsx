@@ -3,7 +3,7 @@
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-interface IOSSheetHeaderProps {
+interface OSBottomDrawerHeaderProps {
   title: React.ReactNode;
   subtitle?: React.ReactNode;
   leading?: React.ReactNode;
@@ -12,14 +12,14 @@ interface IOSSheetHeaderProps {
   className?: string;
 }
 
-export default function IOSSheetHeader({
+export default function OSBottomDrawerHeader({
   title,
   subtitle,
   leading,
   trailing,
   onClose,
   className,
-}: IOSSheetHeaderProps) {
+}: OSBottomDrawerHeaderProps) {
   return (
     <div className={cn('p-5', className)}>
       <div className="flex items-start gap-4">

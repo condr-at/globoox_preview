@@ -2,8 +2,8 @@
 
 import { useState, useRef } from 'react';
 import { Settings, Type } from 'lucide-react';
-import IOSSheet from '@/components/ui/ios-sheet';
-import IOSSheetHeader from '@/components/ui/ios-sheet-header';
+import IOSBottomDrawer from '@/components/ui/ios-bottom-drawer';
+import OSBottomDrawerHeader from '@/components/ui/os-bottom-drawer-header';
 import { useAppStore } from '@/lib/store';
 import { trackFontSizeChanged } from '@/lib/posthog';
 
@@ -37,14 +37,14 @@ export default function ReaderSettings({
                 </button>
             )}
 
-            <IOSSheet
+            <IOSBottomDrawer
                 open={isOpen}
                 onOpenChange={setIsOpen}
                 side="bottom"
                 enableDragDismiss
                 dragHandle={<div className="h-1 w-12 rounded-full bg-black/12 dark:bg-white/16" />}
                 dragRegion={(
-                    <IOSSheetHeader
+                    <OSBottomDrawerHeader
                         title="Themes & Settings"
                         onClose={() => setIsOpen(false)}
                     />
@@ -109,7 +109,7 @@ export default function ReaderSettings({
                     </div>
 
                 </div>
-            </IOSSheet>
+            </IOSBottomDrawer>
         </>
     );
 }

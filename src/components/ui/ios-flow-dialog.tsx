@@ -1,8 +1,8 @@
 'use client';
 
 import { X } from 'lucide-react';
-import IOSFlowDialogHeader from '@/components/ui/ios-flow-dialog-header';
-import IOSSheet from '@/components/ui/ios-sheet';
+import IOSBottomDrawer from '@/components/ui/ios-bottom-drawer';
+import IOSDialogHeaderCenterLarge from '@/components/ui/ios-dialog-header-center-large';
 
 interface IOSFlowDialogProps {
   open: boolean;
@@ -22,7 +22,7 @@ export default function IOSFlowDialog({
   className,
 }: IOSFlowDialogProps) {
   return (
-    <IOSSheet
+    <IOSBottomDrawer
       open={open}
       onOpenChange={onOpenChange}
       enableDragDismiss
@@ -36,10 +36,12 @@ export default function IOSFlowDialog({
           >
             <X className="h-[18px] w-[18px]" strokeWidth={2.1} />
           </button>
-          <IOSFlowDialogHeader
-            title={title}
-            description={description}
-          />
+          <div className="px-6 pt-4 sm:pt-6">
+            <IOSDialogHeaderCenterLarge
+              title={title}
+              description={description}
+            />
+          </div>
         </div>
       )}
       className={className ?? 'sm:max-w-sm sm:pb-6'}
@@ -47,6 +49,6 @@ export default function IOSFlowDialog({
       <div className="px-6 pb-1 pt-5">
         {children}
       </div>
-    </IOSSheet>
+    </IOSBottomDrawer>
   );
 }

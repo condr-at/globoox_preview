@@ -2,8 +2,8 @@
 
 import { BookMarked, Smartphone, Globe } from 'lucide-react';
 import { IOSAction, IOSActionDivider, IOSActionLink, IOSActionStack } from '@/components/ui/ios-action-group';
-import IOSFeaturePromptDialog from '@/components/ui/ios-feature-prompt-dialog';
-import IOSIconListItem from '@/components/ui/ios-icon-list-item';
+import IOSFeatureDialog from '@/components/ui/ios-feature-dialog';
+import IOSIconFeatureListItem from '@/components/ui/ios-icon-feature-list-item';
 
 interface Props {
   isOpen: boolean;
@@ -18,7 +18,7 @@ const BENEFITS = [
 
 export default function SignInToUploadModal({ isOpen, onClose }: Props) {
   return (
-    <IOSFeaturePromptDialog
+    <IOSFeatureDialog
       open={isOpen}
       onOpenChange={(nextOpen) => !nextOpen && onClose()}
       title="Upload your first book"
@@ -39,11 +39,11 @@ export default function SignInToUploadModal({ isOpen, onClose }: Props) {
     >
       <ul className="space-y-3 text-left">
         {BENEFITS.map(({ icon: Icon, text }) => (
-          <IOSIconListItem key={text} icon={Icon}>
+          <IOSIconFeatureListItem key={text} icon={Icon}>
             {text}
-          </IOSIconListItem>
+          </IOSIconFeatureListItem>
         ))}
       </ul>
-    </IOSFeaturePromptDialog>
+    </IOSFeatureDialog>
   );
 }

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import IOSModalShell from '@/components/ui/ios-modal-shell';
 
-interface IOSSheetProps {
+interface IOSBottomDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   children: React.ReactNode;
@@ -17,31 +17,31 @@ interface IOSSheetProps {
   dragRegion?: React.ReactNode;
 }
 
-const sideClassName: Record<NonNullable<IOSSheetProps['side']>, string> = {
+const sideClassName: Record<NonNullable<IOSBottomDrawerProps['side']>, string> = {
   bottom: 'relative mt-auto w-full rounded-t-[30px] border border-[var(--separator)] bg-[var(--bg-grouped-secondary)] shadow-2xl sm:mt-0 sm:max-w-lg sm:rounded-[28px] pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:pb-0',
   left: 'relative h-full w-[min(88vw,360px)] border-r border-[var(--separator)] bg-[var(--bg-grouped-secondary)] shadow-2xl',
   right: 'relative ml-auto h-full w-[min(88vw,420px)] border-l border-[var(--separator)] bg-[var(--bg-grouped-secondary)] shadow-2xl',
 };
 
-const wrapperClassName: Record<NonNullable<IOSSheetProps['side']>, string> = {
+const wrapperClassName: Record<NonNullable<IOSBottomDrawerProps['side']>, string> = {
   bottom: 'flex items-end justify-center sm:items-center sm:p-4',
   left: 'flex items-stretch justify-start',
   right: 'flex items-stretch justify-end',
 };
 
-const sideOpenTransform: Record<NonNullable<IOSSheetProps['side']>, string> = {
+const sideOpenTransform: Record<NonNullable<IOSBottomDrawerProps['side']>, string> = {
   bottom: 'translate3d(0, 0, 0)',
   left: 'translate3d(0, 0, 0)',
   right: 'translate3d(0, 0, 0)',
 };
 
-const sideClosedTransform: Record<NonNullable<IOSSheetProps['side']>, string> = {
+const sideClosedTransform: Record<NonNullable<IOSBottomDrawerProps['side']>, string> = {
   bottom: 'translate3d(0, 100%, 0)',
   left: 'translate3d(-100%, 0, 0)',
   right: 'translate3d(100%, 0, 0)',
 };
 
-export default function IOSSheet({
+export default function IOSBottomDrawer({
   open,
   onOpenChange,
   children,
@@ -52,7 +52,7 @@ export default function IOSSheet({
   dragHandle,
   enableDragDismiss = false,
   dragRegion,
-}: IOSSheetProps) {
+}: IOSBottomDrawerProps) {
   const [dragOffset, setDragOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);

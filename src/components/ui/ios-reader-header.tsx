@@ -4,7 +4,7 @@ import { ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-interface IOSReaderChromeHeaderProps {
+interface IOSReaderHeaderProps {
   title: React.ReactNode;
   subtitle?: React.ReactNode;
   trailingLeft?: React.ReactNode;
@@ -12,13 +12,13 @@ interface IOSReaderChromeHeaderProps {
   className?: string;
 }
 
-export default function IOSReaderChromeHeader({
+export default function IOSReaderHeader({
   title,
   subtitle,
   trailingLeft,
   trailingRight,
   className,
-}: IOSReaderChromeHeaderProps) {
+}: IOSReaderHeaderProps) {
   return (
     <div
       className={cn(

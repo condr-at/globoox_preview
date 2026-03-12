@@ -2,17 +2,17 @@
 
 import { cn } from '@/lib/utils';
 
-interface IOSFeaturePromptHeaderProps {
+interface IOSDialogHeaderCenterLargeProps {
   title: React.ReactNode;
   description?: React.ReactNode;
   className?: string;
 }
 
-export default function IOSFeaturePromptHeader({
+export default function IOSDialogHeaderCenterLarge({
   title,
   description,
   className,
-}: IOSFeaturePromptHeaderProps) {
+}: IOSDialogHeaderCenterLargeProps) {
   return (
     <div className={cn('text-center', className)}>
       <h2 className="text-[22px] font-semibold leading-tight text-[var(--label-primary)]">

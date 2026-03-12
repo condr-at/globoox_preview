@@ -18,21 +18,21 @@ import {
 } from '@/components/ui/ios-action-group';
 import IOSDialog from '@/components/ui/ios-dialog';
 import IOSDialogFooter from '@/components/ui/ios-dialog-footer';
-import IOSFeaturePromptHeader from '@/components/ui/ios-feature-prompt-header';
-import IOSFeaturePromptDialog from '@/components/ui/ios-feature-prompt-dialog';
+import IOSDialogHeaderCenterLarge from '@/components/ui/ios-dialog-header-center-large';
+import IOSFeatureDialog from '@/components/ui/ios-feature-dialog';
 import IOSFlowDialog from '@/components/ui/ios-flow-dialog';
-import IOSFlowDialogHeader from '@/components/ui/ios-flow-dialog-header';
-import IOSIconListItem from '@/components/ui/ios-icon-list-item';
-import IOSReaderChromeHeader from '@/components/ui/ios-reader-chrome-header';
-import IOSSheet from '@/components/ui/ios-sheet';
-import IOSSheetHeader from '@/components/ui/ios-sheet-header';
+import IOSIconFeatureListItem from '@/components/ui/ios-icon-feature-list-item';
+import IOSReaderHeader from '@/components/ui/ios-reader-header';
+import IOSBottomDrawer from '@/components/ui/ios-bottom-drawer';
+import OSBottomDrawerHeader from '@/components/ui/os-bottom-drawer-header';
 
 type OverlayKey =
   | null
   | 'ios-alert'
   | 'ios-dialog'
   | 'ios-flow'
-  | 'ios-sheet'
+  | 'ios-feature-dialog'
+  | 'ios-bottom-drawer'
   | 'reader-sheet-pattern'
   | 'unlimited-limit'
   | 'unlimited-alpha'
@@ -211,23 +211,23 @@ export default function ComponentsPreviewPage() {
       openKey: 'ios-dialog',
     },
     {
-      title: 'IOSSheet',
+      title: 'IOSBottomDrawer',
       layer: 'Primitive',
       builtOn: 'IOSModalShell',
       useWhen: 'Building draggable bottom-sheet experiences, especially in reader surfaces.',
       avoidWhen: 'Short alerts or confirmations.',
-      openKey: 'ios-sheet',
+      openKey: 'ios-bottom-drawer',
     },
     {
-      title: 'IOSSheetHeader',
+      title: 'OSBottomDrawerHeader',
       layer: 'Primitive',
-      builtOn: 'IOSSheet header layout',
+      builtOn: 'IOSBottomDrawer header layout',
       useWhen: 'Shared header for bottom sheets with title, subtitle, optional leading content, and close action.',
       avoidWhen: 'Flow dialog headers or reader top chrome.',
       inlinePreview: (
-        <IOSSheetHeader
-          title="Sheet Title"
-          subtitle="Sheet subtitle"
+        <OSBottomDrawerHeader
+          title="Drawer title"
+          subtitle="Optional subtitle"
           leading={(
             <div className="flex h-16 w-12 items-center justify-center border border-dashed border-pink-300 bg-pink-50 text-sm text-pink-700 dark:border-pink-500/40 dark:bg-pink-500/10 dark:text-pink-300">
               Cover
@@ -238,28 +238,15 @@ export default function ComponentsPreviewPage() {
       ),
     },
     {
-      title: 'IOSFlowDialogHeader',
+      title: 'IOSDialogHeaderCenterLarge',
       layer: 'Primitive',
       builtOn: 'IOSDialog header layout',
-      useWhen: 'Shared header for flow dialogs that need a centered title and optional description.',
+      useWhen: 'Centered title and optional description inside compact dialogs and flow dialogs.',
       avoidWhen: 'Alert rows or reader-sheet headers.',
       inlinePreview: (
-        <IOSFlowDialogHeader
-          title="Flow Title"
-          description="Flow description"
-        />
-      ),
-    },
-    {
-      title: 'IOSFeaturePromptHeader',
-      layer: 'Primitive',
-      builtOn: 'Compact prompt header layout',
-      useWhen: 'Compact feature prompts with centered title and supporting copy.',
-      avoidWhen: 'Reader sheets, alerts, or drag-sheet headers.',
-      inlinePreview: (
-        <IOSFeaturePromptHeader
-          title="Prompt Title"
-          description="Prompt description"
+        <IOSDialogHeaderCenterLarge
+          title="Centered dialog title"
+          description="Optional supporting description"
         />
       ),
     },
@@ -298,31 +285,43 @@ export default function ComponentsPreviewPage() {
       notes: 'Horizontal pair follows the same rule: both actions stay regular unless there is exactly one primary action in light theme.',
     },
     {
-      title: 'IOSReaderChromeHeader',
+      title: 'IOSReaderHeader',
       layer: 'Primitive',
       builtOn: 'Reader top chrome layout',
       useWhen: 'Top header in ReaderView with back, title, language, and trailing actions.',
       avoidWhen: 'Modal headers or generic page headers.',
       inlinePreview: (
-        <IOSReaderChromeHeader
-          title="Book Title"
-          subtitle="Author Name"
-          trailingLeft={<span className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center text-[15px] font-medium">EN</span>}
-          trailingRight={<span className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center text-[20px]">…</span>}
-        />
+        <div className="relative overflow-hidden">
+          <IOSReaderHeader
+            title="Title"
+            subtitle="Subtitle"
+            trailingLeft={<span className="sr-only">Trailing control</span>}
+            trailingRight={<span className="sr-only">Trailing control</span>}
+            className="[&_button]:opacity-0"
+          />
+          <div className="pointer-events-none absolute left-2 top-[calc(env(safe-area-inset-top)+16px)] flex h-[44px] w-[44px] items-center justify-center border border-dashed border-pink-300 bg-pink-50 text-[10px] text-pink-700 dark:border-pink-500/40 dark:bg-pink-500/10 dark:text-pink-300">
+            44x44
+          </div>
+          <div className="pointer-events-none absolute right-12 top-[calc(env(safe-area-inset-top)+16px)] flex h-[44px] w-[44px] items-center justify-center border border-dashed border-pink-300 bg-pink-50 text-[10px] text-pink-700 dark:border-pink-500/40 dark:bg-pink-500/10 dark:text-pink-300">
+            44x44
+          </div>
+          <div className="pointer-events-none absolute right-0 top-[calc(env(safe-area-inset-top)+16px)] flex h-[44px] w-[44px] items-center justify-center border border-dashed border-pink-300 bg-pink-50 text-[10px] text-pink-700 dark:border-pink-500/40 dark:bg-pink-500/10 dark:text-pink-300">
+            44x44
+          </div>
+        </div>
       ),
     },
     {
-      title: 'IOSIconListItem',
+      title: 'IOSIconFeatureListItem',
       layer: 'Primitive',
       builtOn: 'Small icon + label row',
       useWhen: 'Short benefit or feature lists inside dialogs and sheets.',
       avoidWhen: 'Dense settings rows or action rows.',
       inlinePreview: (
         <ul>
-          <IOSIconListItem icon={Globe}>
-            Benefit copy goes here
-          </IOSIconListItem>
+          <IOSIconFeatureListItem icon={Globe}>
+            Benefit or feature summary
+          </IOSIconFeatureListItem>
         </ul>
       ),
     },
@@ -341,24 +340,25 @@ export default function ComponentsPreviewPage() {
     {
       title: 'IOSFlowDialog',
       layer: 'Pattern',
-      builtOn: 'IOSSheet + IOSFlowDialogHeader + IOSDialogFooter',
+      builtOn: 'IOSBottomDrawer + IOSDialogHeaderCenterLarge + IOSDialogFooter',
       useWhen: 'Bottom-sheet flows with richer task content, like upload and multi-step actions.',
       avoidWhen: 'Short alerts or compact feature prompts.',
       openKey: 'ios-flow',
-      notes: 'Header drag-dismiss is built in. Use this instead of composing IOSSheet directly in feature code.',
+      notes: 'Header drag-dismiss is built in. Use this instead of composing IOSBottomDrawer directly in feature code.',
     },
     {
-      title: 'IOSFeaturePromptDialog',
+      title: 'IOSFeatureDialog',
       layer: 'Pattern',
-      builtOn: 'IOSDialog + IOSFeaturePromptHeader + IOSDialogFooter',
+      builtOn: 'IOSDialog + IOSDialogHeaderCenterLarge + IOSDialogFooter',
       useWhen: 'Compact prompts with richer explanatory content, like benefits lists or feature pitches.',
       avoidWhen: 'Short alerts or full sheet flows.',
+      openKey: 'ios-feature-dialog',
       notes: 'Use this when content is richer than an alert but still fits a compact dialog.',
     },
     {
       title: 'Reader Sheet Pattern',
       layer: 'Pattern',
-      builtOn: 'IOSSheet + IOSSheetHeader',
+      builtOn: 'IOSBottomDrawer + OSBottomDrawerHeader',
       useWhen: 'Reader-specific bottom drawers like Appearance and Chapters.',
       avoidWhen: 'General app modals outside the reader experience.',
       openKey: 'reader-sheet-pattern',
@@ -394,7 +394,7 @@ export default function ComponentsPreviewPage() {
     {
       title: 'SignInToUploadModal',
       layer: 'Example',
-      builtOn: 'IOSFeaturePromptDialog',
+      builtOn: 'IOSFeatureDialog',
       useWhen: 'Account gate that redirects to the canonical auth page.',
       avoidWhen: 'Provider-specific auth shortcuts inside a modal.',
       openKey: 'sign-in-upload',
@@ -402,7 +402,7 @@ export default function ComponentsPreviewPage() {
     {
       title: 'ReaderSettings (Appearance)',
       layer: 'Example',
-      builtOn: 'IOSSheet + IOSSheetHeader',
+      builtOn: 'IOSBottomDrawer + OSBottomDrawerHeader',
       useWhen: 'Reader-specific settings bottom sheet.',
       avoidWhen: 'General app settings or non-reader flows.',
       openKey: 'reader-settings',
@@ -411,7 +411,7 @@ export default function ComponentsPreviewPage() {
     {
       title: 'TableOfContents (Chapters)',
       layer: 'Example',
-      builtOn: 'IOSSheet + IOSSheetHeader',
+      builtOn: 'IOSBottomDrawer + OSBottomDrawerHeader',
       useWhen: 'Reader chapter navigation sheet.',
       avoidWhen: 'Generic list modals elsewhere in the app.',
       openKey: 'table-of-contents',
@@ -440,7 +440,7 @@ export default function ComponentsPreviewPage() {
             <div className="rounded-[22px] border border-[var(--separator)] bg-[var(--bg-grouped)] p-4 text-sm text-[var(--label-primary)]">
               <p className="font-medium">Allowed in feature code</p>
               <p className="mt-2 text-[var(--label-secondary)]">
-                `IOSAlertDialog`, `IOSFlowDialog`, and reader-specific sheet components built on `IOSSheet`.
+                `IOSAlertDialog`, `IOSFlowDialog`, and reader-specific sheet components built on `IOSBottomDrawer`.
               </p>
             </div>
             <div className="rounded-[22px] border border-[var(--separator)] bg-[var(--bg-grouped)] p-4 text-sm text-[var(--label-primary)]">
@@ -458,7 +458,7 @@ export default function ComponentsPreviewPage() {
             <div className="rounded-[22px] border border-[var(--separator)] bg-[var(--bg-grouped)] p-4 text-sm text-[var(--label-primary)]">
               <p className="font-medium">Do not hand-roll chrome</p>
               <p className="mt-2 text-[var(--label-secondary)]">
-                Reuse `IOSSheetHeader`, `IOSFeaturePromptHeader`, and `IOSDialogFooter`. Do not rebuild modal chrome locally in feature files.
+                Reuse `OSBottomDrawerHeader`, `IOSDialogHeaderCenterLarge`, and `IOSDialogFooter`. Do not rebuild modal chrome locally in feature files.
               </p>
             </div>
           </div>
@@ -474,7 +474,7 @@ export default function ComponentsPreviewPage() {
               <p className="mt-2 text-[var(--label-secondary)]">Use for short blocking decisions, warnings, confirmations, and simple access requests.</p>
             </div>
             <div className="rounded-[22px] border border-[var(--separator)] bg-[var(--bg-grouped)] p-4 text-sm">
-              <p className="font-medium text-[var(--label-primary)]">IOSFeaturePromptDialog</p>
+              <p className="font-medium text-[var(--label-primary)]">IOSFeatureDialog</p>
               <p className="mt-2 text-[var(--label-secondary)]">Use for compact prompts with richer copy or benefits lists, but not full flows.</p>
             </div>
             <div className="rounded-[22px] border border-[var(--separator)] bg-[var(--bg-grouped)] p-4 text-sm">
@@ -557,8 +557,8 @@ export default function ComponentsPreviewPage() {
       <IOSFlowDialog
         open={activeOverlay === 'ios-flow'}
         onOpenChange={(open) => !open && closeOverlay()}
-        title="Flow Title"
-        description="Flow description"
+        title="Upload a book"
+        description="Use this pattern for richer bottom-drawer tasks."
       >
         <div className="mt-5">
           <SchematicPlaceholder
@@ -568,8 +568,27 @@ export default function ComponentsPreviewPage() {
         </div>
       </IOSFlowDialog>
 
-      <IOSSheet
-        open={activeOverlay === 'ios-sheet'}
+      <IOSFeatureDialog
+        open={activeOverlay === 'ios-feature-dialog'}
+        onOpenChange={(open) => !open && closeOverlay()}
+        title="Save your library"
+        description="Use this pattern for compact prompts with richer explanatory content."
+        footer={(
+          <IOSActionStack>
+            <IOSAction emphasized>Continue</IOSAction>
+            <IOSActionDivider />
+            <IOSAction>Maybe later</IOSAction>
+          </IOSActionStack>
+        )}
+      >
+        <SchematicPlaceholder
+          label="Feature content"
+          items={['Benefits list', 'Short supporting copy', 'Prompt-specific details']}
+        />
+      </IOSFeatureDialog>
+
+      <IOSBottomDrawer
+        open={activeOverlay === 'ios-bottom-drawer'}
         onOpenChange={(open) => !open && closeOverlay()}
         dragHandle={<div className="h-1 w-10 rounded-full bg-[var(--label-tertiary)]/40" />}
         enableDragDismiss
@@ -580,9 +599,9 @@ export default function ComponentsPreviewPage() {
             items={['Optional header', 'Scrollable body', 'Optional bottom spacing']}
           />
         </div>
-      </IOSSheet>
+      </IOSBottomDrawer>
 
-      <IOSSheet
+      <IOSBottomDrawer
         open={activeOverlay === 'reader-sheet-pattern'}
         onOpenChange={(open) => !open && closeOverlay()}
         labelledBy={sheetTitleId}
@@ -591,7 +610,7 @@ export default function ComponentsPreviewPage() {
         enableDragDismiss
         dragHandle={<div className="h-1 w-12 rounded-full bg-black/12 dark:bg-white/16" />}
         dragRegion={(
-          <IOSSheetHeader
+          <OSBottomDrawerHeader
             title={<span id={sheetTitleId}>Appearance</span>}
             subtitle={<span id={sheetDescriptionId}>Reader controls and grouped content.</span>}
             onClose={closeOverlay}
@@ -605,7 +624,7 @@ export default function ComponentsPreviewPage() {
             items={['Grouped setting rows', 'Reader-specific controls', 'Chapter list or appearance controls']}
           />
         </div>
-      </IOSSheet>
+      </IOSBottomDrawer>
 
       <UnlimitedAccessModal
         open={activeOverlay === 'unlimited-limit'}
