@@ -19,7 +19,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: 'Globoox Preview',
+  title: 'Globoox',
   description: 'Reading app that translates ebooks into your language with AI',
   keywords: ['reading', 'books', 'translation', 'language learning', 'ebooks'],
   manifest: '/manifest.json',
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     telephone: false,
   },
   openGraph: {
-    title: 'Globoox Preview',
+    title: 'Globoox',
     description: 'Reading app that translates ebooks into your language with AI.',
     type: 'website',
   },

@@ -119,9 +119,11 @@ export default function ProfilePage() {
                                     className="w-full justify-start h-12 px-4 rounded-none cursor-not-allowed hover:bg-transparent hover:text-inherit"
                                 >
                                     <Settings className="w-5 h-5 mr-3 opacity-60" />
-                                    <span className="opacity-60">Settings</span>
-                                    <span className="ml-auto text-[8px] font-semibold text-white leading-none px-1 py-0.5 rounded-full bg-primary">
-                                        soon
+                                    <span className="flex items-center gap-2">
+                                        <span className="opacity-60">Settings</span>
+                                        <span className="text-[8px] font-semibold text-white leading-none px-1 py-0.5 rounded-full bg-primary">
+                                            soon
+                                        </span>
                                     </span>
                                 </Button>
                                 <Separator />
@@ -170,7 +172,7 @@ export default function ProfilePage() {
 
                 {/* App Info */}
                 <p className="text-center text-xs text-muted-foreground">
-                    Globoox Preview v1.0.0
+                    Globoox v0.1
                 </p>
             </div>
 
