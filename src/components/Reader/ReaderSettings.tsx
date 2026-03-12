@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react';
 import { Settings, Type } from 'lucide-react';
 import IOSBottomDrawer from '@/components/ui/ios-bottom-drawer';
-import OSBottomDrawerHeader from '@/components/ui/os-bottom-drawer-header';
+import IOSBottomDrawerHeader from '@/components/ui/ios-bottom-drawer-header';
 import { useAppStore } from '@/lib/store';
 import { trackFontSizeChanged } from '@/lib/posthog';
 
@@ -44,7 +44,7 @@ export default function ReaderSettings({
                 enableDragDismiss
                 dragHandle={<div className="h-1 w-12 rounded-full bg-black/12 dark:bg-white/16" />}
                 dragRegion={(
-                    <OSBottomDrawerHeader
+                    <IOSBottomDrawerHeader
                         title="Themes & Settings"
                         onClose={() => setIsOpen(false)}
                     />

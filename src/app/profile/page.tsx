@@ -11,7 +11,7 @@ import PageHeader from '@/components/ui/PageHeader';
 import { createClient } from '@/lib/supabase/client';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { useAuth } from '@/lib/hooks/useAuth';
-import UnlimitedAccessModal from '@/components/UnlimitedAccessModal';
+import JoinAlphaDialog from '@/components/JoinAlphaDialog';
 
 export default function ProfilePage() {
     const router = useRouter();
@@ -175,11 +175,10 @@ export default function ProfilePage() {
             </div>
 
             {user && (
-                <UnlimitedAccessModal
+                <JoinAlphaDialog
                     open={showAccessModal}
                     onOpenChange={setShowAccessModal}
                     userEmail={user.email ?? ''}
-                    trigger="alpha_join"
                 />
             )}
         </div>

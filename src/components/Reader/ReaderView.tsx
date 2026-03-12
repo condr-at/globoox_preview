@@ -38,7 +38,7 @@ import ContentBlockRenderer from './ContentBlockRenderer';
 import { Button } from '@/components/ui/button';
 import IOSAlertDialog from '@/components/ui/ios-alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import UnlimitedAccessModal from '@/components/UnlimitedAccessModal';
+import TranslationLimitDialog from '@/components/TranslationLimitDialog';
 
 // Source of a navigation event. Any source other than manual_scroll is a "jump"
 // that aborts in-flight prefetch requests and updates readingAnchor immediately.
@@ -1386,11 +1386,10 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                 icon={null}
             />
             {user && (
-                <UnlimitedAccessModal
+                <TranslationLimitDialog
                     open={showTranslationLimitModal}
                     onOpenChange={setShowTranslationLimitModal}
                     userEmail={user.email ?? ''}
-                    trigger="translation_limit"
                 />
             )}
 

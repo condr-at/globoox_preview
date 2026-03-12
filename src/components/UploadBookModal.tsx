@@ -79,6 +79,7 @@ export default function UploadBookModal({ isOpen, onClose, onUploaded }: UploadB
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadHelp = getUploadHelp(error)
+  const sectionClassName = 'rounded-[20px] border border-[var(--separator)] bg-[var(--bg-grouped)] p-5'
 
   const isLikelyEpub = async (selectedFile: File): Promise<boolean> => {
     const normalizedName = selectedFile.name.trim().toLowerCase();
@@ -195,74 +196,74 @@ export default function UploadBookModal({ isOpen, onClose, onUploaded }: UploadB
       title="Upload Book"
       description="Add an EPUB from your device and we&apos;ll prepare it for reading and translation."
     >
-      <div>
-          {!uploading ? (
-            <>
-              <div
-                onClick={() => fileInputRef.current?.click()}
-                className="cursor-pointer rounded-[24px] border border-[var(--separator)] bg-[var(--bg-grouped)] px-5 py-7 text-center transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.03]"
-              >
-                {file ? (
-                  <FileText className="mx-auto mb-3 h-10 w-10 text-[var(--label-secondary)]" />
-                ) : (
-                  <Upload className="mx-auto mb-3 h-10 w-10 text-[var(--label-secondary)]" />
-                )}
-                <p className="text-[15px] font-medium text-[var(--label-primary)]">
-                  {file ? file.name : 'Choose an EPUB file'}
-                </p>
-                <p className="mt-1 text-sm text-[var(--label-secondary)]">
-                  EPUB only. DRM-protected books usually cannot be imported.
-                </p>
-              </div>
-
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".epub"
-                onChange={handleFileSelect}
-                className="hidden"
-              />
-
-              {error && (
-                <div className="mt-3 space-y-3 rounded-[20px] border border-[var(--separator)] bg-[var(--bg-grouped)] p-4 text-left">
-                  <p className="text-sm font-medium text-[var(--system-red)]">{error}</p>
-                  {uploadHelp && (
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium text-[var(--label-primary)]">{uploadHelp.title}</p>
-                      <ul className="space-y-1 text-sm text-[var(--label-secondary)]">
-                        {uploadHelp.tips.map((tip) => (
-                          <li key={tip}>{tip}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              <IOSDialogFooter>
-                <IOSActionStack>
-                  <IOSAction onClick={handleUpload} disabled={!file} emphasized>
-                    Upload
-                  </IOSAction>
-                </IOSActionStack>
-              </IOSDialogFooter>
-            </>
-          ) : (
-            <div className="rounded-[24px] border border-[var(--separator)] bg-[var(--bg-grouped)] px-5 py-8 text-center">
-              {progress < 100 ? (
-                <Loader2 className="mx-auto mb-3 h-10 w-10 animate-spin text-[var(--label-secondary)]" />
+      <div className="space-y-4">
+        {!uploading ? (
+          <>
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              className={`${sectionClassName} cursor-pointer py-7 text-center transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.03]`}
+            >
+              {file ? (
+                <FileText className="mx-auto mb-3 h-10 w-10 text-[var(--label-secondary)]" />
               ) : (
-                <CheckCircle className="mx-auto mb-3 h-10 w-10 text-[var(--label-secondary)]" />
+                <Upload className="mx-auto mb-3 h-10 w-10 text-[var(--label-secondary)]" />
               )}
-              <p className="mb-3 text-sm text-[var(--label-secondary)]">{message}</p>
-              <div className="h-2 w-full rounded-full bg-[var(--fill-quaternary)]">
-                <div
-                  className="h-2 rounded-full bg-[var(--system-blue)] transition-all duration-300"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
+              <p className="text-[15px] font-medium text-[var(--label-primary)]">
+                {file ? file.name : 'Choose an EPUB file'}
+              </p>
+              <p className="mt-1 text-sm text-[var(--label-secondary)]">
+                EPUB only. DRM-protected books usually cannot be imported.
+              </p>
             </div>
-          )}
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".epub"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+
+            {error && (
+              <div className={`${sectionClassName} space-y-3 text-left`}>
+                <p className="text-sm font-medium text-[var(--system-red)]">{error}</p>
+                {uploadHelp && (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-[var(--label-primary)]">{uploadHelp.title}</p>
+                    <ul className="space-y-1 text-sm text-[var(--label-secondary)]">
+                      {uploadHelp.tips.map((tip) => (
+                        <li key={tip}>{tip}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <IOSDialogFooter>
+              <IOSActionStack>
+                <IOSAction onClick={handleUpload} disabled={!file} emphasized>
+                  Upload
+                </IOSAction>
+              </IOSActionStack>
+            </IOSDialogFooter>
+          </>
+        ) : (
+          <div className={`${sectionClassName} py-8 text-center`}>
+            {progress < 100 ? (
+              <Loader2 className="mx-auto mb-3 h-10 w-10 animate-spin text-[var(--label-secondary)]" />
+            ) : (
+              <CheckCircle className="mx-auto mb-3 h-10 w-10 text-[var(--label-secondary)]" />
+            )}
+            <p className="mb-3 text-sm text-[var(--label-secondary)]">{message}</p>
+            <div className="h-2 w-full rounded-full bg-[var(--fill-quaternary)]">
+              <div
+                className="h-2 rounded-full bg-[var(--system-blue)] transition-all duration-300"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </div>
+        )}
       </div>
     </IOSFlowDialog>
   );

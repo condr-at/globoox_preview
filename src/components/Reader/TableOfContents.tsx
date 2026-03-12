@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { List } from 'lucide-react';
 import IOSBottomDrawer from '@/components/ui/ios-bottom-drawer';
-import OSBottomDrawerHeader from '@/components/ui/os-bottom-drawer-header';
+import IOSBottomDrawerHeader from '@/components/ui/ios-bottom-drawer-header';
 
 interface Chapter {
     number: number;
@@ -63,7 +63,7 @@ export default function TableOfContents({
                 enableDragDismiss
                 dragHandle={<div className="h-1 w-12 rounded-full bg-black/12 dark:bg-white/16" />}
                 dragRegion={(
-                    <OSBottomDrawerHeader
+                    <IOSBottomDrawerHeader
                         title={<span className={isContentPending ? 'blur-[3px] opacity-40' : ''}>{bookTitle}</span>}
                         subtitle={(
                             <div className={`space-y-1 ${isContentPending ? 'blur-[3px] opacity-40' : ''}`}>

@@ -6,8 +6,9 @@ import ReaderSettings from '@/components/Reader/ReaderSettings';
 import TableOfContents from '@/components/Reader/TableOfContents';
 import DeleteBookConfirmDialog from '@/components/Store/DeleteBookConfirmDialog';
 import SignInToUploadModal from '@/components/SignInToUploadModal';
-import UnlimitedAccessModal from '@/components/UnlimitedAccessModal';
+import JoinAlphaDialog from '@/components/JoinAlphaDialog';
 import UploadBookModal from '@/components/UploadBookModal';
+import TranslationLimitDialog from '@/components/TranslationLimitDialog';
 import IOSAlertDialog from '@/components/ui/ios-alert-dialog';
 import {
   IOSAction,
@@ -24,7 +25,7 @@ import IOSFlowDialog from '@/components/ui/ios-flow-dialog';
 import IOSIconFeatureListItem from '@/components/ui/ios-icon-feature-list-item';
 import IOSReaderHeader from '@/components/ui/ios-reader-header';
 import IOSBottomDrawer from '@/components/ui/ios-bottom-drawer';
-import OSBottomDrawerHeader from '@/components/ui/os-bottom-drawer-header';
+import IOSBottomDrawerHeader from '@/components/ui/ios-bottom-drawer-header';
 
 type OverlayKey =
   | null
@@ -219,13 +220,13 @@ export default function ComponentsPreviewPage() {
       openKey: 'ios-bottom-drawer',
     },
     {
-      title: 'OSBottomDrawerHeader',
+      title: 'IOSBottomDrawerHeader',
       layer: 'Primitive',
       builtOn: 'IOSBottomDrawer header layout',
       useWhen: 'Shared header for bottom sheets with title, subtitle, optional leading content, and close action.',
       avoidWhen: 'Flow dialog headers or reader top chrome.',
       inlinePreview: (
-        <OSBottomDrawerHeader
+        <IOSBottomDrawerHeader
           title="Drawer title"
           subtitle="Optional subtitle"
           leading={(
@@ -356,9 +357,9 @@ export default function ComponentsPreviewPage() {
       notes: 'Use this when content is richer than an alert but still fits a compact dialog.',
     },
     {
-      title: 'Reader Sheet Pattern',
+      title: 'Reader BottomDrawer Pattern',
       layer: 'Pattern',
-      builtOn: 'IOSBottomDrawer + OSBottomDrawerHeader',
+      builtOn: 'IOSBottomDrawer + IOSBottomDrawerHeader',
       useWhen: 'Reader-specific bottom drawers like Appearance and Chapters.',
       avoidWhen: 'General app modals outside the reader experience.',
       openKey: 'reader-sheet-pattern',
@@ -376,11 +377,19 @@ export default function ComponentsPreviewPage() {
       openKey: 'delete-book',
     },
     {
-      title: 'UnlimitedAccessModal',
+      title: 'TranslationLimitDialog',
+      layer: 'Example',
+      builtOn: 'IOSFeatureDialog',
+      useWhen: 'Translation limit prompt with richer explanatory copy and async request state.',
+      avoidWhen: 'Creating new modal types without mapping to an existing pattern.',
+      openKey: 'unlimited-limit',
+    },
+    {
+      title: 'JoinAlphaDialog',
       layer: 'Example',
       builtOn: 'IOSAlertDialog',
-      useWhen: 'Translation limit and alpha-access request prompts with alert-style actions.',
-      avoidWhen: 'Creating new modal types without mapping to an existing pattern.',
+      useWhen: 'Short alpha-program request prompt from profile or account surfaces.',
+      avoidWhen: 'Richer monetization or limit-explainer prompts.',
       openKey: 'unlimited-alpha',
     },
     {
@@ -402,7 +411,7 @@ export default function ComponentsPreviewPage() {
     {
       title: 'ReaderSettings (Appearance)',
       layer: 'Example',
-      builtOn: 'IOSBottomDrawer + OSBottomDrawerHeader',
+      builtOn: 'IOSBottomDrawer + IOSBottomDrawerHeader',
       useWhen: 'Reader-specific settings bottom sheet.',
       avoidWhen: 'General app settings or non-reader flows.',
       openKey: 'reader-settings',
@@ -411,7 +420,7 @@ export default function ComponentsPreviewPage() {
     {
       title: 'TableOfContents (Chapters)',
       layer: 'Example',
-      builtOn: 'IOSBottomDrawer + OSBottomDrawerHeader',
+      builtOn: 'IOSBottomDrawer + IOSBottomDrawerHeader',
       useWhen: 'Reader chapter navigation sheet.',
       avoidWhen: 'Generic list modals elsewhere in the app.',
       openKey: 'table-of-contents',
@@ -458,7 +467,7 @@ export default function ComponentsPreviewPage() {
             <div className="rounded-[22px] border border-[var(--separator)] bg-[var(--bg-grouped)] p-4 text-sm text-[var(--label-primary)]">
               <p className="font-medium">Do not hand-roll chrome</p>
               <p className="mt-2 text-[var(--label-secondary)]">
-                Reuse `OSBottomDrawerHeader`, `IOSDialogHeaderCenterLarge`, and `IOSDialogFooter`. Do not rebuild modal chrome locally in feature files.
+                Reuse `IOSBottomDrawerHeader`, `IOSDialogHeaderCenterLarge`, and `IOSDialogFooter`. Do not rebuild modal chrome locally in feature files.
               </p>
             </div>
           </div>
@@ -482,7 +491,7 @@ export default function ComponentsPreviewPage() {
               <p className="mt-2 text-[var(--label-secondary)]">Use for sheet-based tasks with custom body layout, inputs, uploads, and drag-to-dismiss.</p>
             </div>
             <div className="rounded-[22px] border border-[var(--separator)] bg-[var(--bg-grouped)] p-4 text-sm">
-              <p className="font-medium text-[var(--label-primary)]">Reader Sheet Pattern</p>
+              <p className="font-medium text-[var(--label-primary)]">Reader BottomDrawer Pattern</p>
               <p className="mt-2 text-[var(--label-secondary)]">Use only inside the reader for Chapters, Appearance, and other reader-specific drawers.</p>
             </div>
           </div>
@@ -610,7 +619,7 @@ export default function ComponentsPreviewPage() {
         enableDragDismiss
         dragHandle={<div className="h-1 w-12 rounded-full bg-black/12 dark:bg-white/16" />}
         dragRegion={(
-          <OSBottomDrawerHeader
+          <IOSBottomDrawerHeader
             title={<span id={sheetTitleId}>Appearance</span>}
             subtitle={<span id={sheetDescriptionId}>Reader controls and grouped content.</span>}
             onClose={closeOverlay}
@@ -626,19 +635,17 @@ export default function ComponentsPreviewPage() {
         </div>
       </IOSBottomDrawer>
 
-      <UnlimitedAccessModal
+      <TranslationLimitDialog
         open={activeOverlay === 'unlimited-limit'}
         onOpenChange={(open) => !open && closeOverlay()}
         userEmail="preview@globoox.co"
-        trigger="translation_limit"
       />
 
-      <UnlimitedAccessModal
+      <JoinAlphaDialog
         open={activeOverlay === 'unlimited-alpha'}
         onOpenChange={(open) => !open && closeOverlay()}
         userEmail="preview@globoox.co"
-        trigger="alpha_join"
-      />
+              />
 
       <UploadBookModal
         isOpen={activeOverlay === 'upload-book'}
