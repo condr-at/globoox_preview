@@ -1,9 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Loader2, Sparkles } from 'lucide-react';
-import IOSDialog from '@/components/ui/ios-dialog';
-import { Button } from '@/components/ui/button';
+import IOSAlertDialog from '@/components/ui/ios-alert-dialog';
 import { joinWaitlist } from '@/lib/api';
 
 interface UnlimitedAccessModalProps {
@@ -37,71 +35,67 @@ export default function UnlimitedAccessModal({
     }
   };
 
-  const title =
-    trigger === 'alpha_join' ? 'Get Unlimited Access' : 'Translation Limit Reached';
+  if (trigger === 'translation_limit') {
+    const alertDescription = status === 'success'
+      ? (
+          <span>
+            Your request has been sent. We&apos;ll reach out to{' '}
+            <span className="font-medium">{userEmail}</span> soon.
+          </span>
+        )
+      : (
+          <span>
+            The free plan allows translating one book. We&apos;ll contact you at{' '}
+            <span className="font-medium">{userEmail}</span>.
+          </span>
+        );
 
-  const description =
-    trigger === 'alpha_join'
-      ? 'Want early access to all features? Send us a request and we\'ll get back to you.'
-      : 'The free plan allows translating one book. Send us a request to unlock unlimited translations.';
+    return (
+      <IOSAlertDialog
+        open={open}
+        onOpenChange={onOpenChange}
+        title={status === 'success' ? 'Request Sent' : 'Translation Limit Reached'}
+        description={alertDescription}
+        confirmLabel={status === 'success' ? 'Done' : status === 'loading' ? 'Sending...' : 'Send Access Request'}
+        cancelLabel="Not Now"
+        onConfirm={status === 'success' ? () => onOpenChange(false) : handleSendRequest}
+        showCancel={status !== 'success'}
+        loading={status === 'loading'}
+      />
+    );
+  }
+
+  const alphaDescription = status === 'success'
+    ? (
+        <span>
+          Your request has been sent. We&apos;ll reach out to{' '}
+          <span className="font-medium">{userEmail}</span> soon.
+        </span>
+      )
+    : (
+        <span>
+          Want early access to all features? We&apos;ll contact you at{' '}
+          <span className="font-medium">{userEmail}</span>.
+          {status === 'error' ? (
+            <span className="block mt-3 text-[var(--system-red)]">
+              Something went wrong. Please try again.
+            </span>
+          ) : null}
+        </span>
+      );
 
   return (
-    <IOSDialog open={open} onOpenChange={onOpenChange} mobileLayout="sheet">
-      <div className="px-6 pt-6 pb-2 space-y-5">
-        <div className="flex flex-col items-center text-center gap-3">
-          <div className="w-12 h-12 rounded-full bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
-            <Sparkles className="w-6 h-6 text-violet-600 dark:text-violet-400" />
-          </div>
-          <div>
-            <h2 className="text-lg font-semibold">{title}</h2>
-            {status !== 'success' && (
-              <p className="text-sm text-muted-foreground mt-1">{description}</p>
-            )}
-          </div>
-        </div>
-
-        {status === 'success' ? (
-          <div className="text-center space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Your request has been sent! We&apos;ll reach out to{' '}
-              <span className="font-medium text-foreground">{userEmail}</span> soon.
-            </p>
-            <Button className="w-full" onClick={() => onOpenChange(false)}>
-              Done
-            </Button>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            <p className="text-center text-sm text-muted-foreground">
-              We&apos;ll contact you at{' '}
-              <span className="font-medium text-foreground">{userEmail}</span>
-            </p>
-            <Button
-              className="w-full bg-violet-600 hover:bg-violet-700 text-white"
-              onClick={handleSendRequest}
-              disabled={status === 'loading'}
-            >
-              {status === 'loading' ? (
-                <Loader2 className="w-4 h-4 animate-spin mr-2" />
-              ) : null}
-              {status === 'loading' ? 'Sending…' : 'Send Access Request'}
-            </Button>
-            {status === 'error' && (
-              <p className="text-xs text-destructive text-center">
-                Something went wrong. Please try again.
-              </p>
-            )}
-            <Button
-              variant="ghost"
-              className="w-full"
-              onClick={() => onOpenChange(false)}
-              disabled={status === 'loading'}
-            >
-              Close
-            </Button>
-          </div>
-        )}
-      </div>
-    </IOSDialog>
+    <IOSAlertDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={status === 'success' ? 'Request Sent' : 'Get Unlimited Access'}
+      description={alphaDescription}
+      confirmLabel={status === 'success' ? 'Done' : status === 'loading' ? 'Sending...' : 'Send Access Request'}
+      cancelLabel="Not Now"
+      onConfirm={status === 'success' ? () => onOpenChange(false) : handleSendRequest}
+      showCancel={status !== 'success'}
+      actionsLayout="vertical"
+      loading={status === 'loading'}
+    />
   );
 }

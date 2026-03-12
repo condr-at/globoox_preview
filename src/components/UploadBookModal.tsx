@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { X, Upload, Loader2, CheckCircle, FileText } from 'lucide-react';
-import IOSDialog from '@/components/ui/ios-dialog';
+import { Upload, Loader2, CheckCircle, FileText } from 'lucide-react';
+import { IOSAction, IOSActionStack } from '@/components/ui/ios-action-group';
+import IOSFlowDialog from '@/components/ui/ios-flow-dialog';
+import IOSDialogFooter from '@/components/ui/ios-dialog-footer';
 import { getSignedUploadUrl, uploadToStorage, processBook } from '@/lib/api';
 import { trackBookUploadStarted, trackBookUploaded, trackBookUploadFailed } from '@/lib/posthog';
 import * as Sentry from '@sentry/nextjs';
@@ -186,86 +188,82 @@ export default function UploadBookModal({ isOpen, onClose, onUploaded }: UploadB
   };
 
   return (
-    <IOSDialog
+    <IOSFlowDialog
       open={isOpen}
       onOpenChange={(nextOpen) => !nextOpen && handleClose()}
-      className="bg-card sm:max-w-md"
+      className="sm:max-w-md sm:pb-6"
+      title="Upload Book"
+      description="Add an EPUB from your device and we&apos;ll prepare it for reading and translation."
     >
-      <div className="relative p-6">
-        <button
-          onClick={handleClose}
-          className="absolute top-4 right-4 p-1 rounded-full hover:bg-muted transition-colors"
-        >
-          <X className="w-5 h-5" />
-        </button>
-
-        <h2 className="text-xl font-semibold mb-4">Upload Book</h2>
-
-        {!uploading ? (
-          <>
-            <div
-              onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:border-primary transition-colors"
-            >
-              {file ? (
-                <FileText className="w-10 h-10 mx-auto mb-3 text-primary" />
-              ) : (
-                <Upload className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
-              )}
-              <p className="text-sm text-muted-foreground">
-                {file ? file.name : 'Click to select an EPUB file'}
-              </p>
-            </div>
-
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".epub"
-              onChange={handleFileSelect}
-              className="hidden"
-            />
-
-            {error && (
-              <div className="mt-3 space-y-3">
-                <p className="text-sm text-destructive">{error}</p>
-                {uploadHelp && (
-                  <div className="rounded-lg border border-border bg-muted/40 p-3 text-left">
-                    <p className="text-sm font-medium">{uploadHelp.title}</p>
-                    <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
-                      {uploadHelp.tips.map((tip) => (
-                        <li key={tip}>{tip}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            )}
-
-            <button
-              onClick={handleUpload}
-              disabled={!file}
-              className="w-full mt-4 py-2.5 px-4 bg-primary text-primary-foreground rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors"
-            >
-              Upload
-            </button>
-          </>
-        ) : (
-          <div className="text-center py-4">
-            {progress < 100 ? (
-              <Loader2 className="w-10 h-10 mx-auto mb-3 animate-spin text-primary" />
-            ) : (
-              <CheckCircle className="w-10 h-10 mx-auto mb-3 text-green-500" />
-            )}
-            <p className="text-sm text-muted-foreground mb-3">{message}</p>
-            <div className="w-full bg-muted rounded-full h-2">
+      <div>
+          {!uploading ? (
+            <>
               <div
-                className="bg-primary h-2 rounded-full transition-all duration-300"
-                style={{ width: `${progress}%` }}
+                onClick={() => fileInputRef.current?.click()}
+                className="cursor-pointer rounded-[24px] border border-[var(--separator)] bg-[var(--bg-grouped)] px-5 py-7 text-center transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.03]"
+              >
+                {file ? (
+                  <FileText className="mx-auto mb-3 h-10 w-10 text-[var(--label-secondary)]" />
+                ) : (
+                  <Upload className="mx-auto mb-3 h-10 w-10 text-[var(--label-secondary)]" />
+                )}
+                <p className="text-[15px] font-medium text-[var(--label-primary)]">
+                  {file ? file.name : 'Choose an EPUB file'}
+                </p>
+                <p className="mt-1 text-sm text-[var(--label-secondary)]">
+                  EPUB only. DRM-protected books usually cannot be imported.
+                </p>
+              </div>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".epub"
+                onChange={handleFileSelect}
+                className="hidden"
               />
+
+              {error && (
+                <div className="mt-3 space-y-3 rounded-[20px] border border-[var(--separator)] bg-[var(--bg-grouped)] p-4 text-left">
+                  <p className="text-sm font-medium text-[var(--system-red)]">{error}</p>
+                  {uploadHelp && (
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-[var(--label-primary)]">{uploadHelp.title}</p>
+                      <ul className="space-y-1 text-sm text-[var(--label-secondary)]">
+                        {uploadHelp.tips.map((tip) => (
+                          <li key={tip}>{tip}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <IOSDialogFooter>
+                <IOSActionStack>
+                  <IOSAction onClick={handleUpload} disabled={!file} emphasized>
+                    Upload
+                  </IOSAction>
+                </IOSActionStack>
+              </IOSDialogFooter>
+            </>
+          ) : (
+            <div className="rounded-[24px] border border-[var(--separator)] bg-[var(--bg-grouped)] px-5 py-8 text-center">
+              {progress < 100 ? (
+                <Loader2 className="mx-auto mb-3 h-10 w-10 animate-spin text-[var(--label-secondary)]" />
+              ) : (
+                <CheckCircle className="mx-auto mb-3 h-10 w-10 text-[var(--label-secondary)]" />
+              )}
+              <p className="mb-3 text-sm text-[var(--label-secondary)]">{message}</p>
+              <div className="h-2 w-full rounded-full bg-[var(--fill-quaternary)]">
+                <div
+                  className="h-2 rounded-full bg-[var(--system-blue)] transition-all duration-300"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
             </div>
-          </div>
-        )}
+          )}
       </div>
-    </IOSDialog>
+    </IOSFlowDialog>
   );
 }
