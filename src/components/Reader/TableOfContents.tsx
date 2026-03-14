@@ -91,7 +91,7 @@ export default function TableOfContents({
                         onClose={() => setIsOpen(false)}
                     />
                 )}
-                className="mt-[max(56px,calc(env(safe-area-inset-top)+18px))] flex h-[calc(100dvh-max(56px,calc(env(safe-area-inset-top)+18px)))] max-h-none flex-col overflow-hidden rounded-t-[20px] bg-[#f3f3f1] shadow-[0_-12px_40px_rgba(0,0,0,0.16)] dark:bg-[#1c1c1e] sm:mt-0 sm:h-auto sm:max-w-[320px] sm:rounded-[24px]"
+                className="mt-[max(56px,calc(env(safe-area-inset-top)+18px))] flex h-[calc(100dvh-max(56px,calc(env(safe-area-inset-top)+18px)))] max-h-none flex-col overflow-hidden rounded-t-[20px] bg-[#f3f3f1] shadow-[0_-12px_40px_rgba(0,0,0,0.16)] dark:bg-[#1c1c1e] sm:mt-0 sm:h-auto sm:max-w-[640px] sm:rounded-[24px]"
             >
                 <div className="relative flex-1 overflow-hidden">
                     <div className={`h-full overflow-y-auto ${isContentPending ? 'blur-[3px] opacity-40' : ''}`}>
