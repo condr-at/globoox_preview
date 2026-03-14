@@ -68,7 +68,7 @@ export default function ContentBlockRenderer({
     // For relative EPUB paths, only substitute coverUrl for the first image (the actual cover).
     // Other in-chapter images with relative paths cannot be resolved and are skipped.
     let imageSrc = block.src
-    if (imageSrc && !imageSrc.startsWith('http://') && !imageSrc.startsWith('https://') && !imageSrc.startsWith('data:')) {
+    if (imageSrc && !imageSrc.startsWith('http://') && !imageSrc.startsWith('https://') && !imageSrc.startsWith('data:') && !imageSrc.startsWith('/')) {
       if (isCoverImage && coverUrl) {
         imageSrc = coverUrl
       } else {

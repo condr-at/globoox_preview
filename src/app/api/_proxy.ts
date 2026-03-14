@@ -52,6 +52,14 @@ export async function proxyToBackend(request: Request): Promise<NextResponse | n
       return response
     }
 
+    if (contentType.startsWith('image/') || contentType === 'application/octet-stream') {
+      const response = new NextResponse(res.body, { status: res.status })
+      response.headers.set('Content-Type', contentType)
+      const cacheControl = res.headers.get('cache-control')
+      if (cacheControl) response.headers.set('Cache-Control', cacheControl)
+      return response
+    }
+
     const data = await res.json().catch(() => null)
     const response = NextResponse.json(data ?? {}, { status: res.status })
     response.headers.set('x-data-source', 'backend')

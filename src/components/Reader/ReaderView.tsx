@@ -1545,7 +1545,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                                         // Skip image blocks that cannot be rendered to avoid empty divs in the DOM
                                         if (block.type === 'image') {
                                             const src = block.src;
-                                            const isAbsolute = src?.startsWith('http://') || src?.startsWith('https://') || src?.startsWith('data:');
+                                            const isAbsolute = src?.startsWith('http://') || src?.startsWith('https://') || src?.startsWith('data:') || src?.startsWith('/');
                                             if (!isAbsolute && !(isCoverImage && coverUrl)) return null;
                                         }
                                         const isPending = isBlockPendingForActiveLang(block, pendingBlockIds);

@@ -7,7 +7,7 @@ import type { ReadingAnchor } from '@/lib/store'
 type CacheKey = string
 
 const DB_NAME = 'globoox-cache'
-const DB_VERSION = 8
+const DB_VERSION = 9
 const STORE_CHAPTER_CONTENT_V1 = 'chapter_content'
 const STORE_CHAPTER_SKELETON = 'chapter_skeleton'
 const STORE_BLOCK_TEXT = 'block_text'
