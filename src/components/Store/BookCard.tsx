@@ -7,6 +7,7 @@ import { StarIcon } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import BookActionsMenu from './BookActionsMenu';
+import { useAuth } from '@/lib/hooks/useAuth';
 
 interface BookCardProps {
   id: string;
@@ -34,7 +35,8 @@ export default function BookCard({
   onOpen,
 }: BookCardProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const hasActions = Boolean(onHide || onDelete);
+  const { isAuthenticated } = useAuth();
+  const hasActions = isAuthenticated && Boolean(onHide || onDelete);
 
   return (
     <Card className="w-full">
