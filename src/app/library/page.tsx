@@ -16,7 +16,7 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import GoogleOneTap from '@/components/GoogleOneTap';
 import PageHeader from '@/components/ui/PageHeader';
 import { trackBookOpened } from '@/lib/posthog';
-import { fetchReadingPosition, BookReadingProgress, ApiBook } from '@/lib/api';
+import { BookReadingProgress, ApiBook } from '@/lib/api';
 import { getCachedReadingPosition } from '@/lib/contentCache';
 
 const FALLBACK_COVER = '/covers/great-gatsby.jpg';
@@ -24,15 +24,12 @@ const FALLBACK_AUTHOR = 'Unknown author';
 
 export default function LibraryPage() {
   const { progress, touchLastRead } = useAppStore();
-  const syncProgressVersion = useAppStore((s) => s.syncVersions.progress);
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const scopeKey = isAuthenticated && user?.id ? user.id : 'guest';
   const { books, loading, error, hideBook, removeBook, refresh } = useBooks({ scopeKey });
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [isSignInOpen, setIsSignInOpen] = useState(false);
   const [progressData, setProgressData] = useState<Record<string, BookReadingProgress>>({});
-  const [progressFetchedOnce, setProgressFetchedOnce] = useState(false);
-  const [justReadBookId, setJustReadBookId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
   const [isDeletingBook, setIsDeletingBook] = useState(false);
   const [statusFilter, setStatusFilter] = useState<'visible' | 'hidden' | 'all'>('visible');
@@ -54,20 +51,6 @@ export default function LibraryPage() {
     menuWidth: 200,
     menuHeight: 220,
   });
-
-  useEffect(() => {
-    try {
-      const raw = sessionStorage.getItem('globoox:last_read_book');
-      if (!raw) return;
-      const parsed = JSON.parse(raw) as { bookId?: string; at?: number };
-      if (parsed?.bookId && typeof parsed.at === 'number' && Date.now() - parsed.at < 5 * 60 * 1000) {
-        setJustReadBookId(parsed.bookId);
-      }
-      sessionStorage.removeItem('globoox:last_read_book');
-    } catch {
-      // ignore
-    }
-  }, []);
 
   useEffect(() => {
     document.documentElement.classList.add('library-scroll-lock-x');
@@ -122,69 +105,28 @@ export default function LibraryPage() {
     }
   }, [deleteTarget, removeBook]);
 
-  // Fetch reading positions for all books (authenticated users only)
-  const fetchAllProgress = useCallback(async (bookIds: string[]) => {
-    if (!isAuthenticated || bookIds.length === 0) return;
-
-    try {
-      const results = await Promise.allSettled(
-        bookIds.map(id => fetchReadingPosition(id))
-      );
-
-      const progressMap: Record<string, BookReadingProgress> = {};
-      results.forEach((result, idx) => {
-        if (result.status === 'fulfilled') {
-          const data = result.value;
-          const bookId = bookIds[idx];
-          // Use server value if present, otherwise fallback to local store (Fix #5)
-          const totalBlocks = data.total_blocks || progress[bookId]?.totalBlocks || 0;
-
-          progressMap[bookId] = {
-            book_id: data.book_id,
-            chapter_id: data.chapter_id,
-            block_id: data.block_id,
-            block_position: data.block_position,
-            total_blocks: totalBlocks,
-            content_version: 0,
-            updated_at: data.updated_at,
-          };
-        }
-      });
-
-      setProgressData(progressMap);
-    } finally {
-      setProgressFetchedOnce(true);
-    }
-  }, [isAuthenticated, progress]);
-
   // Hydrate server reading positions from IndexedDB on load to avoid N requests on refresh.
   useEffect(() => {
-    if (!isAuthenticated) {
-      setProgressFetchedOnce(true);
-      return;
-    }
-
     if (books.length === 0) {
       setProgressData({});
-      setProgressFetchedOnce(false);
       return;
     }
 
     let cancelled = false;
-    setProgressFetchedOnce(false);
     void (async () => {
       const entries = await Promise.all(
         books.map(async (b) => {
           const cached = await getCachedReadingPosition(scopeKey, b.id);
-          return [b.id, cached?.position ?? null] as const;
+          return [b.id, cached] as const;
         })
       );
 
       if (cancelled) return;
 
       const progressMap: Record<string, BookReadingProgress> = {};
-      for (const [bookId, pos] of entries) {
-        if (!pos) continue;
+      for (const [bookId, cached] of entries) {
+        if (!cached) continue;
+        const pos = cached.position;
         progressMap[bookId] = {
           book_id: pos.book_id,
           chapter_id: pos.chapter_id,
@@ -192,26 +134,14 @@ export default function LibraryPage() {
           block_position: pos.block_position,
           total_blocks: pos.total_blocks ?? progress[bookId]?.totalBlocks ?? 0,
           content_version: 0,
-          updated_at: pos.updated_at,
+          updated_at: pos.updated_at ?? cached.updatedAt,
         };
       }
       setProgressData(progressMap);
-      setProgressFetchedOnce(true);
     })();
 
     return () => { cancelled = true; };
   }, [books, isAuthenticated, scopeKey, progress]);
-
-  // Only revalidate server reading positions when sync-check indicates progress changed.
-  const lastSyncProgressVersionRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    if (!syncProgressVersion) return;
-    if (lastSyncProgressVersionRef.current === syncProgressVersion) return;
-    lastSyncProgressVersionRef.current = syncProgressVersion;
-    if (books.length === 0) return;
-    void fetchAllProgress(books.map((b) => b.id));
-  }, [isAuthenticated, syncProgressVersion, books, fetchAllProgress]);
 
   // Get block-based progress for a book
   const getBookProgress = useCallback((book: ApiBook) => {
@@ -229,53 +159,6 @@ export default function LibraryPage() {
     return 0;
   }, [progress, progressData]);
 
-  // Get last read entry sorted by server updated_at
-  const lastReadEntry = useMemo(() => {
-    if (!isAuthenticated) {
-      // For guests, use local lastRead
-      return Object.entries(progress).sort(
-        (a, b) => new Date(b[1].lastRead).getTime() - new Date(a[1].lastRead).getTime()
-      )[0];
-    }
-
-    // If user just opened a book, prefer it (even after server progress fetch) so Continue Reading feels instant.
-    if (justReadBookId && progress[justReadBookId]) {
-      const lastReadAt = new Date(progress[justReadBookId].lastRead).getTime();
-      if (Number.isFinite(lastReadAt) && Date.now() - lastReadAt < 5 * 60 * 1000) {
-        return [justReadBookId, progress[justReadBookId]];
-      }
-    }
-
-    // Before the first server progress fetch completes, prefer a recent local "just read" book to avoid hiding the section.
-    if (!progressFetchedOnce) {
-      const local = Object.entries(progress).sort(
-        (a, b) => new Date(b[1].lastRead).getTime() - new Date(a[1].lastRead).getTime()
-      )[0];
-      if (local) {
-        const lastReadAt = new Date(local[1].lastRead).getTime();
-        if (Number.isFinite(lastReadAt) && Date.now() - lastReadAt < 5 * 60 * 1000) return local;
-      }
-
-      return undefined;
-    }
-
-    // First try server updated_at
-    const serverEntries = Object.entries(progressData)
-      .filter(([, data]) => data.updated_at != null)
-      .sort((a, b) =>
-        new Date(b[1].updated_at!).getTime() - new Date(a[1].updated_at!).getTime()
-      );
-
-    if (serverEntries.length > 0) {
-      return serverEntries[0];
-    }
-
-    // Fallback to local lastRead
-    return Object.entries(progress).sort(
-      (a, b) => new Date(b[1].lastRead).getTime() - new Date(a[1].lastRead).getTime()
-    )[0];
-  }, [progressData, progress, isAuthenticated, progressFetchedOnce, justReadBookId]);
-
   const filteredBooks = useMemo(() => {
     const filtered = statusFilter === 'hidden'
       ? books.filter((b) => b.status === 'hidden')
@@ -287,16 +170,16 @@ export default function LibraryPage() {
       if (sortOrder === 'title_asc') return a.title.localeCompare(b.title);
       if (sortOrder === 'title_desc') return b.title.localeCompare(a.title);
       if (sortOrder === 'recently_opened') {
-        const aTime = progressData[a.id]?.updated_at ?? progress[a.id]?.lastRead ?? '';
-        const bTime = progressData[b.id]?.updated_at ?? progress[b.id]?.lastRead ?? '';
-        return new Date(bTime).getTime() - new Date(aTime).getTime();
+        const aTime = progressData[a.id]?.updated_at ?? progress[a.id]?.lastRead ?? null;
+        const bTime = progressData[b.id]?.updated_at ?? progress[b.id]?.lastRead ?? null;
+        const aMs = aTime ? new Date(aTime).getTime() : -Infinity;
+        const bMs = bTime ? new Date(bTime).getTime() : -Infinity;
+        return bMs - aMs;
       }
       // recently_added
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
   }, [books, statusFilter, sortOrder, progressData, progress]);
-
-      const lastBook = lastReadEntry ? filteredBooks.find((b) => b.id === lastReadEntry[0]) : null;
 
   return (
     <div className="min-h-screen bg-background pb-[calc(60px+env(safe-area-inset-bottom))]">
@@ -364,27 +247,6 @@ export default function LibraryPage() {
           )}
         </div>
 
-        {false && lastBook && lastReadEntry && (
-          <section>
-            <h2 className="text-lg font-semibold mb-4">Continue Reading</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
-              <BookCard
-                id={lastBook.id}
-                title={lastBook.title}
-                author={lastBook.author ?? FALLBACK_AUTHOR}
-                cover={lastBook.cover_url ?? FALLBACK_COVER}
-                progress={getBookProgress(lastBook)}
-                onHide={hideBook}
-                onDelete={handleRequestDelete}
-                hideLabel="Hide"
-                onOpen={() => {
-                  touchLastRead(lastBook.id);
-                  trackBookOpened({ book_id: lastBook.id, title: lastBook.title, source: 'library' });
-                }}
-              />
-            </div>
-          </section>
-        )}
 
         <section>
           {loading ? (

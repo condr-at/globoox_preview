@@ -388,6 +388,39 @@ export async function setCachedReadingPosition(scope: string, bookId: string, en
   await withStore(STORE_READING_POSITIONS, 'readwrite', (store) => store.put(full))
 }
 
+export async function touchCachedLastRead(scope: string, bookId: string, iso: string): Promise<void> {
+  try {
+    const key = makeScopedKey(scope, bookId)
+    await withStore<void>(STORE_READING_POSITIONS, 'readwrite', (store) => {
+      const getReq = store.get(key)
+      return new Promise<void>((resolve, reject) => {
+        getReq.onsuccess = () => {
+          const existing = getReq.result as CachedReadingPositionEntry | undefined
+          if (existing) {
+            existing.updatedAt = iso
+            store.put(existing)
+          } else {
+            // No position saved yet — create a minimal stub so lastRead survives reload
+            const stub: CachedReadingPositionEntry = {
+              key,
+              scope,
+              bookId,
+              position: { book_id: bookId, chapter_id: null, block_id: null, block_position: null, lang: null, updated_at: null },
+              updatedAt: iso,
+              fetchedAt: Date.now(),
+            }
+            store.put(stub)
+          }
+          resolve()
+        }
+        getReq.onerror = () => reject(getReq.error)
+      })
+    })
+  } catch {
+    // non-critical
+  }
+}
+
 export async function clearCachedReadingPositions(scope?: string): Promise<void> {
   try {
     const db = await openDb()
