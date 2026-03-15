@@ -122,11 +122,11 @@ export function FAQ() {
                   height: '24px',
                   flexShrink: 0,
                   marginLeft: '16px',
-                  transition: 'transform 0.3s ease',
-                  transform: openIndex === index ? 'rotate(180deg)' : 'rotate(0deg)',
+                  fontSize: '20px',
+                  fontWeight: 300,
                 }}
               >
-                ▼
+                {openIndex === index ? '−' : '+'}
               </span>
             </button>
 
