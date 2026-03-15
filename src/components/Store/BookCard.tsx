@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { StarIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardTitle, CardDescription } from '@/components/ui/card';
 import BookActionsMenu from './BookActionsMenu';
 import { useAuth } from '@/lib/hooks/useAuth';
 
