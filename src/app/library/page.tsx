@@ -141,7 +141,8 @@ export default function LibraryPage() {
     })();
 
     return () => { cancelled = true; };
-  }, [books, isAuthenticated, scopeKey, progress]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [books, scopeKey]);
 
   // Get block-based progress for a book
   const getBookProgress = useCallback((book: ApiBook) => {
@@ -159,6 +160,9 @@ export default function LibraryPage() {
     return 0;
   }, [progress, progressData]);
 
+  const sortedBooksRef = useRef<typeof books>([]);
+  const sortedBookIdsKey = useRef('');
+
   const filteredBooks = useMemo(() => {
     const filtered = statusFilter === 'hidden'
       ? books.filter((b) => b.status === 'hidden')
@@ -166,7 +170,7 @@ export default function LibraryPage() {
         ? books
         : books.filter((b) => b.status !== 'hidden');
 
-    return [...filtered].sort((a, b) => {
+    const sorted = [...filtered].sort((a, b) => {
       if (sortOrder === 'title_asc') return a.title.localeCompare(b.title);
       if (sortOrder === 'title_desc') return b.title.localeCompare(a.title);
       if (sortOrder === 'recently_opened') {
@@ -179,6 +183,20 @@ export default function LibraryPage() {
       // recently_added
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
+
+    // Freeze the visible order when only progress changed (not the book list itself).
+    // This prevents the list from jumping while the user is navigating to/from a book.
+    const newIdsKey = sorted.map((b) => b.id).join(',');
+    const prevIdsKey = sortedBookIdsKey.current;
+    const bookSetChanged = filtered.map((b) => b.id).sort().join(',') !==
+      sortedBooksRef.current.map((b) => b.id).sort().join(',');
+
+    if (bookSetChanged || prevIdsKey === '' || sortOrder !== 'recently_opened') {
+      sortedBooksRef.current = sorted;
+      sortedBookIdsKey.current = newIdsKey;
+    }
+
+    return sortedBooksRef.current;
   }, [books, statusFilter, sortOrder, progressData, progress]);
 
   return (
