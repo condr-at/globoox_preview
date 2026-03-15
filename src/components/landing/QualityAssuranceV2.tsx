@@ -40,66 +40,94 @@ export function QualityAssuranceV2() {
         </p>
       </div>
 
-      <div style={{ marginTop: '60px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+      <div style={{ marginTop: '60px', display: 'flex', justifyContent: 'center', alignItems: 'flex-end' }}>
         {/* MacBook mockup */}
         <div
           style={{
             position: 'relative',
-            width: '800px',
-            maxWidth: '100%',
+            width: '100%',
+            maxWidth: '900px',
+            perspective: '1200px',
           }}
         >
-          {/* MacBook frame */}
+          {/* MacBook body */}
           <div
             style={{
-              background: '#FFFFFF',
-              borderRadius: '12px 12px 0 0',
-              padding: '16px',
-              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.15)',
-              border: '1px solid #E0D9D0',
-              aspectRatio: '16 / 10',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: '#F5F3F0',
+              position: 'relative',
+              background: '#D4CCC4',
+              borderRadius: '14px 14px 2px 2px',
+              padding: '10px',
+              boxShadow: '0 40px 80px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3)',
             }}
           >
-            {/* Screen content placeholder */}
+            {/* Screen bezel */}
             <div
               style={{
-                width: '100%',
-                height: '100%',
-                background: 'linear-gradient(135deg, #F7F5F2 0%, #F0E8E0 100%)',
-                borderRadius: '8px',
+                background: '#1A1A1A',
+                borderRadius: '10px',
+                padding: '8px',
+                aspectRatio: '16 / 10',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#999',
-                fontSize: '16px',
               }}
             >
-              Mockup content coming soon
+              {/* Notch */}
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '8px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  width: '180px',
+                  height: '24px',
+                  background: '#000',
+                  borderRadius: '0 0 20px 20px',
+                  zIndex: 10,
+                }}
+              />
+
+              {/* Screen content */}
+              <div
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  background: 'linear-gradient(135deg, #F7F5F2 0%, #F0E8E0 100%)',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#999',
+                  fontSize: '16px',
+                  fontWeight: 500,
+                }}
+              >
+                Mockup content coming soon
+              </div>
             </div>
           </div>
 
-          {/* MacBook base */}
+          {/* MacBook base / bottom */}
           <div
             style={{
-              background: '#E8E0D8',
-              height: '12px',
+              height: '20px',
+              background: 'linear-gradient(to right, #C0B8B0 0%, #D4CCC4 50%, #C0B8B0 100%)',
               borderRadius: '0 0 20px 20px',
-              marginTop: '-1px',
+              boxShadow: 'inset 0 2px 4px rgba(255, 255, 255, 0.1), 0 10px 30px rgba(0, 0, 0, 0.15)',
             }}
           />
 
-          {/* MacBook stand */}
+          {/* Stand legs */}
           <div
             style={{
-              width: '60%',
+              position: 'absolute',
+              bottom: '-4px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: '70%',
               height: '8px',
-              background: '#D0C8C0',
-              margin: '0 auto',
-              borderRadius: '0 0 12px 12px',
+              background: 'linear-gradient(to right, transparent 0%, #A89880 10%, #A89880 90%, transparent 100%)',
+              borderRadius: '4px',
             }}
           />
         </div>
