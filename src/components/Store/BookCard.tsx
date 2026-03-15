@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { StarIcon } from 'lucide-react';
@@ -8,6 +8,38 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardTitle, CardDescription } from '@/components/ui/card';
 import BookActionsMenu from './BookActionsMenu';
 import { useAuth } from '@/lib/hooks/useAuth';
+
+// Resize base64 cover to card thumbnail size via Canvas.
+// HTTPS URLs are returned as-is (handled by next/image optimizer).
+function useCompressedCover(src: string, maxWidth = 480): string {
+  const [compressed, setCompressed] = useState(src);
+
+  useEffect(() => {
+    if (!src.startsWith('data:')) {
+      setCompressed(src);
+      return;
+    }
+    let cancelled = false;
+    const img = new window.Image();
+    img.onload = () => {
+      if (cancelled) return;
+      const scale = Math.min(1, maxWidth / img.naturalWidth);
+      const w = Math.round(img.naturalWidth * scale);
+      const h = Math.round(img.naturalHeight * scale);
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      canvas.getContext('2d')!.drawImage(img, 0, 0, w, h);
+      const webp = canvas.toDataURL('image/webp', 0.80);
+      // Fall back to JPEG if WebP is not supported (very rare)
+      setCompressed(webp.startsWith('data:image/webp') ? webp : canvas.toDataURL('image/jpeg', 0.75));
+    };
+    img.src = src;
+    return () => { cancelled = true; };
+  }, [src, maxWidth]);
+
+  return compressed;
+}
 
 interface BookCardProps {
   id: string;
@@ -37,6 +69,7 @@ export default function BookCard({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { isAuthenticated } = useAuth();
   const hasActions = isAuthenticated && Boolean(onHide || onDelete);
+  const displayCover = useCompressedCover(cover);
 
   return (
     <div className="w-full relative">
@@ -66,7 +99,7 @@ export default function BookCard({
       >
         <div className="aspect-[2/3] rounded-md bg-muted mb-2 overflow-hidden relative shadow-md">
           <Image
-            src={cover}
+            src={displayCover}
             alt={title}
             fill
             className="object-cover"
