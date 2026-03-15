@@ -2,9 +2,12 @@
 
 import { Hero } from '@/components/landing/Hero';
 import { FeaturesGrid } from '@/components/landing/FeaturesGrid';
+import { QualityAssurance } from '@/components/landing/QualityAssurance';
+import { Reviews } from '@/components/landing/Reviews';
 import { SectionLabel } from '@/components/landing/SectionLabel';
 import { PricingGrid } from '@/components/landing/PricingGrid';
 import { ComparisonTable } from '@/components/landing/ComparisonTable';
+import { FAQ } from '@/components/landing/FAQ';
 import { CTA } from '@/components/landing/CTA';
 import { Footer } from '@/components/landing/Footer';
 
@@ -17,8 +20,14 @@ export default function LandingPage() {
       {/* Hero 2: Split with books */}
       <Hero variant="split" withBooks={true} />
 
-      {/* Features grid with compare slider */}
+      {/* Features grid */}
       <FeaturesGrid />
+
+      {/* Quality Assurance section */}
+      <QualityAssurance />
+
+      {/* Reviews section */}
+      <Reviews />
 
       {/* Pricing section */}
       <section style={{ padding: '120px 0' }}>
@@ -67,6 +76,9 @@ export default function LandingPage() {
 
         <ComparisonTable />
       </section>
+
+      {/* FAQ section */}
+      <FAQ />
 
       {/* CTA section */}
       <CTA />
