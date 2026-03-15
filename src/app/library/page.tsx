@@ -36,7 +36,12 @@ export default function LibraryPage() {
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
   const [isDeletingBook, setIsDeletingBook] = useState(false);
   const [statusFilter, setStatusFilter] = useState<'visible' | 'hidden' | 'all'>('visible');
-  const [sortOrder, setSortOrder] = useState<'title_asc' | 'title_desc' | 'recently_added' | 'recently_opened'>('recently_added');
+  const SORT_STORAGE_KEY = 'globoox:library_sort';
+  const [sortOrder, setSortOrder] = useState<'title_asc' | 'title_desc' | 'recently_added' | 'recently_opened'>(() => {
+    if (typeof window === 'undefined') return 'recently_opened';
+    const saved = localStorage.getItem(SORT_STORAGE_KEY);
+    return (saved as 'title_asc' | 'title_desc' | 'recently_added' | 'recently_opened') || 'recently_opened';
+  });
   const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
   const [sortDrawerOpen, setSortDrawerOpen] = useState(false);
   const sortTriggerRef = useRef<HTMLButtonElement>(null);
@@ -346,7 +351,7 @@ export default function LibraryPage() {
               ] as const).map(({ value, label }, i, arr) => (
                 <div key={value}>
                   <button
-                    onClick={() => { setSortOrder(value); setSortDropdownOpen(false); }}
+                    onClick={() => { setSortOrder(value); localStorage.setItem(SORT_STORAGE_KEY, value); setSortDropdownOpen(false); }}
                     className="w-full flex items-center justify-between px-[16px] py-[12px] text-left transition-colors active:bg-[var(--fill-tertiary)]"
                   >
                     <span className="text-[17px]">{label}</span>
@@ -359,10 +364,10 @@ export default function LibraryPage() {
           )}
         </div>
 
-        {lastBook && lastReadEntry && (
+        {false && lastBook && lastReadEntry && (
           <section>
             <h2 className="text-lg font-semibold mb-4">Continue Reading</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
               <BookCard
                 id={lastBook.id}
                 title={lastBook.title}
@@ -382,9 +387,8 @@ export default function LibraryPage() {
         )}
 
         <section>
-          <h2 className="text-lg font-semibold mb-4">All Books</h2>
           {loading ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
               {[1, 2, 3, 4].map((i) => (
                 <div key={i} className="aspect-[2/3] rounded-md bg-muted animate-pulse" />
               ))}
@@ -392,7 +396,7 @@ export default function LibraryPage() {
           ) : filteredBooks.length === 0 ? (
             <p className="text-sm text-muted-foreground">No books yet.</p>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
               {filteredBooks.map((book) => (
                 <BookCard
                   key={book.id}
@@ -439,7 +443,7 @@ export default function LibraryPage() {
           ] as const).map(({ value, label }, i, arr) => (
             <button
               key={value}
-              onClick={() => { setSortOrder(value); setSortOpen(false); }}
+              onClick={() => { setSortOrder(value); localStorage.setItem(SORT_STORAGE_KEY, value); setSortDrawerOpen(false); }}
               className={[
                 'flex w-full items-center justify-between px-5 h-[52px] text-[17px] text-left active:bg-black/[0.04] dark:active:bg-white/[0.06] transition-colors',
                 i < arr.length - 1 ? 'border-b border-[var(--separator)]' : '',

@@ -4,7 +4,6 @@ import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { StarIcon } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import BookActionsMenu from './BookActionsMenu';
 import { useAuth } from '@/lib/hooks/useAuth';
@@ -39,56 +38,52 @@ export default function BookCard({
   const hasActions = isAuthenticated && Boolean(onHide || onDelete);
 
   return (
-    <Card className="w-full">
-      <CardContent className="p-3 relative">
-        {hasActions && (
-          <div className="absolute top-4 right-4">
-            <BookActionsMenu
-              onHide={() => onHide?.(id)}
-              onDelete={() => onDelete?.(id)}
-              hideLabel={hideLabel}
-              onOpenChange={setIsMenuOpen}
-            />
-          </div>
-        )}
+    <div className="w-full relative">
+      {hasActions && (
+        <div className="absolute top-1 right-1 z-10">
+          <BookActionsMenu
+            onHide={() => onHide?.(id)}
+            onDelete={() => onDelete?.(id)}
+            hideLabel={hideLabel}
+            onOpenChange={setIsMenuOpen}
+          />
+        </div>
+      )}
 
-        <Link
-          href={`/reader/${id}`}
-          className={`block transition-transform ${isMenuOpen ? 'pointer-events-none' : 'active:scale-[0.98]'}`}
-          tabIndex={isMenuOpen ? -1 : 0}
-          aria-disabled={isMenuOpen}
-          onClick={(event) => {
-            if (isMenuOpen) {
-              event.preventDefault();
-            } else {
-              onOpen?.();
-            }
-          }}
-        >
-          <div className="aspect-[2/3] rounded-md bg-muted mb-2 overflow-hidden relative">
-            <Image
-              src={cover}
-              alt={title}
-              fill
-              className="object-cover"
-              sizes="(max-width: 640px) 45vw, 180px"
-            />
-            {progress > 0 && (
-              <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/20">
-                <div
-                  className="h-full bg-primary"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-            )}
-          </div>
-          <CardTitle className="text-sm mb-1 line-clamp-2">{title}</CardTitle>
-          <CardDescription className="text-xs line-clamp-1">
-            {author}
-          </CardDescription>
-        </Link>
-      </CardContent>
-    </Card>
+      <Link
+        href={`/reader/${id}`}
+        className={`block transition-transform ${isMenuOpen ? 'pointer-events-none' : 'active:scale-[0.98]'}`}
+        tabIndex={isMenuOpen ? -1 : 0}
+        aria-disabled={isMenuOpen}
+        onClick={(event) => {
+          if (isMenuOpen) {
+            event.preventDefault();
+          } else {
+            onOpen?.();
+          }
+        }}
+      >
+        <div className="aspect-[2/3] rounded-md bg-muted mb-2 overflow-hidden relative shadow-md">
+          <Image
+            src={cover}
+            alt={title}
+            fill
+            className="object-cover"
+            sizes="(max-width: 640px) 45vw, 180px"
+          />
+          {progress > 0 && (
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/20">
+              <div
+                className="h-full bg-primary"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          )}
+        </div>
+        <p className="text-sm font-medium mb-0.5 line-clamp-2 leading-snug">{title}</p>
+        <p className="text-xs text-muted-foreground line-clamp-1">{author}</p>
+      </Link>
+    </div>
   );
 }
 
