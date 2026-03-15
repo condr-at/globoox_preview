@@ -2,6 +2,7 @@
 
 import { Hero } from '@/components/landing/Hero';
 import { FeaturesGrid } from '@/components/landing/FeaturesGrid';
+import { UseCases } from '@/components/landing/UseCases';
 import { QualityAssurance } from '@/components/landing/QualityAssurance';
 import { Reviews } from '@/components/landing/Reviews';
 import { SectionLabel } from '@/components/landing/SectionLabel';
@@ -22,6 +23,9 @@ export default function LandingPage() {
 
       {/* Features grid */}
       <FeaturesGrid />
+
+      {/* Use Cases section */}
+      <UseCases />
 
       {/* Quality Assurance section */}
       <QualityAssurance />
