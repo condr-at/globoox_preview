@@ -68,16 +68,16 @@ export function CompareSlider() {
             position: 'absolute',
             inset: 0,
             padding: '32px',
-            fontSize: '15px',
+            fontSize: '14px',
             lineHeight: 1.8,
             fontFamily: "'Lora', serif",
             background: '#fcfcfc',
             color: '#1A1F2B',
           }}
         >
-          <span>
-            About 70,000 years ago, organisms belonging to the species Homo sapiens started to form even larger and more
-            complex structures called cultures. The subsequent development of these human cultures is called history.
+          <span style={{ maxWidth: '480px', display: 'block', margin: '0 auto' }}>
+
+            Около 70 000 лет назад организмы, принадлежащие к виду Homo sapiens, начали формировать ещё более крупные и сложные структуры, называемые культурами. Последующее развитие этих культур называется историей.
           </span>
         </div>
         <div
@@ -85,7 +85,7 @@ export function CompareSlider() {
             position: 'absolute',
             inset: 0,
             padding: '32px',
-            fontSize: '15px',
+            fontSize: '14px',
             lineHeight: 1.8,
             fontFamily: "'Lora', serif",
             background: '#fffbf9',
@@ -93,9 +93,8 @@ export function CompareSlider() {
             clipPath: `inset(0 ${100 - position}% 0 0)`,
           }}
         >
-          <span>
-            Около 70 000 лет назад организмы, принадлежащие к виду Homo sapiens, начали формировать ещё более крупные
-            и сложные структуры, называемые культурами. Последующее развитие этих культур называется историей.
+          <span style={{ maxWidth: '480px', display: 'block', margin: '0 auto' }}>
+            About 70,000 years ago, organisms belonging to the species Homo sapiens started to form even larger and more complex structures called cultures. The subsequent development of these human cultures is called history.
           </span>
         </div>
 

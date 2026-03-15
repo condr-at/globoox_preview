@@ -1,7 +1,9 @@
+import { CompareSlider } from './CompareSlider';
+
 export function QualityAssuranceV2() {
   return (
     <section style={{ padding: '120px 0' }}>
-      <div style={{ marginBottom: '80px' }}>
+      <div style={{ marginBottom: '80px', textAlign: 'center' }}>
         <span
           style={{
             textTransform: 'uppercase',
@@ -22,6 +24,7 @@ export function QualityAssuranceV2() {
             lineHeight: 1.1,
             color: '#1A1F2B',
             marginBottom: '24px',
+            margin: '0 auto 24px',
             maxWidth: '600px',
           }}
         >
@@ -33,101 +36,58 @@ export function QualityAssuranceV2() {
             color: '#666',
             maxWidth: '600px',
             lineHeight: 1.6,
-            margin: 0,
+            margin: '0 auto',
           }}
         >
           Our multi-layer quality system ensures translations preserve literary nuance while maintaining readability in your language.
         </p>
       </div>
 
-      <div style={{ marginTop: '60px', display: 'flex', justifyContent: 'center', alignItems: 'flex-end' }}>
-        {/* MacBook mockup */}
-        <div
-          style={{
-            position: 'relative',
-            width: '100%',
-            maxWidth: '900px',
-            perspective: '1200px',
-          }}
-        >
-          {/* MacBook body */}
+      <div style={{ marginTop: '60px', display: 'flex', justifyContent: 'center' }}>
+        <div style={{ position: 'relative', width: '100%', maxWidth: '800px' }}>
+          {/* MacBook lid */}
           <div
             style={{
+              width: '100%',
+              aspectRatio: '520 / 340',
+              background: '#C8C4BC',
+              borderRadius: '16px 16px 4px 4px',
+              padding: '1.5%',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
               position: 'relative',
-              background: '#D4CCC4',
-              borderRadius: '14px 14px 2px 2px',
-              padding: '10px',
-              boxShadow: '0 40px 80px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3)',
             }}
           >
-            {/* Screen bezel */}
+            {/* Screen */}
             <div
               style={{
-                background: '#1A1A1A',
+                width: '100%',
+                height: '100%',
+                background: '#1A1F2B',
                 borderRadius: '10px',
-                padding: '8px',
-                aspectRatio: '16 / 10',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
+                overflow: 'hidden',
+                position: 'relative',
               }}
             >
-              {/* Notch */}
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '8px',
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  width: '180px',
-                  height: '24px',
-                  background: '#000',
-                  borderRadius: '0 0 20px 20px',
-                  zIndex: 10,
-                }}
-              />
-
-              {/* Screen content */}
-              <div
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  background: 'linear-gradient(135deg, #F7F5F2 0%, #F0E8E0 100%)',
-                  borderRadius: '8px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#999',
-                  fontSize: '16px',
-                  fontWeight: 500,
-                }}
-              >
-                Mockup content coming soon
+              {/* CompareSlider stretched to fill screen */}
+              <div className="macbook-screen-slider" style={{ width: '100%', height: '100%' }}>
+                <CompareSlider />
+                <style>{`
+                  .macbook-screen-slider > div { margin-top: 0 !important; height: 100% !important; }
+                  .macbook-screen-slider > div > div { height: 100% !important; border-radius: 0 !important; border: none !important; }
+                `}</style>
               </div>
             </div>
           </div>
-
-          {/* MacBook base / bottom */}
+          {/* MacBook base */}
           <div
             style={{
-              height: '20px',
-              background: 'linear-gradient(to right, #C0B8B0 0%, #D4CCC4 50%, #C0B8B0 100%)',
-              borderRadius: '0 0 20px 20px',
-              boxShadow: 'inset 0 2px 4px rgba(255, 255, 255, 0.1), 0 10px 30px rgba(0, 0, 0, 0.15)',
-            }}
-          />
-
-          {/* Stand legs */}
-          <div
-            style={{
-              position: 'absolute',
-              bottom: '-4px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              width: '70%',
-              height: '8px',
-              background: 'linear-gradient(to right, transparent 0%, #A89880 10%, #A89880 90%, transparent 100%)',
-              borderRadius: '4px',
+              width: 'calc(100% + 60px)',
+              height: '18px',
+              background: '#B8B4AC',
+              marginLeft: '-30px',
+              borderRadius: '2px 2px 12px 12px',
+              position: 'relative',
+              boxShadow: '0 10px 40px rgba(0,0,0,0.1)',
             }}
           />
         </div>
