@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowUpDown, Check } from 'lucide-react';
+import { ChevronDown, Check } from 'lucide-react';
 import IOSBottomDrawer from '@/components/ui/ios-bottom-drawer';
 import IOSBottomDrawerHeader from '@/components/ui/ios-bottom-drawer-header';
 import { useAdaptiveDropdown } from '@/components/ui/useAdaptiveDropdown';
@@ -231,10 +231,13 @@ export default function LibraryPage() {
                 setSortDropdownOpen((v) => !v);
               }
             }}
-            className="ml-auto flex items-center justify-center w-9 h-9 rounded-full text-[var(--system-blue)] active:opacity-60 transition-opacity"
+            className="ml-auto relative flex items-center gap-[4px] px-[8px] min-h-[44px] text-[var(--system-blue)] active:opacity-70 transition-opacity after:absolute after:inset-y-[-10px] after:left-[-4px] after:right-[-4px]"
             aria-label="Sort"
           >
-            <ArrowUpDown className="w-[18px] h-[18px]" />
+            <span className="text-[15px] font-medium">
+              {sortOrder === 'recently_opened' ? 'Recently Read' : sortOrder === 'recently_added' ? 'Recently Added' : sortOrder === 'title_asc' ? 'Title A→Z' : 'Title Z→A'}
+            </span>
+            <ChevronDown className={`w-[16px] h-[16px] transition-transform ${sortDropdownOpen || sortDrawerOpen ? 'rotate-180' : ''}`} />
           </button>
 
           {/* Desktop dropdown */}
@@ -246,7 +249,7 @@ export default function LibraryPage() {
             >
               {([
                 { value: 'recently_added', label: 'Recently Added' },
-                { value: 'recently_opened', label: 'Recently Opened' },
+                { value: 'recently_opened', label: 'Recently Read' },
                 { value: 'title_asc', label: 'Title A → Z' },
                 { value: 'title_desc', label: 'Title Z → A' },
               ] as const).map(({ value, label }, i, arr) => (
@@ -317,7 +320,7 @@ export default function LibraryPage() {
         <div className="pb-2">
           {([
             { value: 'recently_added', label: 'Recently Added' },
-            { value: 'recently_opened', label: 'Recently Opened' },
+            { value: 'recently_opened', label: 'Recently Read' },
             { value: 'title_asc', label: 'Title A → Z' },
             { value: 'title_desc', label: 'Title Z → A' },
           ] as const).map(({ value, label }, i, arr) => (
