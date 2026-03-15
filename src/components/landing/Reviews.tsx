@@ -81,7 +81,8 @@ export function Reviews() {
       <div
         style={{
           position: 'relative',
-          width: '100%',
+          width: '100vw',
+          marginLeft: 'calc(-50vw + 50%)',
           overflow: 'hidden',
         }}
       >
@@ -91,6 +92,8 @@ export function Reviews() {
             gap: '32px',
             animation: 'scroll 60s linear infinite',
             width: 'max-content',
+            paddingLeft: 'calc(50vw - 200px)',
+            paddingRight: 'calc(50vw - 200px)',
           }}
         >
           {/* First set */}
@@ -257,6 +260,23 @@ export function Reviews() {
             </div>
           ))}
         </div>
+
+        {/* Gradient fade overlay */}
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            pointerEvents: 'none',
+            background: `linear-gradient(to right,
+              #F7F5F2 0%,
+              transparent 100px,
+              transparent calc(100% - 100px),
+              #F7F5F2 100%)`,
+          }}
+        />
       </div>
 
       <style>{`
