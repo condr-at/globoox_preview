@@ -40,8 +40,8 @@ export function CTA() {
       <button
         style={{
           display: 'inline-block',
-          background: isHovered ? '#1A2420' : '#FFFFFF',
-          color: isHovered ? '#FFFFFF' : '#B25032',
+          background: isHovered ? '#C4826E' : '#FFFFFF',
+          color: isHovered ? '#FFFFFF' : '#1A2420',
           padding: '16px 32px',
           borderRadius: '8px',
           fontWeight: 600,

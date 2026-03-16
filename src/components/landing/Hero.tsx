@@ -13,7 +13,7 @@ function BookSpine({ title, height, bg, textColor }: { title: string; height: nu
     <div
       className="spine-hover"
       style={{
-        width: '45px',
+        width: '58px',
         height: `${height}px`,
         background: bg,
         borderRadius: '4px',
@@ -45,7 +45,7 @@ function BookSpine({ title, height, bg, textColor }: { title: string; height: nu
           writingMode: 'vertical-rl',
           textOrientation: 'mixed',
           fontFamily: "'Lora', serif",
-          fontSize: '14px',
+          fontSize: '18px',
           color: textColor || '#5E6771',
           margin: '0 auto',
           opacity: 0.8,
@@ -68,7 +68,7 @@ function FloatingScript({ children, style }: { children: React.ReactNode; style:
         fontFamily: "'Lora', serif",
         color: '#B25032',
         opacity: 0.15,
-        fontSize: '24px',
+        fontSize: '31px',
         pointerEvents: 'none',
         ...style,
       }}
@@ -164,10 +164,10 @@ export function Hero({ variant = 'centered', withBooks = false }: HeroProps) {
           <div
             style={{
               position: 'relative',
-              width: '100%',
-              height: '500px',
+              width: '130%',
+              height: '650px',
               background: 'rgba(178, 80, 50, 0.03)',
-              borderRadius: '200px 40px 200px 40px',
+              borderRadius: '260px 52px 260px 52px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -178,7 +178,7 @@ export function Hero({ variant = 'centered', withBooks = false }: HeroProps) {
               哲学
             </FloatingScript>
             <FloatingScript
-              style={{ bottom: '20%', right: '15%', animation: 'float 8s infinite ease-in-out', animationDelay: '2s', fontSize: '32px' }}
+              style={{ bottom: '20%', right: '15%', animation: 'float 8s infinite ease-in-out', animationDelay: '2s', fontSize: '42px' }}
             >
               Poésie
             </FloatingScript>
@@ -189,12 +189,12 @@ export function Hero({ variant = 'centered', withBooks = false }: HeroProps) {
               History
             </FloatingScript>
 
-            <div style={{ display: 'flex', gap: '12px', transform: 'rotate(-5deg)', alignItems: 'flex-end' }}>
-              <BookSpine title="Moby Dick" height={320} bg="#E8E4DF" />
-              <BookSpine title="Anna Karenina" height={280} bg="#DED9D2" />
-              <BookSpine title="Globoox Engine" height={340} bg="#1A2420" textColor="#D48B77" />
-              <BookSpine title="The Odyssey" height={280} bg="#DED9D2" />
-              <BookSpine title="Don Quixote" height={320} bg="#E8E4DF" />
+            <div style={{ display: 'flex', gap: '16px', transform: 'rotate(-5deg)', alignItems: 'flex-end' }}>
+              <BookSpine title="How to Build a Bridge with Duct Tape" height={416} bg="#E8E4DF" />
+              <BookSpine title="The Coffee Equation" height={364} bg="#DED9D2" />
+              <BookSpine title="Globoox Engine" height={442} bg="#1A2420" textColor="#D48B77" />
+              <BookSpine title="Why Dogs Tilt Their Heads" height={364} bg="#DED9D2" />
+              <BookSpine title="The 4 AM Airport Rule" height={416} bg="#E8E4DF" />
             </div>
           </div>
         </div>
