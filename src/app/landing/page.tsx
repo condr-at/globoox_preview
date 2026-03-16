@@ -6,6 +6,7 @@ import { UseCases } from '@/components/landing/UseCases';
 import { QualityAssuranceV2 } from '@/components/landing/QualityAssuranceV2';
 import { Reviews } from '@/components/landing/Reviews';
 import { Pricing } from '@/components/landing/Pricing';
+import { ComparisonSection } from '@/components/landing/ComparisonSection';
 import { FAQ } from '@/components/landing/FAQ';
 import { CTA } from '@/components/landing/CTA';
 import { Footer } from '@/components/landing/Footer';
