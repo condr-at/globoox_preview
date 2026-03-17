@@ -306,13 +306,15 @@ export function MyBooksMockup() {
   useEffect(() => {
     const el = outerRef.current;
     if (!el) return;
+    const parent = el.parentElement;
+    const target = parent ?? el;
     const update = () => {
-      const w = el.getBoundingClientRect().width;
-      if (w > 0) setScale(w / 320);
+      const w = target.getBoundingClientRect().width;
+      if (w > 0) setScale(Math.min(1, w / 320));
     };
     update();
     const ro = new ResizeObserver(update);
-    ro.observe(el);
+    ro.observe(target);
     return () => ro.disconnect();
   }, []);
 
@@ -438,7 +440,7 @@ export function MyBooksMockup() {
       width: '100%',
       maxWidth: 320,
       position: 'relative',
-      paddingBottom: `${(640 / 320) * 100}%`,
+      height: 640 * scale,
     }}>
     <div style={{
       position: 'absolute',
