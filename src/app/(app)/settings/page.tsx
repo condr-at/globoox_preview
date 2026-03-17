@@ -26,7 +26,7 @@ const COLOR_THEMES = [
     { id: 'default', label: 'Default', lightTheme: 'light', darkTheme: 'dark' },
 ] as const;
 
-export default function ProfilePage() {
+export default function SettingsPage() {
     const router = useRouter();
     const supabaseRef = useRef<SupabaseClient | null>(null);
     const { user, isAlpha, loading } = useAuth();
@@ -90,7 +90,7 @@ export default function ProfilePage() {
 
     return (
         <div className="min-h-screen bg-background pb-[calc(60px+env(safe-area-inset-bottom))]">
-            <PageHeader title="Profile" />
+            <PageHeader title="Settings" />
 
             <div className="container max-w-2xl mx-auto px-4 sm:px-6 pt-[calc(1rem+env(safe-area-inset-top)+76px)] pb-4 space-y-4">
                 {loading ? (

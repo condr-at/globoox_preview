@@ -81,7 +81,7 @@ export default function JoinAlphaPage({ searchParams }: JoinAlphaPageProps) {
               This link is missing a token. Please use the link provided by our team.
             </p>
             <Button asChild className="mt-4 w-full" variant="outline">
-              <Link href="/library">Go to Library</Link>
+              <Link href="/my-books">Go to My Books</Link>
             </Button>
           </CardContent>
         </Card>
@@ -103,7 +103,7 @@ export default function JoinAlphaPage({ searchParams }: JoinAlphaPageProps) {
                 </p>
               </div>
               <Button asChild className="w-full">
-                <Link href="/library">Go to Library</Link>
+                <Link href="/my-books">Go to My Books</Link>
               </Button>
             </>
           ) : status === 'error' ? (
@@ -114,7 +114,7 @@ export default function JoinAlphaPage({ searchParams }: JoinAlphaPageProps) {
                 <p className="text-sm text-muted-foreground mt-1">{errorMessage}</p>
               </div>
               <Button asChild className="w-full" variant="outline">
-                <Link href="/library">Go to Library</Link>
+                <Link href="/my-books">Go to My Books</Link>
               </Button>
             </>
           ) : (

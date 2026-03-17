@@ -22,7 +22,7 @@ import { getCachedReadingPosition } from '@/lib/contentCache';
 const FALLBACK_COVER = '/covers/great-gatsby.jpg';
 const FALLBACK_AUTHOR = 'Unknown author';
 
-export default function LibraryPage() {
+export default function MyBooksPage() {
   const { progress, touchLastRead } = useAppStore();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const scopeKey = isAuthenticated && user?.id ? user.id : 'guest';
@@ -67,7 +67,7 @@ export default function LibraryPage() {
     const params = new URLSearchParams(window.location.search);
     if (params.get('upload') === '1') {
       setIsUploadOpen(true);
-      window.history.replaceState({}, '', '/library');
+      window.history.replaceState({}, '', '/my-books');
     }
   }, [authLoading, isAuthenticated]);
 
@@ -205,7 +205,7 @@ export default function LibraryPage() {
     <div className="min-h-screen bg-background pb-[calc(60px+env(safe-area-inset-bottom))]">
       <GoogleOneTap />
       <PageHeader
-        title="Library"
+        title="My Books"
         action={{ label: 'Add', onClick: handleUploadClick }}
       />
 

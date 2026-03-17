@@ -25,7 +25,7 @@ export default function RegisterPage() {
 function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const nextUrl = searchParams.get('next') || '/library';
+  const nextUrl = searchParams.get('next') || '/my-books';
   const supabaseRef = useRef<SupabaseClient | null>(null);
 
   function getSupabase() {

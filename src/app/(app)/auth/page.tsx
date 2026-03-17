@@ -42,7 +42,7 @@ function AuthForm() {
     searchParams.get('error') ? 'Authentication failed. Please try again.' : null
   );
   const [message, setMessage] = useState<string | null>(null);
-  const nextUrl = searchParams.get('next') || '/library';
+  const nextUrl = searchParams.get('next') || '/my-books';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -185,7 +185,7 @@ function AuthForm() {
           </Card>
         </section>
         <p className="pb-2 text-center text-sm text-muted-foreground">
-          <Link href="/library" className="text-primary underline-offset-4 hover:underline">
+          <Link href="/my-books" className="text-primary underline-offset-4 hover:underline">
             Browse as guest
           </Link>
         </p>

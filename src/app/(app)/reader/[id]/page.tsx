@@ -99,8 +99,8 @@ export default function ReaderPage({ params }: ReaderPageProps) {
       <div className="min-h-screen flex items-center justify-center p-6 text-center">
         <div>
           <p className="text-lg font-semibold mb-2">Book not found</p>
-          <Link href="/library" className="text-primary">
-            Back to Library
+          <Link href="/my-books" className="text-primary">
+            Back to My Books
           </Link>
         </div>
       </div>

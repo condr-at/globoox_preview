@@ -1406,7 +1406,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                     <div className="flex h-full items-center justify-start shrink-0">
                         <Button variant="ghost" size="icon" asChild className="text-primary -ml-2 flex-shrink-0 relative after:absolute after:inset-y-[-10px] after:left-[-10px] after:right-[-4px]">
                             <Link
-                                href="/library"
+                                href="/my-books"
                                 onClick={() => {
                                     try {
                                         sessionStorage.setItem(

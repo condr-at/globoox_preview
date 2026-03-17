@@ -9,8 +9,8 @@ export default function Header() {
     const pathname = usePathname();
 
     const isActive = (path: string) => {
-        if (path === '/library') {
-            return pathname === '/' || pathname === '/library' || pathname.startsWith('/reader');
+        if (path === '/my-books') {
+            return pathname === '/' || pathname === '/my-books' || pathname.startsWith('/reader');
         }
         return pathname.startsWith(path);
     };
@@ -22,17 +22,17 @@ export default function Header() {
 
     return (
         <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-t pb-[env(safe-area-inset-bottom)]">
-            <div className="container max-w-2xl mx-auto flex items-center justify-around h-14">
+            <div className="container max-w-2xl mx-auto flex items-center justify-around h-15">
                 {/* Store — disabled, coming soon */}
                 <Button
                     variant="ghost"
                     type="button"
                     aria-disabled="true"
-                    className="flex-1 flex-col gap-0.5 h-full rounded-none cursor-not-allowed select-none px-3 hover:bg-transparent hover:text-inherit"
+                    className="flex-1 flex-col gap-1 h-full rounded-none cursor-not-allowed select-none px-3 hover:bg-transparent hover:text-inherit"
                 >
                     <div className="relative">
                         <div className="opacity-40">
-                            <ShoppingBag className="w-6 h-6" strokeWidth={1.5} />
+                            <ShoppingBag className="w-8 h-8" strokeWidth={1.5} />
                         </div>
                         <span className="absolute -top-0.5 -right-3 text-[8px] font-semibold text-white leading-none px-1 py-0.5 rounded-full bg-primary">
                             soon
@@ -41,19 +41,19 @@ export default function Header() {
                     <span className="text-[10px] font-medium opacity-40">Store</span>
                 </Button>
 
-                {/* Library — center, main tab */}
+                {/* My Books — center, main tab */}
                 <Button
                     variant="ghost"
                     asChild
-                    className={`flex-1 flex-col gap-0.5 h-full rounded-none ${
-                        isActive('/library')
+                    className={`flex-1 flex-col gap-1 h-full rounded-none ${
+                        isActive('/my-books')
                             ? 'text-primary'
                             : 'text-muted-foreground'
                     }`}
                 >
-                    <Link href="/library">
-                        <BookOpen className="w-6 h-6" strokeWidth={isActive('/library') ? 2 : 1.5} />
-                        <span className="text-[10px] font-medium">Library</span>
+                    <Link href="/my-books">
+                        <BookOpen className="w-8 h-8" strokeWidth={isActive('/my-books') ? 2 : 1.5} />
+                        <span className="text-[10px] font-medium">My Books</span>
                     </Link>
                 </Button>
 
@@ -61,14 +61,14 @@ export default function Header() {
                 <Button
                     variant="ghost"
                     asChild
-                    className={`flex-1 flex-col gap-0.5 h-full rounded-none ${
-                        isActive('/profile')
+                    className={`flex-1 flex-col gap-1 h-full rounded-none ${
+                        isActive('/settings')
                             ? 'text-primary'
                             : 'text-muted-foreground'
                     }`}
                 >
-                    <Link href="/profile">
-                        <Settings className="w-6 h-6" strokeWidth={isActive('/profile') ? 2 : 1.5} />
+                    <Link href="/settings">
+                        <Settings className="w-8 h-8" strokeWidth={isActive('/settings') ? 2 : 1.5} />
                         <span className="text-[10px] font-medium">Settings</span>
                     </Link>
                 </Button>

@@ -15,7 +15,7 @@ export default async function RootPage() {
 
     // Authenticated users go to library
     if (session) {
-      redirect('/library');
+      redirect('/my-books');
     }
   } catch (error) {
     // If auth check fails, redirect to landing anyway
@@ -23,5 +23,5 @@ export default async function RootPage() {
   }
 
   // Unauthenticated users go to library
-  redirect('/library');
+  redirect('/my-books');
 }
