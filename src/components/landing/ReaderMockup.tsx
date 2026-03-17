@@ -379,7 +379,7 @@ export function ReaderMockup() {
   const modalVisible = phase === 'modal-show' || phase === 'modal-idle' || phase === 'modal-tap';
   const modalTapOK = phase === 'modal-tap';
   const isTranslating = phase === 'translating';
-  const isTranslated = phase === 'translated' || phase === 'hold';
+  const isTranslated = phase === 'translated' || phase === 'hold' || phase === 'back-tap' || phase === 'back-close';
   const currentLang = isTranslated ? 'EN' : 'GR';
 
   const textLines = isTranslated ? ENGLISH_TEXT : GREEK_TEXT;

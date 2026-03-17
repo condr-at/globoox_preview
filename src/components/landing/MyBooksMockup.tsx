@@ -16,8 +16,8 @@ const T_PAUSE_DONE      = 900;   // пауза на чекмарке
 const T_DRAWER_CLOSE    = 420;
 const T_PAUSE_BOOK      = 600;
 const T_HOLD            = 2600;
-const T_FADE_OUT        = 1000;
-const T_FADE_IN         = 800;
+const T_RESET_OPEN      = 320;   // drawer открылся — сбрасываем книгу под ним
+const T_RESET_CLOSE     = 480;   // drawer закрывается обратно
 
 // высота зоны выбора файла — фиксирована чтобы drawer не скакал
 const DRAWER_ZONE_H = 110;
