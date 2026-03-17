@@ -65,9 +65,7 @@ export default function RootLayout({
             } catch(e) {}
           })();
         ` }} />
-      </head>
-      {process.env.NODE_ENV === 'production' && (
-        <head>
+        {process.env.NODE_ENV === 'production' && (
           <Script
             id="microsoft-clarity"
             strategy="afterInteractive"
@@ -81,8 +79,8 @@ export default function RootLayout({
               `,
             }}
           />
-        </head>
-      )}
+        )}
+      </head>
       <body className="antialiased bg-[var(--bg-grouped)]">
           <PostHogProvider />
           <SyncCheckClient />
