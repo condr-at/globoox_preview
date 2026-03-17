@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 const T_IDLE            = 2400;
 const T_BTN_FLASH       = 80;    // одно мигание кнопки Add
 const T_PAUSE_EMPTY     = 1100;  // смотрим на пустой drawer
-const T_TAP_FLASH       = 500;   // вспышка зоны выбора
+const T_TAP_FLASH       = 350;   // вспышка зоны выбора
 const T_SPINNER         = 1600;  // спиннер
 const T_FILE_APPEAR     = 500;   // файл появляется
 const T_PAUSE_FILE      = 900;   // пауза на файле — кнопка Upload активна
@@ -68,6 +68,23 @@ const EXISTING_BOOKS = [
 const NEW_BOOK = { title: 'Meditations', author: 'Marcus Aurelius', color: '#9B8AAB' };
 
 // ─── mini book cover ──────────────────────────────────────────────────────────
+
+// ─── ripple ───────────────────────────────────────────────────────────────────
+function Ripple({ active, color = 'rgba(255,255,255,0.5)', radius = 6 }: { active: boolean; color?: string; radius?: number }) {
+  return (
+    <div style={{ position: 'absolute', inset: 0, borderRadius: radius, pointerEvents: 'none', overflow: 'hidden' }}>
+      <div style={{
+        position: 'absolute', top: '50%', left: '50%',
+        width: active ? '300%' : '0%', aspectRatio: '1',
+        transform: 'translate(-50%, -50%)',
+        borderRadius: '50%',
+        backgroundColor: color,
+        transition: active ? 'width 0.35s ease-out, opacity 0.35s ease-out' : 'none',
+        opacity: active ? 0 : 1,
+      }} />
+    </div>
+  );
+}
 
 // ─── spinner ──────────────────────────────────────────────────────────────────
 function Spinner() {
@@ -138,6 +155,7 @@ function UploadDrawer({ open, phase, uploadPct }: {
             gap: 8,
             border: `1.5px dashed ${tapFlash ? C.accent : C.separator}`,
             transition: 'background-color 0.3s ease, border-color 0.3s ease',
+            position: 'relative', overflow: 'hidden',
           }}>
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
               stroke={tapFlash ? C.accent : C.textMuted}
@@ -150,6 +168,7 @@ function UploadDrawer({ open, phase, uploadPct }: {
             <span style={{ color: tapFlash ? C.accent : C.textMuted, fontSize: 13, transition: 'color 0.3s ease' }}>
               Choose an EPUB file
             </span>
+            <Ripple active={tapFlash} color="rgba(192,90,58,0.15)" radius={12} />
           </div>
         </div>
 
@@ -240,7 +259,7 @@ function UploadDrawer({ open, phase, uploadPct }: {
       </div>
 
       {/* ── footer: separator + Upload button ── */}
-      <div style={{ borderTop: `0.5px solid ${C.separator}` }}>
+      <div style={{ borderTop: `0.5px solid ${C.separator}`, position: 'relative', overflow: 'hidden' }}>
         <div style={{
           height: 56,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -251,9 +270,12 @@ function UploadDrawer({ open, phase, uploadPct }: {
             : uploadBtnActive ? C.accent : C.textMuted,
           opacity: uploadBtnActive || uploadBtnTap ? 1 : 0.4,
           transition: uploadBtnTap ? 'color 0.06s ease' : 'color 0.25s ease, opacity 0.25s ease',
+          position: 'relative', overflow: 'hidden',
         }}>
           Upload
+          <Ripple active={uploadBtnTap} color="rgba(192,90,58,0.15)" radius={0} />
         </div>
+        <Ripple active={uploadBtnTap} color="rgba(192,90,58,0.08)" radius={0} />
       </div>
     </div>
   );
@@ -478,23 +500,28 @@ export function MyBooksMockup() {
           padding: '0 16px',
           backgroundColor: C.header,
           borderBottom: `0.5px solid ${C.separator}`,
+          position: 'relative',
         }}>
           <span style={{ color: C.text, fontSize: 17, fontWeight: 600 }}>My Books</span>
-          <button style={{
-            backgroundColor: btnFlash ? C.accent : C.accentBg,
-            color: btnFlash ? '#fff' : C.accent,
-            border: 'none',
-            borderRadius: 8,
-            padding: '5px 12px',
-            fontSize: 13,
-            fontWeight: 600,
-            cursor: 'pointer',
-            transition: btnFlash
-              ? 'background-color 0.08s ease, color 0.08s ease'
-              : 'background-color 0.25s ease, color 0.25s ease',
-          }}>
-            + Add
-          </button>
+          <div style={{ position: 'relative', borderRadius: 8, overflow: 'hidden' }}>
+            <button style={{
+              backgroundColor: btnFlash ? C.accent : C.accentBg,
+              color: btnFlash ? '#fff' : C.accent,
+              border: 'none',
+              borderRadius: 8,
+              padding: '5px 12px',
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: btnFlash
+                ? 'background-color 0.08s ease, color 0.08s ease'
+                : 'background-color 0.25s ease, color 0.25s ease',
+            }}>
+              + Add
+            </button>
+            <Ripple active={btnFlash} color="rgba(255,255,255,0.4)" radius={8} />
+          </div>
+          <Ripple active={btnFlash} color="rgba(192,90,58,0.08)" radius={0} />
         </div>
 
         {/* filter pills */}

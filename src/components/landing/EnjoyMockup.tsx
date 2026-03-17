@@ -30,6 +30,23 @@ const C = {
   accent:     '#C05A3A',
 };
 
+// ─── ripple ───────────────────────────────────────────────────────────────────
+function TapRipple({ active }: { active: boolean }) {
+  return (
+    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+      <div style={{
+        position: 'absolute', top: '50%', left: '50%',
+        width: active ? '300%' : '0%', aspectRatio: '1',
+        transform: 'translate(-50%, -50%)',
+        borderRadius: '50%',
+        backgroundColor: 'rgba(44,59,45,0.06)',
+        transition: active ? 'width 0.7s ease-out, opacity 0.7s ease-out' : 'none',
+        opacity: active ? 0 : 1,
+      }} />
+    </div>
+  );
+}
+
 // ─── pages of English text ────────────────────────────────────────────────────
 const PAGES = [
   // page 1 — точная копия из ReaderMockup (translated state)
@@ -265,6 +282,7 @@ export function EnjoyMockup() {
           left: 0, right: 0,
           overflow: 'hidden',
         }}>
+          <TapRipple active={phase === 'tap-hide' || phase === 'tap-show'} />
           {/* swipe container */}
           <div style={{
             position: 'absolute', inset: 0,
@@ -291,7 +309,7 @@ export function EnjoyMockup() {
                 );
               })}
               {/* translating label */}
-              {isRevealing && (
+              {isRevealing && revealedCount < 2 && (
                 <div style={{
                   position: 'absolute', top: '42%', left: 0, right: 0,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',

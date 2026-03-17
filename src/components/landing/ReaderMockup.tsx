@@ -17,8 +17,10 @@ const T_MODAL_TAP     = 150;
 const T_TRANSLATING   = 2400;  // glow + blur
 const T_TRANSLATED    = 400;   // текст проявляется
 const T_HOLD          = 2200;  // читаем английский
-const T_BACK_TAP      = 150;   // подсветка кнопки назад
-const T_BACK_CLOSE    = 400;   // переход reader → library
+const T_BACK_TAP      = 180;   // подсветка кнопки назад + ripple
+const T_READER_SKEL   = 950;   // скелетон ридера при открытии
+const T_BACK_CLOSE    = 320;   // reader → library skeleton
+const T_LIB_SKEL      = 380;   // скелетон библиотеки при возврате
 
 // ─── colours (forest-light) ──────────────────────────────────────────────────
 const C = {
@@ -42,6 +44,7 @@ const C = {
 type Phase =
   | 'library'
   | 'book-tap'
+  | 'reader-skeleton'
   | 'reader-open'
   | 'reader-idle'
   | 'lang-tap'
@@ -55,7 +58,8 @@ type Phase =
   | 'translated'
   | 'hold'
   | 'back-tap'
-  | 'back-close';
+  | 'back-close'
+  | 'library-skeleton';
 
 // первый слот — Meditations (новая книга из Step 1), остальные — existing books
 const NEW_BOOK = { title: 'Meditations', author: 'Marcus Aurelius', color: '#9B8AAB', progress: 0 };
@@ -211,6 +215,36 @@ function GlowBorder({ active, width = 320, height = 640 }: { active: boolean; wi
   );
 }
 
+// ─── shimmer skeleton line ────────────────────────────────────────────────────
+function SkelLine({ w = '100%', h = 13, mb = 10 }: { w?: string | number; h?: number; mb?: number }) {
+  return (
+    <div style={{
+      width: w, height: h, borderRadius: 4, marginBottom: mb,
+      background: 'linear-gradient(90deg, rgba(44,59,45,0.07) 0%, rgba(44,59,45,0.07) 30%, rgba(44,59,45,0.16) 50%, rgba(44,59,45,0.07) 70%, rgba(44,59,45,0.07) 100%)',
+      backgroundSize: '200% 100%',
+      animation: 'readermock-shimmer 1.4s linear infinite',
+    }} />
+  );
+}
+
+function SkelBook({ w = 76 }: { w?: number }) {
+  const coverH = Math.round(w * 1.5);
+  return (
+    <div>
+      <div style={{
+        width: w, height: coverH, borderRadius: 6,
+        background: 'linear-gradient(90deg, rgba(44,59,45,0.07) 0%, rgba(44,59,45,0.07) 30%, rgba(44,59,45,0.16) 50%, rgba(44,59,45,0.07) 70%, rgba(44,59,45,0.07) 100%)',
+        backgroundSize: '200% 100%',
+        animation: 'readermock-shimmer 1.4s linear infinite',
+      }} />
+      <div style={{ marginTop: 5 }}>
+        <SkelLine w="80%" h={9} mb={4} />
+        <SkelLine w="55%" h={8} mb={0} />
+      </div>
+    </div>
+  );
+}
+
 // ─── ios alert dialog ─────────────────────────────────────────────────────────
 function IOSAlert({ visible, tapOK }: { visible: boolean; tapOK: boolean }) {
   return (
@@ -292,10 +326,12 @@ export function ReaderMockup() {
       setPhase('book-tap');
 
       schedule(() => {
-        // открываем reader
-        setPhase('reader-open');
+        // скелетон ридера
+        setPhase('reader-skeleton');
 
         schedule(() => {
+          setPhase('reader-open');
+          schedule(() => {
           setPhase('reader-idle');
 
           schedule(() => {
@@ -333,13 +369,15 @@ export function ReaderMockup() {
                                     // тап по кнопке назад
                                     setPhase('back-tap');
                                     schedule(() => {
-                                      // анимация закрытия (reader → library)
                                       setPhase('back-close');
                                       schedule(() => {
-                                        setPhase('library');
+                                        setPhase('library-skeleton');
                                         schedule(() => {
-                                          runCycle();
-                                        }, T_IDLE);
+                                          setPhase('library');
+                                          schedule(() => {
+                                            runCycle();
+                                          }, T_IDLE);
+                                        }, T_LIB_SKEL);
                                       }, T_BACK_CLOSE);
                                     }, T_BACK_TAP);
                                   }, T_HOLD);
@@ -355,7 +393,8 @@ export function ReaderMockup() {
               }, T_DROPDOWN_OPEN);
             }, T_LANG_TAP);
           }, T_READER_IDLE);
-        }, T_READER_OPEN);
+          }, T_READER_OPEN);
+        }, T_READER_SKEL);
       }, T_BOOK_TAP);
     }, T_IDLE);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -370,7 +409,9 @@ export function ReaderMockup() {
   }, []);
 
   // ─── derived state ───────────────────────────────────────────────────────────
-  const inReader = phase !== 'library' && phase !== 'book-tap' && phase !== 'back-close';
+  const inReader = phase !== 'library' && phase !== 'book-tap' && phase !== 'back-close' && phase !== 'library-skeleton' && phase !== 'reader-skeleton' && phase !== 'back-tap';
+  const showReaderSkeleton = phase === 'reader-skeleton';
+  const showLibrarySkeleton = phase === 'library-skeleton';
   const bookTapped = phase === 'book-tap';
   const backTapped = phase === 'back-tap';
   const dropdownOpen = phase === 'dropdown-open' || phase === 'hover-0' || phase === 'hover-1' || phase === 'hover-2' || phase === 'lang-select';
@@ -411,7 +452,7 @@ export function ReaderMockup() {
         {/* ── LIBRARY VIEW ── */}
         <div style={{
           position: 'absolute', inset: 0,
-          opacity: inReader ? 0 : 1,
+          opacity: (phase === 'library' || phase === 'book-tap') ? 1 : 0,
           transition: 'opacity 0.35s ease-in-out',
           pointerEvents: 'none',
           backgroundColor: C.bg,
@@ -554,12 +595,15 @@ export function ReaderMockup() {
               display: 'flex', alignItems: 'center', gap: 2,
               opacity: langTapped ? 0.5 : 1,
               transition: 'opacity 0.1s ease',
+              position: 'relative', padding: '4px 6px', borderRadius: 6, overflow: 'hidden',
             }}>
               <span style={{ fontSize: 13, fontWeight: 600, color: C.accent }}>{currentLang}</span>
               <svg width="10" height="6" viewBox="0 0 10 6" fill="none" style={{ transform: dropdownOpen ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s ease' }}>
                 <path d="M1 1L5 5L9 1" stroke={C.accent} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
+              <Ripple active={langTapped} />
             </div>
+            <Ripple active={langTapped} color="rgba(192,90,58,0.06)" radius={0} />
 
             {/* dropdown */}
             {dropdownOpen && (
@@ -574,16 +618,19 @@ export function ReaderMockup() {
                 zIndex: 30,
               }}>
                 {LANGS.map((lang, i) => (
-                  <div key={lang}>
+                  <div key={lang} style={{ position: 'relative' }}>
                     <div style={{
                       padding: '10px 14px',
                       fontSize: 14,
                       color: C.text,
                       backgroundColor: hoveredIndex === i ? C.accentBg : 'transparent',
                       transition: 'background-color 0.15s ease',
+                      position: 'relative', overflow: 'hidden',
                     }}>
                       {lang}
+                      {i === 2 && <Ripple active={phase === 'lang-select'} color="rgba(192,90,58,0.2)" radius={0} />}
                     </div>
+                    {i === 2 && <Ripple active={phase === 'lang-select'} color="rgba(192,90,58,0.08)" radius={0} />}
                     {i < LANGS.length - 1 && <div style={{ height: 0.5, backgroundColor: C.separator, marginLeft: 14 }} />}
                   </div>
                 ))}
@@ -653,6 +700,93 @@ export function ReaderMockup() {
 
         {/* ── GLOW ── */}
         <GlowBorder active={glowActive} />
+
+        {/* ── READER SKELETON ── */}
+        {showReaderSkeleton && (
+          <div style={{ position: 'absolute', inset: 0, backgroundColor: C.bg, zIndex: 20, display: 'flex', flexDirection: 'column' }}>
+            {/* status bar */}
+            <div style={{ height: 22, backgroundColor: C.statusBar, flexShrink: 0 }} />
+            {/* nav bar */}
+            <div style={{ height: 44, backgroundColor: C.header, borderBottom: `0.5px solid ${C.separator}`, flexShrink: 0 }} />
+            {/* text lines */}
+            <div style={{ flex: 1, padding: '20px 20px 16px' }}>
+              <SkelLine w="65%" h={11} mb={18} />
+              <SkelLine w="100%" h={13} mb={8} />
+              <SkelLine w="100%" h={13} mb={8} />
+              <SkelLine w="100%" h={13} mb={8} />
+              <SkelLine w="78%" h={13} mb={18} />
+              <SkelLine w="100%" h={13} mb={8} />
+              <SkelLine w="100%" h={13} mb={8} />
+              <SkelLine w="60%" h={13} mb={18} />
+              <SkelLine w="100%" h={13} mb={8} />
+              <SkelLine w="100%" h={13} mb={8} />
+              <SkelLine w="100%" h={13} mb={8} />
+              <SkelLine w="85%" h={13} mb={8} />
+              <SkelLine w="72%" h={13} mb={8} />
+              <SkelLine w="65%" h={13} mb={8} />
+              <SkelLine w="100%" h={13} mb={8} />
+              <SkelLine w="100%" h={13} mb={8} />
+              <SkelLine w="100%" h={13} mb={8} />
+              <SkelLine w="78%" h={13} mb={8} />
+              <SkelLine w="100%" h={13} mb={8} />
+              <SkelLine w="100%" h={13} mb={8} />
+              <SkelLine w="60%" h={13} mb={18} />
+              <SkelLine w="100%" h={13} mb={8} />
+              <SkelLine w="100%" h={13} mb={8} />
+              <SkelLine w="100%" h={13} mb={8} />
+              <SkelLine w="85%" h={13} mb={8} />
+              <SkelLine w="72%" h={13} mb={0} />
+            </div>
+            {/* footer */}
+            <div style={{ height: 36, flexShrink: 0, borderTop: `0.5px solid ${C.separator}` }} />
+          </div>
+        )}
+
+        {/* ── LIBRARY SKELETON ── */}
+        {showLibrarySkeleton && (
+          <div style={{ position: 'absolute', inset: 0, backgroundColor: C.bg, zIndex: 20, display: 'flex', flexDirection: 'column' }}>
+            {/* status bar */}
+            <div style={{ height: 22, backgroundColor: C.statusBar, flexShrink: 0 }} />
+            {/* nav bar */}
+            <div style={{ height: 44, backgroundColor: C.header, borderBottom: `0.5px solid ${C.separator}`, flexShrink: 0 }} />
+            {/* filter pills skeleton */}
+            <div style={{ display: 'flex', gap: 8, padding: '10px 16px' }}>
+              {[60, 50, 40].map((w, i) => (
+                <div key={i} style={{ width: w, height: 24, borderRadius: 16,
+                  background: 'linear-gradient(90deg, rgba(44,59,45,0.07) 0%, rgba(44,59,45,0.07) 30%, rgba(44,59,45,0.16) 50%, rgba(44,59,45,0.07) 70%, rgba(44,59,45,0.07) 100%)',
+                  backgroundSize: '200% 100%', animation: 'readermock-shimmer 1.4s linear infinite',
+                }} />
+              ))}
+            </div>
+            {/* book grid skeleton */}
+            {(() => {
+              const GAP = 14, PAD = 16, COLS = 3;
+              const cellW = Math.floor((320 - PAD * 2 - GAP * (COLS - 1)) / COLS);
+              return (
+                <div style={{ padding: '4px 16px', display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: GAP }}>
+                  {Array.from({ length: 6 }).map((_, i) => <SkelBook key={i} w={cellW} />)}
+                </div>
+              );
+            })()}
+            {/* tab bar */}
+            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 56, backgroundColor: C.bg, borderTop: `0.5px solid ${C.separator}` }} />
+          </div>
+        )}
+
+        {/* ── BACK RIPPLE (outside header, full widget) ── */}
+        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden', borderRadius: 20, zIndex: 15 }}>
+          <div style={{
+            position: 'absolute',
+            top: 33, left: 16,
+            width: backTapped ? '500%' : '0%',
+            aspectRatio: '1',
+            transform: 'translate(-50%, -50%)',
+            borderRadius: '50%',
+            backgroundColor: 'rgba(192,90,58,0.10)',
+            transition: backTapped ? 'width 0.55s ease-out, opacity 0.55s ease-out' : 'none',
+            opacity: backTapped ? 0 : 1,
+          }} />
+        </div>
 
         <style>{`
           @keyframes readermock-glow {
