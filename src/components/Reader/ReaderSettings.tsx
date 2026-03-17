@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { Settings, Type, Check } from 'lucide-react';
-import { useTheme } from 'next-themes';
+import { useAppTheme } from '@/lib/hooks/useAppTheme';
 import IOSBottomDrawer from '@/components/ui/ios-bottom-drawer';
 import IOSBottomDrawerHeader from '@/components/ui/ios-bottom-drawer-header';
 import { useAppStore } from '@/lib/store';
@@ -29,7 +29,7 @@ export default function ReaderSettings({
     const isOpen = externalOpen !== undefined ? externalOpen : internalOpen;
     const setIsOpen = setExternalOpen !== undefined ? setExternalOpen : setInternalOpen;
 
-    const { theme, setTheme } = useTheme();
+    const { theme, setAppTheme } = useAppTheme();
     const { settings, setFontSize } = useAppStore();
     const fontSizeBeforeRef = useRef(settings.fontSize);
     const fontSizeSliderProgress = `${((settings.fontSize - 14) / (32 - 14)) * 100}%`;
@@ -70,7 +70,11 @@ export default function ReaderSettings({
                                 return (
                                     <button
                                         key={t.id}
-                                        onClick={() => setTheme(t.id)}
+                                        onClick={() => {
+                                            const palette = t.id.startsWith('forest') ? 'globoox' : 'default';
+                                            const mode = t.id.endsWith('dark') ? 'dark' : 'light';
+                                            setAppTheme(mode, palette);
+                                        }}
                                         className="flex flex-col items-center gap-[6px] active:opacity-70 transition-opacity"
                                         aria-label={t.label}
                                         aria-pressed={isActive}

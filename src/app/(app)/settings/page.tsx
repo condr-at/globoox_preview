@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { User, HelpCircle, LogOut, Loader2, FlaskConical } from 'lucide-react';
-import { useTheme } from 'next-themes';
 import { Card, CardContent, CardDescription, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -12,6 +11,7 @@ import PageHeader from '@/components/ui/PageHeader';
 import { createClient } from '@/lib/supabase/client';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useAppTheme } from '@/lib/hooks/useAppTheme';
 import JoinAlphaDialog from '@/components/JoinAlphaDialog';
 import IOSSettingsRow from '@/components/ui/ios-settings-row';
 
@@ -32,36 +32,7 @@ export default function SettingsPage() {
     const { user, isAlpha, loading } = useAuth();
     const [signingOut, setSigningOut] = useState(false);
     const [showAccessModal, setShowAccessModal] = useState(false);
-    const { theme, setTheme, resolvedTheme } = useTheme();
-
-    const PALETTE_KEY = 'globoox-palette';
-    const [palette, setPalette] = useState<'globoox' | 'default'>(() => {
-        if (typeof window === 'undefined') return 'default';
-        return (localStorage.getItem(PALETTE_KEY) as 'globoox' | 'default') ?? 'default';
-    });
-
-    const currentColorTheme = palette;
-    const currentMode = localStorage.getItem('globoox-mode') === 'system' ? 'system'
-        : theme === 'dark' || theme === 'forest-dark' ? 'dark'
-        : 'light';
-
-    const applyAppearance = (mode: string, colorTheme: 'globoox' | 'default') => {
-        localStorage.setItem(PALETTE_KEY, colorTheme);
-        localStorage.setItem('globoox-mode', mode);
-        setPalette(colorTheme);
-        if (mode === 'system') {
-            const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            setTheme(colorTheme === 'globoox'
-                ? (dark ? 'forest-dark' : 'forest-light')
-                : (dark ? 'dark' : 'light')
-            );
-            return;
-        }
-        setTheme(colorTheme === 'globoox'
-            ? (mode === 'dark' ? 'forest-dark' : 'forest-light')
-            : (mode === 'dark' ? 'dark' : 'light')
-        );
-    };
+    const { mode: currentMode, palette: currentColorTheme, setAppTheme } = useAppTheme();
 
     useEffect(() => {
         const supabase = createClient();
@@ -161,14 +132,14 @@ export default function SettingsPage() {
                                         label="Mode"
                                         value={currentMode}
                                         options={MODES}
-                                        onChange={(id) => applyAppearance(id, currentColorTheme)}
+                                        onChange={(id) => setAppTheme(id as 'light' | 'dark' | 'system', currentColorTheme)}
                                     />
                                     <div className="ml-4 h-px bg-[var(--separator-opaque)]" />
                                     <IOSSettingsRow
                                         label="Theme"
                                         value={currentColorTheme}
                                         options={COLOR_THEMES}
-                                        onChange={(id) => applyAppearance(currentMode, id as 'globoox' | 'default')}
+                                        onChange={(id) => setAppTheme(currentMode, id as 'globoox' | 'default')}
                                     />
                                 </CardContent>
                             </Card>

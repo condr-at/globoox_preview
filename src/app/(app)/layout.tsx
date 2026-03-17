@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
 import '../globals.css';
 import Header from '@/components/ui/Header';
-import { ThemeProvider } from '@/components/theme-provider';
 import PostHogProvider from '@/components/PostHogProvider';
 import SyncCheckClient from '@/components/SyncCheckClient';
 import PaletteSync from '@/components/PaletteSync';
@@ -85,14 +84,6 @@ export default function RootLayout({
         </head>
       )}
       <body className="antialiased bg-[var(--bg-grouped)]">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          storageKey="globoox-theme"
-          disableTransitionOnChange
-          themes={['light', 'dark', 'forest-light', 'forest-dark', 'system']}
-        >
           <PostHogProvider />
           <SyncCheckClient />
           <PaletteSync />
@@ -102,7 +93,6 @@ export default function RootLayout({
             </main>
           </div>
           <Header />
-        </ThemeProvider>
       </body>
     </html>
   );
