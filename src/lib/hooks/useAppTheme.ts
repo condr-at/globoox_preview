@@ -11,7 +11,7 @@ const PALETTE_KEY = 'globoox-palette';
 const MODE_KEY = 'globoox-mode';
 
 function resolveClass(mode: AppMode, palette: AppPalette): AppThemeClass {
-  const dark = mode === 'dark' || (mode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const dark = mode === 'dark' || (mode === 'system' && typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches);
   return palette === 'globoox'
     ? (dark ? 'forest-dark' : 'forest-light')
     : (dark ? 'dark' : 'light');
