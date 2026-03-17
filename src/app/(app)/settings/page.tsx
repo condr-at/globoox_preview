@@ -40,26 +40,21 @@ export default function SettingsPage() {
         return (localStorage.getItem(PALETTE_KEY) as 'globoox' | 'default') ?? 'default';
     });
 
-    const systemModeActive = theme === 'system';
-    useEffect(() => {
-        if (!systemModeActive || !resolvedTheme) return;
-        if (palette === 'globoox') {
-            const cls = resolvedTheme === 'dark' ? 'forest-dark' : 'forest-light';
-            document.documentElement.classList.remove('light', 'dark', 'forest-light', 'forest-dark');
-            document.documentElement.classList.add(cls);
-        }
-    }, [systemModeActive, resolvedTheme, palette]);
-
     const currentColorTheme = palette;
-    const currentMode = theme === 'system' ? 'system'
+    const currentMode = localStorage.getItem('globoox-mode') === 'system' ? 'system'
         : theme === 'dark' || theme === 'forest-dark' ? 'dark'
         : 'light';
 
     const applyAppearance = (mode: string, colorTheme: 'globoox' | 'default') => {
         localStorage.setItem(PALETTE_KEY, colorTheme);
+        localStorage.setItem('globoox-mode', mode);
         setPalette(colorTheme);
         if (mode === 'system') {
-            setTheme('system');
+            const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            setTheme(colorTheme === 'globoox'
+                ? (dark ? 'forest-dark' : 'forest-light')
+                : (dark ? 'dark' : 'light')
+            );
             return;
         }
         setTheme(colorTheme === 'globoox'

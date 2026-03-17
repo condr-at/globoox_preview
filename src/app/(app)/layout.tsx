@@ -5,6 +5,7 @@ import Header from '@/components/ui/Header';
 import { ThemeProvider } from '@/components/theme-provider';
 import PostHogProvider from '@/components/PostHogProvider';
 import SyncCheckClient from '@/components/SyncCheckClient';
+import PaletteSync from '@/components/PaletteSync';
 
 export const viewport: Viewport = {
   themeColor: [
@@ -46,6 +47,26 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: `
+          (function() {
+            try {
+              var theme = localStorage.getItem('globoox-theme');
+              var palette = localStorage.getItem('globoox-palette') || 'globoox';
+              var mode = localStorage.getItem('globoox-mode') || 'system';
+              var cls;
+              if (mode === 'system' || !theme || theme === 'system') {
+                var dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                cls = palette === 'globoox' ? (dark ? 'forest-dark' : 'forest-light') : (dark ? 'dark' : 'light');
+              } else {
+                cls = theme;
+              }
+              document.documentElement.classList.remove('light', 'dark', 'forest-light', 'forest-dark');
+              document.documentElement.classList.add(cls);
+            } catch(e) {}
+          })();
+        ` }} />
+      </head>
       {process.env.NODE_ENV === 'production' && (
         <head>
           <Script
@@ -74,6 +95,7 @@ export default function RootLayout({
         >
           <PostHogProvider />
           <SyncCheckClient />
+          <PaletteSync />
           <div className="min-h-screen">
             <main>
               {children}
