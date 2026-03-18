@@ -90,7 +90,7 @@ type Phase =
   | 'tap-show'
   | 'hold';
 
-export function EnjoyMockup() {
+export function EnjoyMockup({ onCycleEnd }: { onCycleEnd?: () => void } = {}) {
   const [phase, setPhase]             = useState<Phase>('reader-idle');
   const [scale, setScale]             = useState(1);
   const [pageIdx, setPageIdx]         = useState(0);       // 0-2
@@ -179,6 +179,7 @@ export function EnjoyMockup() {
                               schedule(() => {
                                 setPhase('hold');
                                 schedule(() => {
+                                  onCycleEnd?.();
                                   runCycle();
                                 }, T_HOLD);
                               }, T_TAP_SHOW);

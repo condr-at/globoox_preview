@@ -287,7 +287,7 @@ function IOSAlert({ visible, tapOK }: { visible: boolean; tapOK: boolean }) {
 }
 
 // ─── main ─────────────────────────────────────────────────────────────────────
-export function ReaderMockup() {
+export function ReaderMockup({ onCycleEnd }: { onCycleEnd?: () => void } = {}) {
   const [phase, setPhase]         = useState<Phase>('library');
   const [scale, setScale]         = useState(1);
   const outerRef                  = useRef<HTMLDivElement>(null);
@@ -369,6 +369,7 @@ export function ReaderMockup() {
                                         schedule(() => {
                                           setPhase('library');
                                           schedule(() => {
+                                            onCycleEnd?.();
                                             runCycle();
                                           }, T_IDLE);
                                         }, T_LIB_SKEL);

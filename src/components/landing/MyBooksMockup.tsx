@@ -284,7 +284,7 @@ function UploadDrawer({ open, phase, uploadPct }: {
 }
 
 // ─── main ─────────────────────────────────────────────────────────────────────
-export function MyBooksMockup() {
+export function MyBooksMockup({ onCycleEnd }: { onCycleEnd?: () => void } = {}) {
   const [phase, setPhase]             = useState<Phase>('idle');
   const [uploadPct, setUploadPct]     = useState(0);
   const [showNewBook, setShowNewBook] = useState(false);
@@ -398,6 +398,7 @@ export function MyBooksMockup() {
                                           if (op2 > 0) {
                                             rafRef.current = requestAnimationFrame(fadeIn);
                                           } else {
+                                            onCycleEnd?.();
                                             runCycle();
                                           }
                                         };
