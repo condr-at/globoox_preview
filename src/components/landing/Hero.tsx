@@ -13,53 +13,57 @@ interface HeroProps {
 
 function BookSpine({ title, height, bg, textColor, className }: { title: string; height: number; bg: string; textColor?: string; className?: string }) {
   return (
-    <div
-      className={`spine-hover ${className || ''}`}
-      style={{
-        width: '58px',
-        height: `${height}px`,
-        background: bg,
-        borderRadius: '4px',
-        borderLeft: '3px solid rgba(0,0,0,0.05)',
-        boxShadow: '10px 10px 30px rgba(0,0,0,0.05)',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'flex-end',
-        padding: '20px 0',
-        transition: 'transform 0.6s cubic-bezier(0.22, 1, 0.36, 1)',
-        position: 'relative',
-        overflow: 'hidden',
-        cursor: 'default',
-      }}
-    >
+    <div className="spine-wrap" style={{ position: 'relative', flexShrink: 0 }}>
+      <div className="spine-shadow" />
       <div
+        className={`spine-hover ${className || ''}`}
         style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'linear-gradient(90deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 50%, rgba(0,0,0,0.05) 100%)',
+          width: '58px',
+          height: `${height}px`,
+          background: bg,
+          borderRadius: '4px',
+          borderLeft: '3px solid rgba(0,0,0,0.05)',
+          boxShadow: '6px 12px 20px rgba(0,0,0,0.18), 2px 4px 6px rgba(0,0,0,0.10)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'flex-end',
+          padding: '20px 0',
+          transition: 'transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.6s cubic-bezier(0.22, 1, 0.36, 1)',
+          position: 'relative',
+          cursor: 'default',
           zIndex: 1,
         }}
-      />
-      <span
-        style={{
-          writingMode: 'vertical-rl',
-          textOrientation: 'mixed',
-          fontFamily: "'Lora', serif",
-          fontSize: '18px',
-          color: textColor || 'var(--ink-80)',
-          fontWeight: textColor ? 400 : 500,
-          margin: '0 auto',
-          opacity: textColor ? 0.8 : 1,
-          transform: 'rotate(180deg)',
-          position: 'relative',
-          zIndex: 2,
-        }}
       >
-        {title}
-      </span>
+        {/* Блик — выпуклость корешка */}
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'linear-gradient(90deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.08) 30%, rgba(0,0,0,0.0) 60%, rgba(0,0,0,0.12) 100%)',
+            zIndex: 1,
+          }}
+        />
+        <span
+          style={{
+            writingMode: 'vertical-rl',
+            textOrientation: 'mixed',
+            fontFamily: "'Lora', serif",
+            fontSize: '18px',
+            color: textColor || 'var(--ink-80)',
+            fontWeight: textColor ? 400 : 500,
+            margin: '0 auto',
+            opacity: textColor ? 0.8 : 1,
+            transform: 'rotate(180deg)',
+            position: 'relative',
+            zIndex: 2,
+          }}
+        >
+          {title}
+        </span>
+      </div>
     </div>
   );
 }
