@@ -70,12 +70,14 @@ const NEW_BOOK = { title: 'Meditations', author: 'Marcus Aurelius', color: '#9B8
 // ─── mini book cover ──────────────────────────────────────────────────────────
 
 // ─── ripple ───────────────────────────────────────────────────────────────────
-function Ripple({ active, color = 'rgba(255,255,255,0.5)', radius = 6, clip = true, duration = 350 }: { active: boolean; color?: string; radius?: number; clip?: boolean; duration?: number }) {
+function Ripple({ active, color = 'rgba(255,255,255,0.5)', radius = 6, clip = true, duration = 350, x, y, size = '300%' }: { active: boolean; color?: string; radius?: number; clip?: boolean; duration?: number; x?: number | string; y?: number | string; size?: string }) {
+  const cx = x !== undefined ? x : '50%';
+  const cy = y !== undefined ? y : '50%';
   return (
     <div style={{ position: 'absolute', inset: 0, borderRadius: radius, pointerEvents: 'none', overflow: clip ? 'hidden' : 'visible' }}>
       <div style={{
-        position: 'absolute', top: '50%', left: '50%',
-        width: active ? '300%' : '0%', aspectRatio: '1',
+        position: 'absolute', top: cy, left: cx,
+        width: active ? size : '0%', aspectRatio: '1',
         transform: 'translate(-50%, -50%)',
         borderRadius: '50%',
         backgroundColor: color,
@@ -518,7 +520,7 @@ export function MyBooksMockup() {
             </button>
             <Ripple active={btnFlash} color="rgba(255,255,255,0.4)" radius={8} duration={600} />
           </div>
-          <Ripple active={btnFlash} color="rgba(192,90,58,0.08)" radius={0} clip={false} duration={600} />
+          <Ripple active={btnFlash} color="rgba(192,90,58,0.08)" radius={0} clip={false} duration={600} x={288} y={22} size="500%" />
         </div>
 
         {/* filter pills */}

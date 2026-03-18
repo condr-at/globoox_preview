@@ -118,23 +118,25 @@ function MiniCover({ color, progress = 0, tapped = false }: {
 }
 
 // ─── ripple ───────────────────────────────────────────────────────────────────
-function Ripple({ active, color = 'rgba(255,255,255,0.35)', radius = 6 }: { active: boolean; color?: string; radius?: number }) {
+function Ripple({ active, color = 'rgba(255,255,255,0.35)', radius = 6, clip = true, duration = 350, x, y, size = '300%' }: { active: boolean; color?: string; radius?: number; clip?: boolean; duration?: number; x?: number | string; y?: number | string; size?: string }) {
+  const cx = x !== undefined ? x : '50%';
+  const cy = y !== undefined ? y : '50%';
   return (
     <div style={{
       position: 'absolute', inset: 0,
       borderRadius: radius,
       pointerEvents: 'none',
-      overflow: 'hidden',
+      overflow: clip ? 'hidden' : 'visible',
     }}>
       <div style={{
         position: 'absolute',
-        top: '50%', left: '50%',
-        width: active ? '300%' : '0%',
+        top: cy, left: cx,
+        width: active ? size : '0%',
         aspectRatio: '1',
         transform: 'translate(-50%, -50%)',
         borderRadius: '50%',
         backgroundColor: color,
-        transition: active ? 'width 0.35s ease-out, opacity 0.35s ease-out' : 'none',
+        transition: active ? `width ${duration}ms ease-out, opacity ${duration}ms ease-out` : 'none',
         opacity: active ? 0 : 1,
       }} />
     </div>
@@ -595,7 +597,7 @@ export function ReaderMockup() {
               </svg>
               <Ripple active={langTapped} />
             </div>
-            <Ripple active={langTapped} color="rgba(192,90,58,0.06)" radius={0} />
+            <Ripple active={langTapped} color="rgba(192,90,58,0.06)" clip={false} duration={600} x={304} y={22} size="500%" />
 
             {/* dropdown */}
             {dropdownOpen && (
@@ -767,17 +769,7 @@ export function ReaderMockup() {
 
         {/* ── BACK RIPPLE (outside header, full widget) ── */}
         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden', borderRadius: 20, zIndex: 15 }}>
-          <div style={{
-            position: 'absolute',
-            top: 33, left: 16,
-            width: backTapped ? '500%' : '0%',
-            aspectRatio: '1',
-            transform: 'translate(-50%, -50%)',
-            borderRadius: '50%',
-            backgroundColor: 'rgba(192,90,58,0.10)',
-            transition: backTapped ? 'width 0.6s ease-out, opacity 0.6s ease-out' : 'none',
-            opacity: backTapped ? 0 : 1,
-          }} />
+          <Ripple active={backTapped} color="rgba(192,90,58,0.10)" clip={false} duration={600} x={16} y={33} size="500%" />
         </div>
 
         <style>{`
