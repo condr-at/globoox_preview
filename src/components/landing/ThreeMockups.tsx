@@ -48,6 +48,24 @@ export function ThreeMockups({ label = 'How It Works', heading = 'Three simple s
     scrollToTab(active);
   }, [active, scrollToTab]);
 
+  // set spacer widths so first/last tab can be centered
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (!container) return;
+    const updateSpacers = () => {
+      const containerWidth = container.offsetWidth;
+      const spacers = container.querySelectorAll<HTMLElement>('.threemockups-tab-spacer');
+      const firstTab = tabRefs.current[0];
+      const lastTab = tabRefs.current[tabRefs.current.length - 1];
+      if (spacers[0] && firstTab) spacers[0].style.width = `${containerWidth / 2 - firstTab.offsetWidth / 2}px`;
+      if (spacers[1] && lastTab) spacers[1].style.width = `${containerWidth / 2 - lastTab.offsetWidth / 2}px`;
+    };
+    updateSpacers();
+    const ro = new ResizeObserver(updateSpacers);
+    ro.observe(container);
+    return () => ro.disconnect();
+  }, []);
+
   return (
     <section className="threemockups-section" style={{ padding: '120px 0', background: 'var(--ink)' }}>
       <div className="threemockups-container" style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 40px' }}>
@@ -83,8 +101,10 @@ export function ThreeMockups({ label = 'How It Works', heading = 'Three simple s
           marginBottom: '24px',
           marginLeft: '-20px',
           marginRight: '-20px',
+          WebkitOverflowScrolling: 'touch',
         }}>
-          <div style={{ display: 'flex', gap: '0' }}>
+          <div className="threemockups-tabs-inner" style={{ display: 'flex', gap: '0' }}>
+            <div className="threemockups-tab-spacer" style={{ flexShrink: 0 }} />
             {steps.map(({ step, description }, i) => (
               <button
                 key={i}
@@ -92,8 +112,8 @@ export function ThreeMockups({ label = 'How It Works', heading = 'Three simple s
                 onClick={() => setActive(i)}
                 style={{
                   flexShrink: 0,
-                  height: '72px',
-                  padding: '0 20px',
+                  height: '80px',
+                  padding: '0 28px',
                   border: 'none',
                   borderBottom: active === i ? '2px solid var(--primary)' : '2px solid rgba(255,255,255,0.1)',
                   background: 'transparent',
@@ -102,12 +122,12 @@ export function ThreeMockups({ label = 'How It Works', heading = 'Three simple s
                   flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '4px',
+                  gap: '5px',
                   transition: 'border-color 0.25s ease',
                 }}
               >
                 <span style={{
-                  fontSize: '10px',
+                  fontSize: '11px',
                   fontWeight: 600,
                   textTransform: 'uppercase',
                   letterSpacing: '0.1em',
@@ -116,7 +136,7 @@ export function ThreeMockups({ label = 'How It Works', heading = 'Three simple s
                   {step}
                 </span>
                 <span style={{
-                  fontSize: '15px',
+                  fontSize: '17px',
                   fontFamily: 'Lora, serif',
                   color: active === i ? 'var(--parchment)' : 'rgba(244,240,232,0.4)',
                   transition: 'color 0.25s ease',
@@ -126,6 +146,7 @@ export function ThreeMockups({ label = 'How It Works', heading = 'Three simple s
                 </span>
               </button>
             ))}
+            <div className="threemockups-tab-spacer" style={{ flexShrink: 0 }} />
           </div>
         </div>
 
