@@ -91,6 +91,7 @@ export function ThreeMockups({ label = 'How It Works', heading = 'Three simple s
           }}>
             {heading}
           </h2>
+          <div className="threemockups-header-divider" style={{ display: 'none', height: '1px', background: 'rgba(255,255,255,0.1)', marginTop: '48px', maxWidth: '220px', margin: '48px auto 0' }} />
         </div>
 
         {/* Mobile horizontal tabs — visible only on mobile */}
@@ -245,7 +246,8 @@ export function ThreeMockups({ label = 'How It Works', heading = 'Three simple s
           .threemockups-section { padding: 60px 0 !important; overflow-x: hidden !important; }
           .threemockups-container { padding: 0 20px !important; }
           .threemockups-heading { font-size: 36px !important; }
-          .threemockups-header { margin-bottom: 16px !important; }
+          .threemockups-header { margin-bottom: 32px !important; }
+          .threemockups-header-divider { display: block !important; }
           .threemockups-center { display: block !important; }
           .threemockups-card { border: none !important; border-radius: 0 !important; background: transparent !important; padding: 0 !important; display: block !important; width: 100% !important; }
           .threemockups-layout { flex-direction: column !important; gap: 24px !important; align-items: stretch !important; width: 100% !important; }
@@ -259,6 +261,8 @@ export function ThreeMockups({ label = 'How It Works', heading = 'Three simple s
           .threemockups-card { border: none !important; border-radius: 0 !important; background: transparent !important; padding: 0 !important; }
           .threemockups-heading { font-size: 36px !important; }
           .threemockups-layout { gap: 32px !important; }
+          .threemockups-header { margin-bottom: 48px !important; }
+          .threemockups-header-divider { display: block !important; }
         }
       `}</style>
     </section>
