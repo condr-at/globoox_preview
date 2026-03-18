@@ -3,7 +3,7 @@
 import { Hero } from '@/components/landing/Hero';
 import { PrivacyManifest } from '@/components/landing/PrivacyManifest';
 import { SupportedLanguages } from '@/components/landing/SupportedLanguages';
-import { UseCases } from '@/components/landing/UseCases';
+import { ThreeMockups } from '@/components/landing/ThreeMockups';
 import { QualityAssuranceV2 } from '@/components/landing/QualityAssuranceV2';
 import { CTA } from '@/components/landing/CTA';
 import { Footer } from '@/components/landing/Footer';
@@ -34,16 +34,7 @@ export default function LandingPage() {
         titleClassName="hero-long-title"
       />
 
-      <UseCases
-        label="How It Works"
-        heading="Three simple steps."
-        description=""
-        items={[
-          { title: 'Step 1', subtitle: '', description: 'Upload your ebook', mockup: 'my-books' },
-          { title: 'Step 2', subtitle: '', description: 'Choose your language', mockup: 'reader' },
-          { title: 'Step 3', subtitle: '', description: 'Enjoy your book!', mockup: 'enjoy' },
-        ]}
-      />
+      <ThreeMockups />
 
       <QualityAssuranceV2
         label="Translation Quality"
