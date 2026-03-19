@@ -811,13 +811,21 @@ export function AnimatedIPhoneMockup({
           position: 'absolute',
           top: 0,
           left: '50%',
+          perspective: '1200px',
+          transform: `translateX(-50%) scale(${scale})`,
+          transformOrigin: 'top center',
+          transformStyle: 'preserve-3d',
+        }}
+      >
+        <div
+          style={{
           width: 348,
           height: 668,
           borderRadius: 48,
           padding: 14,
           background: '#1A1F2B',
           boxShadow: '0 30px 60px rgba(0,0,0,0.22), inset 0 0 0 2px #333, inset 0 0 0 4px #111',
-          transform: `translateX(-50%) scale(${scale}) rotateY(10deg)`,
+          transform: 'rotateX(5deg) rotateY(10deg)',
           transformOrigin: 'top center',
           transformStyle: 'preserve-3d',
         }}
@@ -1217,6 +1225,7 @@ export function AnimatedIPhoneMockup({
           }
         `}</style>
         </div>
+      </div>
       </div>
     </div>
   );

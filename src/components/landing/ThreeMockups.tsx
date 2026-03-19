@@ -100,7 +100,7 @@ export function ThreeMockups({ label = 'Usage animation', heading = 'Usage anima
           display: 'none',
           overflowX: 'auto',
           scrollbarWidth: 'none',
-          marginBottom: '24px',
+          marginBottom: '40px',
           marginLeft: '-20px',
           marginRight: '-20px',
           WebkitOverflowScrolling: 'touch',
@@ -138,7 +138,7 @@ export function ThreeMockups({ label = 'Usage animation', heading = 'Usage anima
                   {step}
                 </span>
                 <span style={{
-                  fontSize: '17px',
+                  fontSize: '19px',
                   fontFamily: 'Lora, serif',
                   color: active === i ? 'var(--parchment)' : 'rgba(244,240,232,0.4)',
                   transition: 'color 0.25s ease',
@@ -215,7 +215,7 @@ export function ThreeMockups({ label = 'Usage animation', heading = 'Usage anima
                   {step}
                 </span>
                 <span className="threemockups-tab-label" style={{
-                  fontSize: '22px',
+                  fontSize: '24px',
                   fontFamily: 'Lora, serif',
                   color: active === i ? 'var(--parchment)' : 'rgba(244,240,232,0.4)',
                   transition: 'color 0.25s ease',
