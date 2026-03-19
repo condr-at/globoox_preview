@@ -145,6 +145,28 @@ export function Hero({ variant = 'centered', withBooks = false, title, subtitle,
         height: 300px !important;
         width: 100% !important;
       }
+      .hero-books-row {
+        gap: 0px !important;
+        transform: rotate(90deg) !important;
+      }
+      .hero-books-row .spine-wrap:nth-child(1) {
+        transform: translateY(-8px) !important;
+      }
+      .hero-books-row .spine-wrap:nth-child(2) {
+        transform: translateY(4px) !important;
+      }
+      .hero-books-row .spine-wrap:nth-child(3) {
+        transform: translateY(-2px) !important;
+      }
+      .hero-books-row .spine-wrap:nth-child(4) {
+        transform: translateY(10px) !important;
+      }
+      .hero-books-row .spine-wrap:nth-child(5) {
+        transform: translateY(-5px) !important;
+      }
+      .spine-text-flow {
+        line-height: 0.9 !important;
+      }
       .spine-hover {
         width: 44px !important;
       }
@@ -341,8 +363,7 @@ export function Hero({ variant = 'centered', withBooks = false, title, subtitle,
               <FloatingScript style={{ bottom: '10%', left: '25%', animation: 'float 8s infinite ease-in-out', animationDelay: '1s' }}>
                 History
               </FloatingScript>
-
-              <div style={{ display: 'flex', gap: '16px', transform: 'rotate(5deg)', alignItems: 'flex-end' }}>
+              <div className="hero-books-row" style={{ display: 'flex', gap: '16px', transform: 'rotate(5deg)', alignItems: 'flex-end' }}>
                 <BookSpine title="Nexus" author="Yuval Noah Harari" height={360} bg="var(--parchment-light)" className="spine-h-416 spine-long-title" />
                 <BookSpine title="Эволюция Человека" author="А. Марков" height={396} bg="var(--parchment-light)" className="spine-evolution spine-long-title spine-longest-title" />
                 <BookSpine title="Globoox Engine" height={384} bg="var(--ink)" textColor="#E8A996" className="spine-h-442" />
