@@ -161,11 +161,15 @@ export function Hero({ variant = 'centered', withBooks = false, title, subtitle,
     /* Split variant */
     @media (max-width: 639px) {
       .hero-split {
+        overflow-x: visible !important;
+      }
+      .hero-split-inner {
         grid-template-columns: 1fr !important;
-        padding: 40px 20px !important;
         gap: 32px !important;
         min-height: auto !important;
-        overflow-x: visible !important;
+      }
+      .hero-split-inner > * {
+        min-width: 0 !important;
       }
       .hero-split-text {
         text-align: center !important;
@@ -174,6 +178,8 @@ export function Hero({ variant = 'centered', withBooks = false, title, subtitle,
       }
       .hero-books-section {
         order: 1 !important;
+        width: 100% !important;
+        min-width: 0 !important;
       }
       .hero-split-h1 {
         font-size: 36px !important;
@@ -191,11 +197,13 @@ export function Hero({ variant = 'centered', withBooks = false, title, subtitle,
       }
       .hero-books-blob {
         height: 300px !important;
-        width: 100% !important;
+        width: min(100%, 360px) !important;
+        margin: 0 auto !important;
       }
       .hero-books-row {
         gap: 0px !important;
         transform: rotate(90deg) !important;
+        transform-origin: center center !important;
       }
       .hero-books-row .spine-wrap:nth-child(1) {
         transform: translateY(-8px) !important;
@@ -244,8 +252,10 @@ export function Hero({ variant = 'centered', withBooks = false, title, subtitle,
     }
     @media (min-width: 640px) and (max-width: 1023px) {
       .hero-split {
+        overflow-x: visible !important;
+      }
+      .hero-split-inner {
         grid-template-columns: 1fr !important;
-        padding: 50px 32px !important;
         gap: 40px !important;
       }
       .hero-split-text {
@@ -302,27 +312,22 @@ export function Hero({ variant = 'centered', withBooks = false, title, subtitle,
         <section
           className="hero-split"
           style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            minHeight: '90vh',
-            alignItems: 'center',
-            gap: '60px',
             padding: '60px 40px',
-            maxWidth: '1200px',
-            margin: '0 auto',
+            width: '100%',
             background: 'var(--parchment)',
           }}
         >
-          <div
-            className="hero-split-text"
-            style={{
-              textAlign: 'left' as const,
-              zIndex: 2,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'flex-start' as const,
-            }}
-          >
+          <div className="hero-split-inner" style={{ maxWidth: '1120px', margin: '0 auto', width: '100%', display: 'grid', gridTemplateColumns: '1fr 1fr', minHeight: '90vh', alignItems: 'center', gap: '60px' }}>
+            <div
+              className="hero-split-text"
+              style={{
+                textAlign: 'left' as const,
+                zIndex: 2,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-start' as const,
+              }}
+            >
             <SectionLabel>Introducing Globoox</SectionLabel>
             <h1
               className={`hero-split-h1 ${titleClassName || ''}`}
@@ -370,33 +375,33 @@ export function Hero({ variant = 'centered', withBooks = false, title, subtitle,
             >
               Start Reading Free
             </button>
-          </div>
+            </div>
 
-          <div
-            className="hero-books-section"
-            style={{
-              position: 'relative',
-              height: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              overflow: 'visible',
-            }}
-          >
             <div
-              className="hero-books-blob"
+              className="hero-books-section"
               style={{
                 position: 'relative',
-                width: '130%',
-                height: '650px',
-                background: 'rgba(var(--primary-rgb, 192, 90, 58), 0.03)',
-                borderRadius: '260px 52px 260px 52px',
+                height: '100%',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                perspective: '1000px',
+                overflow: 'visible',
               }}
             >
+              <div
+                className="hero-books-blob"
+                style={{
+                  position: 'relative',
+                  width: '130%',
+                  height: '650px',
+                  background: 'rgba(var(--primary-rgb, 192, 90, 58), 0.03)',
+                  borderRadius: '260px 52px 260px 52px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  perspective: '1000px',
+                }}
+              >
               <FloatingScript style={{ top: '15%', left: '10%', animation: 'float 8s infinite ease-in-out' }}>
                 哲学
               </FloatingScript>
@@ -413,10 +418,11 @@ export function Hero({ variant = 'centered', withBooks = false, title, subtitle,
               </FloatingScript>
               <div className="hero-books-row" style={{ display: 'flex', gap: '16px', transform: 'rotate(5deg)', alignItems: 'flex-end' }}>
                 <BookSpine title="Nexus" author="Yuval Noah Harari" height={360} bg="var(--parchment-light)" className="spine-h-416 spine-long-title" baseZ={1} active={activeSpine === 0} onClick={() => setActiveSpine((prev) => (prev === 0 ? null : 0))} />
-                <BookSpine title="Эволюция Человека" author="А. Марков" height={396} bg="var(--parchment-light)" className="spine-evolution spine-long-title spine-longest-title" baseZ={2} active={activeSpine === 1} onClick={() => setActiveSpine((prev) => (prev === 1 ? null : 1))} />
+                <BookSpine title="Эволюция Человека" author="Александр Марков" height={396} bg="var(--parchment-light)" className="spine-evolution spine-long-title spine-longest-title" baseZ={2} active={activeSpine === 1} onClick={() => setActiveSpine((prev) => (prev === 1 ? null : 1))} />
                 <BookSpine title="Globoox Engine" height={384} bg="var(--ink)" textColor="#E8A996" className="spine-h-442" baseZ={3} active={activeSpine === 2} onClick={() => setActiveSpine((prev) => (prev === 2 ? null : 2))} />
                 <BookSpine title="Desiguales" author="Diego Castañeda Garza" height={308} bg="var(--parchment-light)" className="spine-h-364 spine-desiguales spine-long-title spine-longest-title" baseZ={4} active={activeSpine === 3} onClick={() => setActiveSpine((prev) => (prev === 3 ? null : 3))} />
                 <BookSpine title="Manet, le secret" author="Sophie Chauveau" height={360} bg="var(--parchment-light)" className="spine-h-416 spine-long-title" baseZ={5} active={activeSpine === 4} onClick={() => setActiveSpine((prev) => (prev === 4 ? null : 4))} />
+              </div>
               </div>
             </div>
           </div>
@@ -432,65 +438,60 @@ export function Hero({ variant = 'centered', withBooks = false, title, subtitle,
       <section
         className="hero-centered"
         style={{
-          display: 'flex',
-          flexDirection: 'column' as const,
-          justifyContent: 'center',
-          alignItems: 'center',
-          textAlign: 'center' as const,
           padding: '80px 40px',
-          minHeight: '80vh',
-          maxWidth: '1200px',
-          margin: '0 auto',
+          width: '100%',
           background: 'var(--parchment)',
         }}
       >
-        <SectionLabel>Introducing Globoox</SectionLabel>
-        <h1
-          className={`hero-centered-h1 ${titleClassName || ''}`}
-          style={{
-            fontFamily: "'Lora', serif",
-            fontWeight: 400,
-            letterSpacing: '-0.01em',
-            fontSize: titleClassName ? undefined : '56px',
-            lineHeight: 1.1,
-            marginBottom: '24px',
-            maxWidth: '900px',
+        <div style={{ maxWidth: '1120px', margin: '0 auto', width: '100%', minHeight: '80vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}>
+          <SectionLabel>Introducing Globoox</SectionLabel>
+          <h1
+            className={`hero-centered-h1 ${titleClassName || ''}`}
+            style={{
+              fontFamily: "'Lora', serif",
+              fontWeight: 400,
+              letterSpacing: '-0.01em',
+              fontSize: titleClassName ? undefined : '56px',
+              lineHeight: 1.1,
+              marginBottom: '24px',
+              maxWidth: '900px',
+              }}
+          >
+            {title}
+          </h1>
+          <p
+            className="hero-centered-p"
+            style={{
+              fontSize: '20px',
+              color: 'var(--ash)',
+              marginBottom: '40px',
+              maxWidth: '600px',
             }}
-        >
-          {title}
-        </h1>
-        <p
-          className="hero-centered-p"
-          style={{
-            fontSize: '20px',
-            color: 'var(--ash)',
-            marginBottom: '40px',
-            maxWidth: '600px',
-          }}
-        >
-          {subtitle}
-        </p>
-        <button
-          className="hero-centered-btn"
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
-          onClick={() => { window.location.href = '/my-books'; }}
-          style={{
-            display: 'inline-block',
-            background: isHovered ? 'var(--primary-hover)' : 'var(--primary)',
-            color: 'white',
-            padding: '16px 32px',
-            borderRadius: '8px',
-            fontWeight: 500,
-            textDecoration: 'none',
-            fontSize: '16px',
-            transition: 'background 0.2s ease',
-            border: 'none',
-            cursor: 'pointer',
-          }}
-        >
-          Start Reading Free
-        </button>
+          >
+            {subtitle}
+          </p>
+          <button
+            className="hero-centered-btn"
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+            onClick={() => { window.location.href = '/my-books'; }}
+            style={{
+              display: 'inline-block',
+              background: isHovered ? 'var(--primary-hover)' : 'var(--primary)',
+              color: 'white',
+              padding: '16px 32px',
+              borderRadius: '8px',
+              fontWeight: 500,
+              textDecoration: 'none',
+              fontSize: '16px',
+              transition: 'background 0.2s ease',
+              border: 'none',
+              cursor: 'pointer',
+            }}
+          >
+            Start Reading Free
+          </button>
+        </div>
       </section>
     </>
   );

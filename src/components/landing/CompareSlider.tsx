@@ -42,14 +42,23 @@ export function CompareSlider() {
   }, []);
 
   const readerHeader: React.CSSProperties = {
+    height: 44,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: '10px 24px',
-    borderBottom: '1px solid rgba(0,0,0,0.06)',
-    fontSize: '11px',
+    padding: '0 12px',
+    borderBottom: '0.5px solid rgba(44,59,45,0.18)',
+    fontSize: '13px',
     fontFamily: "'Inter', sans-serif",
-    letterSpacing: '0.02em',
+    position: 'relative',
+  };
+
+  const statusBarBase: React.CSSProperties = {
+    height: 22,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '12px 24px 0',
   };
 
   return (
@@ -88,10 +97,23 @@ export function CompareSlider() {
             hyphens: 'auto',
           }}
         >
+          <div style={{ ...statusBarBase, background: '#fcfcfc' }}>
+            <span style={{ color: '#2C3B2D', fontSize: 10, fontWeight: 600 }}>9:41</span>
+            <div style={{ width: 18, height: 9, border: '1.5px solid #2C3B2D', borderRadius: 2, position: 'relative', opacity: 0.6 }}>
+              <div style={{ position: 'absolute', right: -4, top: '50%', transform: 'translateY(-50%)', width: 3, height: 5, background: '#2C3B2D', borderRadius: '0 1px 1px 0' }} />
+              <div style={{ position: 'absolute', inset: 2, right: 3, background: '#2C3B2D', borderRadius: 0.5 }} />
+            </div>
+          </div>
           <div style={{ ...readerHeader, color: '#999' }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
-            <span>Human Evolution · Alexander Markov</span>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+            <svg width="8" height="13" viewBox="0 0 8 13" fill="none"><path d="M7 1L1 6.5L7 12" stroke="#C05A3A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            <div style={{ position: 'absolute', left: 40, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1.05, gap: 2, maxWidth: 'calc(100% - 106px)' }}>
+              <span style={{ color: '#2C3B2D', fontSize: 13, fontWeight: 600 }}>Human Evolution</span>
+              <span style={{ color: 'rgba(44,59,45,0.62)', fontSize: 10, fontWeight: 500 }}>Alexander Markov</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: '#C05A3A' }}>EN</span>
+              <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="#C05A3A" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            </div>
           </div>
           <div className="compare-text-pad" style={{ flex: 1, overflow: 'hidden', padding: '28px 32px' }}>
             <div style={{ maxWidth: '480px', margin: '0 auto' }}>
@@ -123,10 +145,23 @@ export function CompareSlider() {
             hyphens: 'auto',
           }}
         >
+          <div style={{ ...statusBarBase, background: '#fffbf9' }}>
+            <span style={{ color: '#2C3B2D', fontSize: 10, fontWeight: 600 }}>9:41</span>
+            <div style={{ width: 18, height: 9, border: '1.5px solid #2C3B2D', borderRadius: 2, position: 'relative', opacity: 0.6 }}>
+              <div style={{ position: 'absolute', right: -4, top: '50%', transform: 'translateY(-50%)', width: 3, height: 5, background: '#2C3B2D', borderRadius: '0 1px 1px 0' }} />
+              <div style={{ position: 'absolute', inset: 2, right: 3, background: '#2C3B2D', borderRadius: 0.5 }} />
+            </div>
+          </div>
           <div style={{ ...readerHeader, color: 'var(--dusk)', borderBottomColor: 'rgba(178,80,50,0.1)' }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--dusk)" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
-            <span>Эволюция Человека · А. Марков</span>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--dusk)" strokeWidth="2"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+            <svg width="8" height="13" viewBox="0 0 8 13" fill="none"><path d="M7 1L1 6.5L7 12" stroke="#C05A3A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            <div style={{ position: 'absolute', left: 40, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1.05, gap: 2, maxWidth: 'calc(100% - 106px)' }}>
+              <span style={{ color: '#CB694A', fontSize: 13, fontWeight: 600 }}>Эволюция Человека</span>
+              <span style={{ color: '#d59d8c', fontSize: 10, fontWeight: 500 }}>Александр Марков</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: '#C05A3A' }}>RU</span>
+              <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="#C05A3A" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            </div>
           </div>
           <div className="compare-text-pad" style={{ flex: 1, overflow: 'hidden', padding: '28px 32px' }}>
             <div style={{ maxWidth: '480px', margin: '0 auto' }}>

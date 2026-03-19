@@ -132,12 +132,12 @@ export function QualityAssuranceV2({ label, heading, description }: QualityAssur
             style={{
               width: '100%',
               aspectRatio: '9 / 19.5',
-              background: '#1A1A1A',
+              background: '#C8C4BC',
               borderRadius: '40px',
               padding: '3%',
               boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
               position: 'relative',
-              border: '3px solid #333',
+              border: '3px solid #C8C4BC',
             }}
           >
             <div
@@ -150,21 +150,7 @@ export function QualityAssuranceV2({ label, heading, description }: QualityAssur
                 position: 'relative',
               }}
             >
-              {/* Dynamic Island */}
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '10px',
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  width: '72px',
-                  height: '20px',
-                  background: '#000',
-                  borderRadius: '20px',
-                  zIndex: 10,
-                }}
-              />
-              <div className="device-screen-slider" style={{ width: '100%', height: '100%', paddingTop: '36px', background: '#fcfcfc' }}>
+              <div className="device-screen-slider" style={{ width: '100%', height: '100%', background: '#fcfcfc' }}>
                 <CompareSlider />
               </div>
             </div>
@@ -182,8 +168,8 @@ export function QualityAssuranceV2({ label, heading, description }: QualityAssur
         .device-tablet { display: none !important; }
         .device-iphone { display: block !important; }
 
-        /* ≥640px: show tablet */
-        @media (min-width: 640px) {
+        /* ≥440px: show tablet */
+        @media (min-width: 440px) {
           .device-iphone { display: none !important; }
           .device-tablet { display: block !important; }
         }
