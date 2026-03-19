@@ -1,9 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { MyBooksMockup } from './MyBooksMockup';
-import { ReaderMockup } from './ReaderMockup';
-import { EnjoyMockup } from './EnjoyMockup';
+import { ContinuousMockup } from './ContinuousMockup';
 
 interface ThreeMockupsProps {
   label?: string;
@@ -18,6 +16,8 @@ const steps = [
 
 export function ThreeMockups({ label = 'How It Works', heading = 'Three simple steps.' }: ThreeMockupsProps) {
   const [active, setActive] = useState(0);
+  const [jumpTo, setJumpTo] = useState<0 | 1 | 2 | null>(null);
+  const jumpKeyRef = useRef(0); // increment to re-trigger same-tab jumps
   const scrollRef = useRef<HTMLDivElement>(null);
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
@@ -34,16 +34,17 @@ export function ThreeMockups({ label = 'How It Works', heading = 'Three simple s
     });
   }, []);
 
-  const handleCycleEnd = useCallback(() => {
-    setActive(prev => {
-      const next = (prev + 1) % 3;
-      // scroll on next frame so state has updated
-      requestAnimationFrame(() => scrollToTab(next));
-      return next;
-    });
+  const handleStepChange = useCallback((step: 0 | 1 | 2) => {
+    setActive(step);
+    requestAnimationFrame(() => scrollToTab(step));
   }, [scrollToTab]);
 
-  // scroll to active tab when active changes (covers manual clicks too)
+  const handleTabClick = useCallback((i: number) => {
+    jumpKeyRef.current += 1;
+    setJumpTo(i as 0 | 1 | 2);
+  }, []);
+
+  // scroll to active tab when active changes
   useEffect(() => {
     scrollToTab(active);
   }, [active, scrollToTab]);
@@ -110,7 +111,7 @@ export function ThreeMockups({ label = 'How It Works', heading = 'Three simple s
               <button
                 key={i}
                 ref={el => { tabRefs.current[i] = el; }}
-                onClick={() => setActive(i)}
+                onClick={() => handleTabClick(i)}
                 style={{
                   flexShrink: 0,
                   height: '80px',
@@ -179,9 +180,7 @@ export function ThreeMockups({ label = 'How It Works', heading = 'Three simple s
         }}>
           {/* Mockup */}
           <div className="threemockups-mockup" style={{ flexShrink: 0, width: '320px' }}>
-            {active === 0 && <MyBooksMockup onCycleEnd={handleCycleEnd} />}
-            {active === 1 && <ReaderMockup onCycleEnd={handleCycleEnd} />}
-            {active === 2 && <EnjoyMockup onCycleEnd={handleCycleEnd} />}
+            <ContinuousMockup jumpTo={jumpTo} onStepChange={handleStepChange} />
           </div>
 
           {/* Desktop/tablet vertical tabs */}
@@ -189,7 +188,7 @@ export function ThreeMockups({ label = 'How It Works', heading = 'Three simple s
             {steps.map(({ step, description }, i) => (
               <button
                 key={i}
-                onClick={() => setActive(i)}
+                onClick={() => handleTabClick(i)}
                 style={{
                   display: 'flex',
                   flexDirection: 'column',

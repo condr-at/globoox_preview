@@ -48,8 +48,8 @@ const T3_PAUSE_BACK   = 500;
 const T3_READ_PAGE1B  = 3200;
 const T3_TAP_SHOW     = 120;
 const T3_HOLD         = 1200;
-const T3_FADE_OUT     = 900;
-const T3_FADE_IN      = 700;
+const T3_BACK_TAP     = 160;
+const T3_BACK_SKEL    = 950;
 
 const DRAWER_ZONE_H = 110;
 
@@ -169,8 +169,8 @@ type Phase =
   | 'p3-page1b-read'
   | 'p3-tap-show'
   | 'p3-hold'
-  | 'p3-fade-out'
-  | 'p3-fade-in';
+  | 'p3-back-tap'
+  | 'p3-back-skel';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 function Ripple({ active, color = 'rgba(255,255,255,0.5)', radius = 6, clip = true, duration = 350, x, y, size = '300%' }: {
@@ -450,21 +450,28 @@ function StatusBar() {
 }
 
 // ─── main ─────────────────────────────────────────────────────────────────────
-export function ContinuousMockup({ onCycleEnd }: { onCycleEnd?: () => void } = {}) {
+export function ContinuousMockup({
+  onCycleEnd,
+  jumpTo,
+  onStepChange,
+}: {
+  onCycleEnd?: () => void;
+  jumpTo?: 0 | 1 | 2 | null;
+  onStepChange?: (step: 0 | 1 | 2) => void;
+} = {}) {
   const [phase, setPhase]               = useState<Phase>('p1-idle');
   const [uploadPct, setUploadPct]       = useState(0);
   const [showNewBook, setShowNewBook]   = useState(false);
   const [newBookFirst, setNewBookFirst] = useState(false);
-  const [fadeOpacity, setFadeOpacity]   = useState(0);
   const [scale, setScale]               = useState(1);
   // Phase 3 state
   const [pageIdx, setPageIdx]           = useState(0);
   const [swipeDir, setSwipeDir]         = useState<'left' | 'right' | null>(null);
   const [revealedCount, setRevealedCount] = useState(5);
 
-  const outerRef  = useRef<HTMLDivElement>(null);
-  const timerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const rafRef    = useRef<number | null>(null);
+  const outerRef    = useRef<HTMLDivElement>(null);
+  const timerRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rafRef      = useRef<number | null>(null);
 
   // scale observer
   useEffect(() => {
@@ -481,36 +488,177 @@ export function ContinuousMockup({ onCycleEnd }: { onCycleEnd?: () => void } = {
     return () => ro.disconnect();
   }, []);
 
+  const clearTimers = useCallback(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+  }, []);
+
   const schedule = useCallback((fn: () => void, delay: number) => {
     timerRef.current = setTimeout(fn, delay);
   }, []);
 
-  const runCycle = useCallback(() => {
-    // reset all state
-    setPhase('p1-idle');
+  const notifyStep = useCallback((p: Phase) => {
+    if (!onStepChange) return;
+    if (p.startsWith('p1-')) onStepChange(0);
+    else if (p.startsWith('p2-')) onStepChange(1);
+    else if (p.startsWith('p3-')) onStepChange(2);
+  }, [onStepChange]);
+
+  const setPhaseNotify = useCallback((p: Phase) => {
+    setPhase(p);
+    notifyStep(p);
+  }, [notifyStep]);
+
+  const runPhase3 = useCallback(() => {
+    setPhaseNotify('p3-reader-idle');
+    setPageIdx(0);
+    setRevealedCount(5);
+    setSwipeDir(null);
+
+    schedule(() => {
+      setPhaseNotify('p3-tap-hide');
+      schedule(() => {
+        setPhaseNotify('p3-immersive');
+        schedule(() => {
+          setRevealedCount(0);
+          setSwipeDir('left');
+          setPhaseNotify('p3-swipe-1');
+          schedule(() => {
+            setPageIdx(1);
+            setSwipeDir(null);
+            setPhaseNotify('p3-page2-reveal');
+            [1,2,3,4,5].forEach(i => schedule(() => setRevealedCount(i), i * T3_REVEAL_STEP));
+            schedule(() => {
+              setPhaseNotify('p3-page2-read');
+              schedule(() => {
+                setRevealedCount(0);
+                setSwipeDir('left');
+                setPhaseNotify('p3-swipe-2');
+                schedule(() => {
+                  setPageIdx(2);
+                  setSwipeDir(null);
+                  setPhaseNotify('p3-page3-reveal');
+                  [1,2,3,4,5].forEach(i => schedule(() => setRevealedCount(i), i * T3_REVEAL_STEP));
+                  schedule(() => {
+                    setPhaseNotify('p3-page3-read');
+                    schedule(() => {
+                      setSwipeDir('right');
+                      setPhaseNotify('p3-swipe-3');
+                      schedule(() => {
+                        setPageIdx(1);
+                        setRevealedCount(5);
+                        setSwipeDir(null);
+                        setPhaseNotify('p3-page2b-read');
+                        schedule(() => {
+                          setSwipeDir('right');
+                          setPhaseNotify('p3-swipe-4');
+                          schedule(() => {
+                            setPageIdx(0);
+                            setRevealedCount(5);
+                            setSwipeDir(null);
+                            setPhaseNotify('p3-page1b-read');
+                            schedule(() => {
+                              setPhaseNotify('p3-tap-show');
+                              schedule(() => {
+                                setPhaseNotify('p3-hold');
+                                schedule(() => {
+                                  setPhaseNotify('p3-back-tap');
+                                  schedule(() => {
+                                    setPhaseNotify('p3-back-skel');
+                                    schedule(() => {
+                                      onCycleEnd?.();
+                                      runCycle();
+                                    }, T3_BACK_SKEL);
+                                  }, T3_BACK_TAP);
+                                }, T3_HOLD);
+                              }, T3_TAP_SHOW);
+                            }, T3_READ_PAGE1B);
+                          }, T3_SWIPE_BACK);
+                        }, T3_PAUSE_BACK);
+                      }, T3_SWIPE_BACK);
+                    }, T3_READ_PAGE3);
+                  }, 5 * T3_REVEAL_STEP + 400);
+                }, T3_SWIPE);
+              }, T3_READ_PAGE2);
+            }, 5 * T3_REVEAL_STEP + 400);
+          }, T3_SWIPE);
+        }, T3_IMMERSIVE);
+      }, T3_TAP_HIDE);
+    }, 0);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [schedule, setPhaseNotify]);
+
+  const runPhase2 = useCallback(() => {
+    setPhaseNotify('p2-book-tap');
+    schedule(() => {
+      setPhaseNotify('p2-reader-skeleton');
+      schedule(() => {
+        setPhaseNotify('p2-reader-open');
+        schedule(() => {
+          setPhaseNotify('p2-reader-idle');
+          schedule(() => {
+            setPhaseNotify('p2-lang-tap');
+            schedule(() => {
+              setPhaseNotify('p2-dropdown-open');
+              schedule(() => {
+                setPhaseNotify('p2-hover-0');
+                schedule(() => {
+                  setPhaseNotify('p2-hover-1');
+                  schedule(() => {
+                    setPhaseNotify('p2-hover-2');
+                    schedule(() => {
+                      setPhaseNotify('p2-lang-select');
+                      schedule(() => {
+                        setPhaseNotify('p2-modal-show');
+                        schedule(() => {
+                          setPhaseNotify('p2-modal-idle');
+                          schedule(() => {
+                            setPhaseNotify('p2-modal-tap');
+                            schedule(() => {
+                              setPhaseNotify('p2-translating');
+                              schedule(() => {
+                                setPhaseNotify('p2-translated');
+                                schedule(() => {
+                                  setPhaseNotify('p2-hold');
+                                  schedule(() => runPhase3(), T2_HOLD);
+                                }, T2_TRANSLATED);
+                              }, T2_TRANSLATING);
+                            }, T2_MODAL_TAP);
+                          }, T2_MODAL_IDLE);
+                        }, T2_MODAL_APPEAR);
+                      }, T2_LANG_SELECT);
+                    }, T2_HOVER_STEP);
+                  }, T2_HOVER_STEP);
+                }, T2_HOVER_STEP);
+              }, T2_DROPDOWN);
+            }, T2_LANG_TAP);
+          }, T2_READER_IDLE);
+        }, T2_READER_OPEN);
+      }, T2_READER_SKEL);
+    }, T2_BOOK_TAP);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [schedule, setPhaseNotify]);
+
+  const runPhase1 = useCallback(() => {
+    setPhaseNotify('p1-idle');
     setUploadPct(0);
     setShowNewBook(false);
     setNewBookFirst(false);
-    setFadeOpacity(0);
-    setPageIdx(0);
-    setSwipeDir(null);
-    setRevealedCount(5);
 
-    // ── PHASE 1: My Books ──────────────────────────────────────────────────────
     schedule(() => {
-      setPhase('p1-btn-flash');
+      setPhaseNotify('p1-btn-flash');
       schedule(() => {
-        setPhase('p1-drawer-empty');
+        setPhaseNotify('p1-drawer-empty');
         schedule(() => {
-          setPhase('p1-tap-flash');
+          setPhaseNotify('p1-tap-flash');
           schedule(() => {
-            setPhase('p1-spinner');
+            setPhaseNotify('p1-spinner');
             schedule(() => {
-              setPhase('p1-file-ready');
+              setPhaseNotify('p1-file-ready');
               schedule(() => {
-                setPhase('p1-upload-tap');
+                setPhaseNotify('p1-upload-tap');
                 schedule(() => {
-                  setPhase('p1-uploading');
+                  setPhaseNotify('p1-uploading');
                   const start = performance.now();
                   const animateProgress = (now: number) => {
                     const pct = Math.min(100, ((now - start) / T1_UPLOADING) * 100);
@@ -518,12 +666,12 @@ export function ContinuousMockup({ onCycleEnd }: { onCycleEnd?: () => void } = {
                     if (pct < 100) {
                       rafRef.current = requestAnimationFrame(animateProgress);
                     } else {
-                      setPhase('p1-upload-done');
+                      setPhaseNotify('p1-upload-done');
                       schedule(() => {
-                        setPhase('p1-drawer-closing');
+                        setPhaseNotify('p1-drawer-closing');
                         schedule(() => {
                           schedule(() => {
-                            setPhase('p1-book-appear');
+                            setPhaseNotify('p1-book-appear');
                             rafRef.current = requestAnimationFrame(() => {
                               rafRef.current = requestAnimationFrame(() => {
                                 setNewBookFirst(true);
@@ -531,169 +679,10 @@ export function ContinuousMockup({ onCycleEnd }: { onCycleEnd?: () => void } = {
                               });
                             });
                             schedule(() => {
-                              setPhase('p1-book-reorder');
+                              setPhaseNotify('p1-book-reorder');
                               schedule(() => {
-                                setPhase('p1-hold');
-
-                                // ── СТЫК 1→2: из hold сразу тап по книге ──
-                                schedule(() => {
-
-                                  // ── PHASE 2: Reader ────────────────────────────────────────────────────
-                                  setPhase('p2-book-tap');
-                                  schedule(() => {
-                                    setPhase('p2-reader-skeleton');
-                                    schedule(() => {
-                                      setPhase('p2-reader-open');
-                                      schedule(() => {
-                                        setPhase('p2-reader-idle');
-                                        schedule(() => {
-                                          setPhase('p2-lang-tap');
-                                          schedule(() => {
-                                            setPhase('p2-dropdown-open');
-                                            schedule(() => {
-                                              setPhase('p2-hover-0');
-                                              schedule(() => {
-                                                setPhase('p2-hover-1');
-                                                schedule(() => {
-                                                  setPhase('p2-hover-2');
-                                                  schedule(() => {
-                                                    setPhase('p2-lang-select');
-                                                    schedule(() => {
-                                                      setPhase('p2-modal-show');
-                                                      schedule(() => {
-                                                        setPhase('p2-modal-idle');
-                                                        schedule(() => {
-                                                          setPhase('p2-modal-tap');
-                                                          schedule(() => {
-                                                            setPhase('p2-translating');
-                                                            schedule(() => {
-                                                              setPhase('p2-translated');
-                                                              schedule(() => {
-                                                                setPhase('p2-hold');
-
-                                                                // ── СТЫК 2→3: из hold сразу к Enjoy ──
-                                                                schedule(() => {
-
-                                                                  // ── PHASE 3: Enjoy ────────────────────────────
-                                                                  setPhase('p3-reader-idle');
-                                                                  setPageIdx(0);
-                                                                  setRevealedCount(5);
-                                                                  setSwipeDir(null);
-
-                                                                  schedule(() => {
-                                                                    setPhase('p3-tap-hide');
-                                                                    schedule(() => {
-                                                                      setPhase('p3-immersive');
-                                                                      schedule(() => {
-                                                                        // swipe → page 2
-                                                                        setRevealedCount(0);
-                                                                        setSwipeDir('left');
-                                                                        setPhase('p3-swipe-1');
-                                                                        schedule(() => {
-                                                                          setPageIdx(1);
-                                                                          setSwipeDir(null);
-                                                                          setPhase('p3-page2-reveal');
-                                                                          [1,2,3,4,5].forEach(i => schedule(() => setRevealedCount(i), i * T3_REVEAL_STEP));
-                                                                          schedule(() => {
-                                                                            setPhase('p3-page2-read');
-                                                                            schedule(() => {
-                                                                              // swipe → page 3
-                                                                              setRevealedCount(0);
-                                                                              setSwipeDir('left');
-                                                                              setPhase('p3-swipe-2');
-                                                                              schedule(() => {
-                                                                                setPageIdx(2);
-                                                                                setSwipeDir(null);
-                                                                                setPhase('p3-page3-reveal');
-                                                                                [1,2,3,4,5].forEach(i => schedule(() => setRevealedCount(i), i * T3_REVEAL_STEP));
-                                                                                schedule(() => {
-                                                                                  setPhase('p3-page3-read');
-                                                                                  schedule(() => {
-                                                                                    // swipe back → page 2
-                                                                                    setSwipeDir('right');
-                                                                                    setPhase('p3-swipe-3');
-                                                                                    schedule(() => {
-                                                                                      setPageIdx(1);
-                                                                                      setRevealedCount(5);
-                                                                                      setSwipeDir(null);
-                                                                                      setPhase('p3-page2b-read');
-                                                                                      schedule(() => {
-                                                                                        // swipe back → page 1
-                                                                                        setSwipeDir('right');
-                                                                                        setPhase('p3-swipe-4');
-                                                                                        schedule(() => {
-                                                                                          setPageIdx(0);
-                                                                                          setRevealedCount(5);
-                                                                                          setSwipeDir(null);
-                                                                                          setPhase('p3-page1b-read');
-                                                                                          schedule(() => {
-                                                                                            setPhase('p3-tap-show');
-                                                                                            schedule(() => {
-                                                                                              setPhase('p3-hold');
-                                                                                              schedule(() => {
-                                                                                                // fade out → restart
-                                                                                                setPhase('p3-fade-out');
-                                                                                                let op = 0;
-                                                                                                const step = 16 / T3_FADE_OUT;
-                                                                                                const fadeOut = () => {
-                                                                                                  op = Math.min(1, op + step);
-                                                                                                  setFadeOpacity(op);
-                                                                                                  if (op < 1) {
-                                                                                                    rafRef.current = requestAnimationFrame(fadeOut);
-                                                                                                  } else {
-                                                                                                    setPhase('p3-fade-in');
-                                                                                                    let op2 = 1;
-                                                                                                    const stepIn = 16 / T3_FADE_IN;
-                                                                                                    schedule(() => {
-                                                                                                      const fadeIn = () => {
-                                                                                                        op2 = Math.max(0, op2 - stepIn);
-                                                                                                        setFadeOpacity(op2);
-                                                                                                        if (op2 > 0) {
-                                                                                                          rafRef.current = requestAnimationFrame(fadeIn);
-                                                                                                        } else {
-                                                                                                          onCycleEnd?.();
-                                                                                                          runCycle();
-                                                                                                        }
-                                                                                                      };
-                                                                                                      rafRef.current = requestAnimationFrame(fadeIn);
-                                                                                                    }, 80);
-                                                                                                  }
-                                                                                                };
-                                                                                                rafRef.current = requestAnimationFrame(fadeOut);
-                                                                                              }, T3_HOLD);
-                                                                                            }, T3_TAP_SHOW);
-                                                                                          }, T3_READ_PAGE1B);
-                                                                                        }, T3_SWIPE_BACK);
-                                                                                      }, T3_PAUSE_BACK);
-                                                                                    }, T3_SWIPE_BACK);
-                                                                                  }, T3_READ_PAGE3);
-                                                                                }, 5 * T3_REVEAL_STEP + 400);
-                                                                              }, T3_SWIPE);
-                                                                            }, T3_READ_PAGE2);
-                                                                          }, 5 * T3_REVEAL_STEP + 400);
-                                                                        }, T3_SWIPE);
-                                                                      }, T3_IMMERSIVE);
-                                                                    }, T3_TAP_HIDE);
-                                                                  }, T3_IDLE || 0);
-
-                                                                }, T2_HOLD);
-                                                              }, T2_TRANSLATED);
-                                                            }, T2_TRANSLATING);
-                                                          }, T2_MODAL_TAP);
-                                                        }, T2_MODAL_IDLE);
-                                                      }, T2_MODAL_APPEAR);
-                                                    }, T2_LANG_SELECT);
-                                                  }, T2_HOVER_STEP);
-                                                }, T2_HOVER_STEP);
-                                              }, T2_HOVER_STEP);
-                                            }, T2_DROPDOWN);
-                                          }, T2_LANG_TAP);
-                                        }, T2_READER_IDLE);
-                                      }, T2_READER_OPEN);
-                                    }, T2_READER_SKEL);
-                                  }, T2_BOOK_TAP);
-
-                                }, T1_HOLD);
+                                setPhaseNotify('p1-hold');
+                                schedule(() => runPhase2(), T1_HOLD);
                               }, T1_BOOK_REORDER);
                             }, T1_PAUSE_BOOK);
                           }, T1_DRAWER_CLOSE);
@@ -710,7 +699,38 @@ export function ContinuousMockup({ onCycleEnd }: { onCycleEnd?: () => void } = {
       }, T1_BTN_FLASH);
     }, T1_IDLE);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [schedule]);
+  }, [schedule, setPhaseNotify]);
+
+  const runFromStep = useCallback((step: 0 | 1 | 2) => {
+    setUploadPct(0);
+    setShowNewBook(false);
+    setNewBookFirst(false);
+
+    setPageIdx(0);
+    setSwipeDir(null);
+    setRevealedCount(5);
+    if (step === 0) runPhase1();
+    else if (step === 1) runPhase2();
+    else runPhase3();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [runPhase1, runPhase2, runPhase3]);
+
+  // external jump handler — instant, no fade
+  useEffect(() => {
+    if (jumpTo == null) return;
+    clearTimers();
+    runFromStep(jumpTo);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jumpTo]);
+
+  const runCycle = useCallback(() => {
+
+    setPageIdx(0);
+    setSwipeDir(null);
+    setRevealedCount(5);
+    runPhase1();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [runPhase1]);
 
   useEffect(() => {
     runCycle();
@@ -727,6 +747,8 @@ export function ContinuousMockup({ onCycleEnd }: { onCycleEnd?: () => void } = {
   const isPhase3 = phase.startsWith('p3-');
 
   // Phase 1 derived
+  // keep phase1 visible during p2-book-tap so no duplicate library flash
+  const isPhase1Visible = isPhase1 || phase === 'p2-book-tap';
   const drawerOpen   = isPhase1 && ['p1-drawer-empty','p1-tap-flash','p1-spinner','p1-file-ready','p1-upload-tap','p1-uploading','p1-upload-done'].includes(phase);
   const btnFlash     = phase === 'p1-btn-flash';
   const p1ScrollOffset = drawerOpen ? -60 : 0;
@@ -737,9 +759,7 @@ export function ContinuousMockup({ onCycleEnd }: { onCycleEnd?: () => void } = {
   const bookSlot = (bookIdx: number) => newBookFirst ? bookIdx : (bookIdx === 0 ? 5 : bookIdx - 1);
 
   // Phase 2 derived
-  const inReader       = isPhase2 && !['p2-book-tap'].includes(phase);
   const showReaderSkel = phase === 'p2-reader-skeleton';
-  const bookTapped     = phase === 'p2-book-tap';
   const dropdownOpen   = ['p2-dropdown-open','p2-hover-0','p2-hover-1','p2-hover-2','p2-lang-select'].includes(phase);
   const langTapped     = phase === 'p2-lang-tap';
   const hoveredIndex   = phase === 'p2-hover-0' ? 0 : phase === 'p2-hover-1' ? 1 : (phase === 'p2-hover-2' || phase === 'p2-lang-select') ? 2 : -1;
@@ -753,7 +773,9 @@ export function ContinuousMockup({ onCycleEnd }: { onCycleEnd?: () => void } = {
   const glowActive     = modalVisible || isTranslating;
 
   // Phase 3 derived
-  const p3ChromeVisible = ['p3-reader-idle','p3-tap-hide','p3-tap-show','p3-hold','p3-fade-out','p3-fade-in'].includes(phase);
+  const p3ChromeVisible = ['p3-reader-idle','p3-tap-hide','p3-tap-show','p3-hold','p3-back-tap'].includes(phase);
+  const p3BackTap = phase === 'p3-back-tap';
+  const p3BackSkel = phase === 'p3-back-skel';
   const isSwiping       = swipeDir !== null && isPhase3;
   const swipeLeft       = swipeDir === 'left';
   const incomingPageIdx = swipeLeft ? (pageIdx + 1) % PAGES.length : (pageIdx - 1 + PAGES.length) % PAGES.length;
@@ -790,8 +812,7 @@ export function ContinuousMockup({ onCycleEnd }: { onCycleEnd?: () => void } = {
         ═══════════════════════════════════════════════════════════════════ */}
         <div style={{
           position: 'absolute', inset: 0,
-          opacity: isPhase1 ? 1 : 0,
-          transition: 'opacity 0.35s ease-in-out',
+          opacity: isPhase1Visible ? 1 : 0,
           pointerEvents: 'none',
           backgroundColor: C.bg,
         }}>
@@ -853,6 +874,8 @@ export function ContinuousMockup({ onCycleEnd }: { onCycleEnd?: () => void } = {
                     <div style={{
                       width: '100%', aspectRatio: '2/3', borderRadius: 6, backgroundColor: book.color,
                       position: 'relative', overflow: 'hidden', boxShadow: `0 2px 8px ${C.coverShadow}`,
+                      transform: (isNew && phase === 'p2-book-tap') ? 'scale(0.93)' : 'scale(1)',
+                      transition: 'transform 0.12s ease-out',
                     }}>
                       <div style={{ position: 'absolute', bottom: 10, left: 7, right: 7 }}>
                         <div style={{ height: 3, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.7)', marginBottom: 3, width: '88%' }} />
@@ -864,6 +887,7 @@ export function ContinuousMockup({ onCycleEnd }: { onCycleEnd?: () => void } = {
                           <div style={{ height: '100%', width: `${book.progress}%`, backgroundColor: C.accent }} />
                         </div>
                       )}
+                      {isNew && <Ripple active={phase === 'p2-book-tap'} color="rgba(255,255,255,0.5)" radius={6} />}
                     </div>
                     <div style={{ marginTop: 5 }}>
                       <div style={{ color: C.text, fontSize: 10, fontWeight: 500, lineHeight: 1.35, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{book.title}</div>
@@ -893,126 +917,89 @@ export function ContinuousMockup({ onCycleEnd }: { onCycleEnd?: () => void } = {
         ═══════════════════════════════════════════════════════════════════ */}
         <div style={{
           position: 'absolute', inset: 0,
-          opacity: isPhase2 ? 1 : 0,
-          transition: 'opacity 0.35s ease-in-out',
+          opacity: isPhase2 && phase !== 'p2-book-tap' ? 1 : 0,
           pointerEvents: 'none',
           backgroundColor: C.bg,
         }}>
-          {/* Library view (book-tap state) */}
+          {/* Reader header — same layout as phase 3 */}
+          <StatusBar />
           <div style={{
-            position: 'absolute', inset: 0,
-            opacity: bookTapped ? 1 : 0,
-            transition: 'opacity 0.35s ease-in-out',
-            backgroundColor: C.bg,
+            position: 'absolute', top: 22, left: 0, right: 0,
+            height: 44, backgroundColor: C.header, borderBottom: `0.5px solid ${C.separator}`,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 12px',
+            zIndex: 10,
           }}>
-            <StatusBar />
-            <div style={{ height: 44, backgroundColor: C.header, borderBottom: `0.5px solid ${C.separator}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px' }}>
-              <span style={{ color: C.text, fontSize: 17, fontWeight: 600 }}>My Books</span>
-              <div style={{ backgroundColor: C.accentBg, color: C.accent, borderRadius: 8, padding: '5px 12px', fontSize: 13, fontWeight: 600 }}>+ Add</div>
+            <div style={{ display: 'flex', alignItems: 'center', paddingLeft: 4 }}>
+              <svg width="8" height="13" viewBox="0 0 8 13" fill="none">
+                <path d="M7 1L1 6.5L7 12" stroke={C.accent} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
             </div>
-            <div style={{ display: 'flex', gap: 8, padding: '10px 16px', backgroundColor: C.bg }}>
-              {['Visible', 'Hidden', 'All'].map((f, i) => (
-                <div key={f} style={{ padding: '4px 12px', borderRadius: 16, fontSize: 12, fontWeight: 500, backgroundColor: i === 0 ? C.accent : 'transparent', color: i === 0 ? '#fff' : C.textSecond, border: i === 0 ? 'none' : `1px solid ${C.separator}` }}>{f}</div>
-              ))}
+            <span style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', fontSize: 13, fontWeight: 600, color: C.text }}>Meditations</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 2, opacity: langTapped ? 0.5 : 1, transition: 'opacity 0.1s ease', position: 'relative', padding: '4px 6px', borderRadius: 6, overflow: 'hidden' }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: C.accent }}>{currentLang}</span>
+              <svg width="10" height="6" viewBox="0 0 10 6" fill="none" style={{ transform: dropdownOpen ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s ease' }}>
+                <path d="M1 1L5 5L9 1" stroke={C.accent} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              <Ripple active={langTapped} />
             </div>
-            <div style={{ padding: '4px 16px 16px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
-              <div style={{ position: 'relative' }}>
-                <MiniCover color={NEW_BOOK.color} progress={0} tapped={bookTapped} />
-                <Ripple active={bookTapped} />
-                <div style={{ marginTop: 5 }}>
-                  <div style={{ color: C.text, fontSize: 10, fontWeight: 500, lineHeight: 1.35, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{NEW_BOOK.title}</div>
-                  <div style={{ color: C.textMuted, fontSize: 9, marginTop: 2 }}>{NEW_BOOK.author}</div>
-                </div>
-              </div>
-              {EXISTING_BOOKS.map(b => (
-                <div key={b.title}>
-                  <MiniCover color={b.color} progress={b.progress} />
-                  <div style={{ marginTop: 5 }}>
-                    <div style={{ color: C.text, fontSize: 10, fontWeight: 500, lineHeight: 1.35, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{b.title}</div>
-                    <div style={{ color: C.textMuted, fontSize: 9, marginTop: 2 }}>{b.author}</div>
+            <Ripple active={langTapped} color="rgba(192,90,58,0.06)" clip={false} duration={600} x={304} y={22} size="500%" />
+
+            {dropdownOpen && (
+              <div style={{
+                position: 'absolute', top: 42, right: 8, width: 160,
+                backgroundColor: C.dropdownBg, borderRadius: 12,
+                boxShadow: '0 4px 24px rgba(0,0,0,0.14)', border: `0.5px solid ${C.separator}`,
+                overflow: 'hidden', zIndex: 30,
+              }}>
+                {LANGS.map((lang, i) => (
+                  <div key={lang} style={{ position: 'relative' }}>
+                    <div style={{
+                      padding: '10px 14px', fontSize: 14, color: C.text,
+                      backgroundColor: hoveredIndex === i ? C.accentBg : 'transparent',
+                      transition: 'background-color 0.15s ease', position: 'relative', overflow: 'hidden',
+                    }}>
+                      {lang}
+                      {i === 2 && <Ripple active={phase === 'p2-lang-select'} color="rgba(192,90,58,0.2)" radius={0} />}
+                    </div>
+                    {i < LANGS.length - 1 && <div style={{ height: 0.5, backgroundColor: C.separator, marginLeft: 14 }} />}
                   </div>
-                </div>
-              ))}
-            </div>
-            <TabBar activeTab="books" />
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* Reader view */}
+          {/* Content — same absolute layout as phase 3 */}
+          <div style={{ position: 'absolute', top: 22 + 44, bottom: 36, left: 0, right: 0, overflow: 'hidden', padding: '4px 20px 16px' }}>
+            {textLines.map((line, i) => (
+              <p key={`${isTranslated ? 'en' : 'gr'}-${i}`} style={{
+                fontSize: i === 0 ? 13 : 14, fontWeight: i === 0 ? 600 : 400,
+                color: i === 0 ? C.textSecond : C.text, lineHeight: 1.65,
+                marginBottom: i === 0 ? 14 : 10,
+                filter: textBlur ? 'blur(3px)' : 'none',
+                opacity: textBlur ? 0.4 : 1,
+                transition: textBlur ? 'none' : `filter 0.5s ease-out ${i * 0.12}s, opacity 0.5s ease-out ${i * 0.12}s`,
+              }}>{line}</p>
+            ))}
+            {isTranslating && (
+              <div style={{ position: 'absolute', top: '40%', left: 0, right: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+                <span style={{
+                  fontSize: 16, fontWeight: 600, letterSpacing: '0.04em',
+                  background: `linear-gradient(90deg, rgba(192,90,58,0.2) 0%, rgba(192,90,58,0.2) 30%, ${C.accent} 50%, rgba(192,90,58,0.2) 70%, rgba(192,90,58,0.2) 100%)`,
+                  backgroundSize: '200% 100%', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+                  animation: 'contmock-shimmer 1.8s linear infinite',
+                }}>Translating...</span>
+              </div>
+            )}
+          </div>
+
+          {/* Footer — same as phase 3 */}
           <div style={{
-            position: 'absolute', inset: 0,
-            opacity: inReader ? 1 : 0,
-            transition: 'opacity 0.35s ease-in-out',
-            backgroundColor: C.bg,
-            display: 'flex', flexDirection: 'column',
+            position: 'absolute', bottom: 0, left: 0, right: 0, height: 36,
+            backgroundColor: C.bg, borderTop: `0.5px solid ${C.separator}`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
           }}>
-            <StatusBar />
-            <div style={{ height: 44, backgroundColor: C.header, borderBottom: `0.5px solid ${C.separator}`, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 12px', position: 'relative' }}>
-              <div style={{ display: 'flex', alignItems: 'center', paddingLeft: 4 }}>
-                <svg width="8" height="13" viewBox="0 0 8 13" fill="none">
-                  <path d="M7 1L1 6.5L7 12" stroke={C.accent} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
-              <span style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', fontSize: 13, fontWeight: 600, color: C.text }}>Meditations</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 2, opacity: langTapped ? 0.5 : 1, transition: 'opacity 0.1s ease', position: 'relative', padding: '4px 6px', borderRadius: 6, overflow: 'hidden' }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: C.accent }}>{currentLang}</span>
-                <svg width="10" height="6" viewBox="0 0 10 6" fill="none" style={{ transform: dropdownOpen ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s ease' }}>
-                  <path d="M1 1L5 5L9 1" stroke={C.accent} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                <Ripple active={langTapped} />
-              </div>
-              <Ripple active={langTapped} color="rgba(192,90,58,0.06)" clip={false} duration={600} x={304} y={22} size="500%" />
-
-              {dropdownOpen && (
-                <div style={{
-                  position: 'absolute', top: 42, right: 8, width: 160,
-                  backgroundColor: C.dropdownBg, borderRadius: 12,
-                  boxShadow: '0 4px 24px rgba(0,0,0,0.14)', border: `0.5px solid ${C.separator}`,
-                  overflow: 'hidden', zIndex: 30,
-                }}>
-                  {LANGS.map((lang, i) => (
-                    <div key={lang} style={{ position: 'relative' }}>
-                      <div style={{
-                        padding: '10px 14px', fontSize: 14, color: C.text,
-                        backgroundColor: hoveredIndex === i ? C.accentBg : 'transparent',
-                        transition: 'background-color 0.15s ease', position: 'relative', overflow: 'hidden',
-                      }}>
-                        {lang}
-                        {i === 2 && <Ripple active={phase === 'p2-lang-select'} color="rgba(192,90,58,0.2)" radius={0} />}
-                      </div>
-                      {i < LANGS.length - 1 && <div style={{ height: 0.5, backgroundColor: C.separator, marginLeft: 14 }} />}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div style={{ flex: 1, padding: '4px 20px 16px', position: 'relative' }}>
-              {textLines.map((line, i) => (
-                <p key={`${isTranslated ? 'en' : 'gr'}-${i}`} style={{
-                  fontSize: i === 0 ? 13 : 14, fontWeight: i === 0 ? 600 : 400,
-                  color: i === 0 ? C.textSecond : C.text, lineHeight: 1.65,
-                  marginBottom: i === 0 ? 14 : 10,
-                  filter: textBlur ? 'blur(3px)' : 'none',
-                  opacity: textBlur ? 0.4 : 1,
-                  transition: textBlur ? 'none' : `filter 0.5s ease-out ${i * 0.12}s, opacity 0.5s ease-out ${i * 0.12}s`,
-                }}>{line}</p>
-              ))}
-              {isTranslating && (
-                <div style={{ position: 'absolute', top: '40%', left: 0, right: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
-                  <span style={{
-                    fontSize: 16, fontWeight: 600, letterSpacing: '0.04em',
-                    background: `linear-gradient(90deg, rgba(192,90,58,0.2) 0%, rgba(192,90,58,0.2) 30%, ${C.accent} 50%, rgba(192,90,58,0.2) 70%, rgba(192,90,58,0.2) 100%)`,
-                    backgroundSize: '200% 100%', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-                    animation: 'contmock-shimmer 1.8s linear infinite',
-                  }}>Translating...</span>
-                </div>
-              )}
-            </div>
-
-            <div style={{ height: 36, flexShrink: 0, borderTop: `0.5px solid ${C.separator}`, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: C.bg }}>
-              <span style={{ fontSize: 10, color: C.textMuted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 160 }}>Book I — To Himself</span>
-              <span style={{ fontSize: 10, color: C.textMuted, flexShrink: 0 }}>{isTranslated ? '12%' : '0%'}</span>
-            </div>
+            <span style={{ fontSize: 10, color: C.textMuted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 160 }}>Book I — To Himself</span>
+            <span style={{ fontSize: 10, color: C.textMuted, flexShrink: 0 }}>{isTranslated ? '12%' : '0%'}</span>
           </div>
 
           {/* Reader skeleton */}
@@ -1040,7 +1027,6 @@ export function ContinuousMockup({ onCycleEnd }: { onCycleEnd?: () => void } = {
         <div style={{
           position: 'absolute', inset: 0,
           opacity: isPhase3 ? 1 : 0,
-          transition: 'opacity 0.35s ease-in-out',
           pointerEvents: 'none',
           backgroundColor: C.bg,
         }}>
@@ -1053,10 +1039,11 @@ export function ContinuousMockup({ onCycleEnd }: { onCycleEnd?: () => void } = {
             transition: 'transform 0.3s cubic-bezier(0.22,1,0.36,1)',
             position: 'relative', zIndex: 10,
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', paddingLeft: 4 }}>
+            <div style={{ display: 'flex', alignItems: 'center', paddingLeft: 4, position: 'relative', overflow: 'hidden', borderRadius: 6, padding: '4px 8px' }}>
               <svg width="8" height="13" viewBox="0 0 8 13" fill="none">
-                <path d="M7 1L1 6.5L7 12" stroke={C.accent} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M7 1L1 6.5L7 12" stroke={p3BackTap ? `rgba(192,90,58,0.4)` : C.accent} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ transition: 'stroke 0.08s ease' }}/>
               </svg>
+              <Ripple active={p3BackTap} color="rgba(192,90,58,0.2)" radius={6} duration={300} />
             </div>
             <span style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', fontSize: 13, fontWeight: 600, color: C.text }}>Meditations</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -1136,16 +1123,22 @@ export function ContinuousMockup({ onCycleEnd }: { onCycleEnd?: () => void } = {
             <span style={{ fontSize: 10, color: C.textMuted, maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Book I — To Himself</span>
             <span style={{ fontSize: 10, color: C.textMuted, flexShrink: 0 }}>12%</span>
           </div>
-        </div>
 
-        {/* ── fade overlay (only used at end of phase 3 for loop) ── */}
-        <div style={{
-          position: 'absolute', inset: 0,
-          backgroundColor: C.bg,
-          opacity: fadeOpacity,
-          pointerEvents: 'none',
-          zIndex: 100,
-        }} />
+          {/* back-tap skeleton overlay */}
+          {p3BackSkel && (
+            <div style={{ position: 'absolute', inset: 0, backgroundColor: C.bg, zIndex: 20, display: 'flex', flexDirection: 'column' }}>
+              <div style={{ height: 22, backgroundColor: C.statusBar, flexShrink: 0 }} />
+              <div style={{ height: 44, backgroundColor: C.header, borderBottom: `0.5px solid ${C.separator}`, flexShrink: 0 }} />
+              <div style={{ flex: 1, padding: '4px 20px 16px' }}>
+                <SkelLine w="65%" h={11} mb={18} />
+                {[100,100,100,78,100,100,60,100,100,100,85,72,65,100,100,100,78,100,100,60,100,100,100,85,72].map((w, i) => (
+                  <SkelLine key={i} w={`${w}%`} h={13} mb={i % 5 === 4 ? 18 : 8} />
+                ))}
+              </div>
+              <div style={{ height: 36, flexShrink: 0, borderTop: `0.5px solid ${C.separator}` }} />
+            </div>
+          )}
+        </div>
 
         <style>{`
           @keyframes contmock-spin { to { transform: rotate(360deg); } }
