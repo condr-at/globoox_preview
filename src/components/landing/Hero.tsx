@@ -170,6 +170,10 @@ export function Hero({ variant = 'centered', withBooks = false, title, subtitle,
       .hero-split-text {
         text-align: center !important;
         align-items: center !important;
+        order: 2 !important;
+      }
+      .hero-books-section {
+        order: 1 !important;
       }
       .hero-split-h1 {
         font-size: 36px !important;
@@ -295,7 +299,7 @@ export function Hero({ variant = 'centered', withBooks = false, title, subtitle,
     return (
       <>
         <style dangerouslySetInnerHTML={{ __html: responsiveStyles }} />
-        <header
+        <section
           className="hero-split"
           style={{
             display: 'grid',
@@ -416,7 +420,7 @@ export function Hero({ variant = 'centered', withBooks = false, title, subtitle,
               </div>
             </div>
           </div>
-        </header>
+        </section>
       </>
     );
   }
@@ -425,7 +429,7 @@ export function Hero({ variant = 'centered', withBooks = false, title, subtitle,
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: responsiveStyles }} />
-      <header
+      <section
         className="hero-centered"
         style={{
           display: 'flex',
@@ -487,7 +491,7 @@ export function Hero({ variant = 'centered', withBooks = false, title, subtitle,
         >
           Start Reading Free
         </button>
-      </header>
+      </section>
     </>
   );
 }
