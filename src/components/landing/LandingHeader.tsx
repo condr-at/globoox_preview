@@ -18,12 +18,14 @@ export function LandingHeader({ navItems = [] }: LandingHeaderProps) {
           top: '12px',
           zIndex: 40,
           padding: '0px 16px 0',
+          overflow: 'visible',
         }}
       >
         <div
           style={{
             maxWidth: '1200px',
             margin: '0 auto',
+            position: 'relative',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -163,8 +165,10 @@ export function LandingHeader({ navItems = [] }: LandingHeaderProps) {
           <div
             className="landing-header-mobile-menu"
             style={{
-              maxWidth: '1200px',
-              margin: '12px auto 0',
+              position: 'absolute',
+              top: 'calc(100% + 12px)',
+              left: '0',
+              right: '0',
               display: 'none',
               flexDirection: 'column',
               gap: '0',
