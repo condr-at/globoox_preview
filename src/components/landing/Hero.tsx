@@ -11,9 +11,33 @@ interface HeroProps {
   titleClassName?: string;
 }
 
-function BookSpine({ title, author, height, bg, textColor, className }: { title: string; author?: string; height: number; bg: string; textColor?: string; className?: string }) {
+function BookSpine({
+  title,
+  author,
+  height,
+  bg,
+  textColor,
+  className,
+}: {
+  title: string;
+  author?: string;
+  height: number;
+  bg: string;
+  textColor?: string;
+  className?: string;
+}) {
   return (
-    <div className="spine-wrap" style={{ position: 'relative', flexShrink: 0 }}>
+    <div
+      className="spine-wrap"
+      style={{
+        position: 'relative',
+        flexShrink: 0,
+        zIndex: 1,
+        cursor: 'pointer',
+        touchAction: 'manipulation',
+        WebkitTapHighlightColor: 'transparent',
+      }}
+    >
       <div className="spine-shadow" />
       <div
         className={`spine-hover ${className || ''}`}
@@ -23,15 +47,14 @@ function BookSpine({ title, author, height, bg, textColor, className }: { title:
           background: bg,
           borderRadius: '4px',
           borderLeft: '3px solid rgba(0,0,0,0.05)',
-          boxShadow: '6px 12px 20px rgba(0,0,0,0.18), 2px 4px 6px rgba(0,0,0,0.10)',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'flex-end',
           padding: '20px 0',
           transition: 'transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.6s cubic-bezier(0.22, 1, 0.36, 1)',
           position: 'relative',
-          cursor: 'default',
           zIndex: 1,
+          boxShadow: '6px 12px 20px rgba(0,0,0,0.18), 2px 4px 6px rgba(0,0,0,0.10)',
         }}
       >
         {/* Блик — выпуклость корешка */}
@@ -114,6 +137,18 @@ export function Hero({ variant = 'centered', withBooks = false, title, subtitle,
   const [isHovered, setIsHovered] = useState(false);
 
   const responsiveStyles = `
+    .spine-wrap {
+      z-index: 1;
+      transition: z-index 0s linear;
+    }
+    .spine-wrap:hover {
+      z-index: 20;
+      transition-delay: 0s;
+    }
+    .spine-wrap:hover .spine-hover {
+      transform: translateY(-12px) scale(1.04);
+      box-shadow: 12px 22px 34px rgba(0,0,0,0.22), 4px 8px 12px rgba(0,0,0,0.12);
+    }
     /* Split variant */
     @media (max-width: 639px) {
       .hero-split {
