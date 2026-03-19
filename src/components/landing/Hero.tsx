@@ -247,7 +247,7 @@ export function Hero({ variant = 'centered', withBooks = false, title, subtitle,
               className="btn-primary-hover hero-split-btn"
               onMouseEnter={() => setIsHovered(true)}
               onMouseLeave={() => setIsHovered(false)}
-              onClick={() => {}}
+              onClick={() => { window.location.href = '/my-books'; }}
               style={{
                 display: 'inline-block',
                 background: isHovered ? 'var(--primary-hover)' : 'var(--primary)',
@@ -369,7 +369,7 @@ export function Hero({ variant = 'centered', withBooks = false, title, subtitle,
           className="hero-centered-btn"
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
-          onClick={() => {}}
+          onClick={() => { window.location.href = '/my-books'; }}
           style={{
             display: 'inline-block',
             background: isHovered ? 'var(--primary-hover)' : 'var(--primary)',

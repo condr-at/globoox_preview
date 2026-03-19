@@ -86,7 +86,7 @@ export function CTA({
         }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        onClick={() => {}}
+        onClick={() => { window.location.href = '/my-books'; }}
       >
         {buttonText}
       </button>
