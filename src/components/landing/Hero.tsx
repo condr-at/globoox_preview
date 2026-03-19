@@ -18,6 +18,9 @@ function BookSpine({
   bg,
   textColor,
   className,
+  active = false,
+  baseZ = 1,
+  onClick,
 }: {
   title: string;
   author?: string;
@@ -25,14 +28,18 @@ function BookSpine({
   bg: string;
   textColor?: string;
   className?: string;
+  active?: boolean;
+  baseZ?: number;
+  onClick?: () => void;
 }) {
   return (
     <div
       className="spine-wrap"
+      onClick={onClick}
       style={{
         position: 'relative',
         flexShrink: 0,
-        zIndex: 1,
+        zIndex: active ? 100 : baseZ,
         cursor: 'pointer',
         touchAction: 'manipulation',
         WebkitTapHighlightColor: 'transparent',
@@ -54,7 +61,8 @@ function BookSpine({
           transition: 'transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.6s cubic-bezier(0.22, 1, 0.36, 1)',
           position: 'relative',
           zIndex: 1,
-          boxShadow: '6px 12px 20px rgba(0,0,0,0.18), 2px 4px 6px rgba(0,0,0,0.10)',
+          transform: active ? 'translateY(-12px) scale(1.04)' : undefined,
+          boxShadow: active ? '12px 22px 34px rgba(0,0,0,0.22), 4px 8px 12px rgba(0,0,0,0.12)' : '6px 12px 20px rgba(0,0,0,0.18), 2px 4px 6px rgba(0,0,0,0.10)',
         }}
       >
         {/* Блик — выпуклость корешка */}
@@ -135,6 +143,7 @@ function FloatingScript({ children, style }: { children: React.ReactNode; style:
 
 export function Hero({ variant = 'centered', withBooks = false, title, subtitle, titleClassName }: HeroProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const [activeSpine, setActiveSpine] = useState<number | null>(null);
 
   const responsiveStyles = `
     .spine-wrap {
@@ -399,11 +408,11 @@ export function Hero({ variant = 'centered', withBooks = false, title, subtitle,
                 History
               </FloatingScript>
               <div className="hero-books-row" style={{ display: 'flex', gap: '16px', transform: 'rotate(5deg)', alignItems: 'flex-end' }}>
-                <BookSpine title="Nexus" author="Yuval Noah Harari" height={360} bg="var(--parchment-light)" className="spine-h-416 spine-long-title" />
-                <BookSpine title="Эволюция Человека" author="А. Марков" height={396} bg="var(--parchment-light)" className="spine-evolution spine-long-title spine-longest-title" />
-                <BookSpine title="Globoox Engine" height={384} bg="var(--ink)" textColor="#E8A996" className="spine-h-442" />
-                <BookSpine title="Desiguales" author="Diego Castañeda Garza" height={308} bg="var(--parchment-light)" className="spine-h-364 spine-desiguales spine-long-title spine-longest-title" />
-                <BookSpine title="Manet, le secret" author="Sophie Chauveau" height={360} bg="var(--parchment-light)" className="spine-h-416 spine-long-title" />
+                <BookSpine title="Nexus" author="Yuval Noah Harari" height={360} bg="var(--parchment-light)" className="spine-h-416 spine-long-title" baseZ={1} active={activeSpine === 0} onClick={() => setActiveSpine((prev) => (prev === 0 ? null : 0))} />
+                <BookSpine title="Эволюция Человека" author="А. Марков" height={396} bg="var(--parchment-light)" className="spine-evolution spine-long-title spine-longest-title" baseZ={2} active={activeSpine === 1} onClick={() => setActiveSpine((prev) => (prev === 1 ? null : 1))} />
+                <BookSpine title="Globoox Engine" height={384} bg="var(--ink)" textColor="#E8A996" className="spine-h-442" baseZ={3} active={activeSpine === 2} onClick={() => setActiveSpine((prev) => (prev === 2 ? null : 2))} />
+                <BookSpine title="Desiguales" author="Diego Castañeda Garza" height={308} bg="var(--parchment-light)" className="spine-h-364 spine-desiguales spine-long-title spine-longest-title" baseZ={4} active={activeSpine === 3} onClick={() => setActiveSpine((prev) => (prev === 3 ? null : 3))} />
+                <BookSpine title="Manet, le secret" author="Sophie Chauveau" height={360} bg="var(--parchment-light)" className="spine-h-416 spine-long-title" baseZ={5} active={activeSpine === 4} onClick={() => setActiveSpine((prev) => (prev === 4 ? null : 4))} />
               </div>
             </div>
           </div>
