@@ -48,8 +48,9 @@ const T3_PAUSE_BACK   = 500;
 const T3_READ_PAGE1B  = 3200;
 const T3_TAP_SHOW     = 120;
 const T3_HOLD         = 1200;
-const T3_BACK_TAP     = 160;
-const T3_BACK_SKEL    = 950;
+const T3_BACK_TAP     = 180;
+const T3_BACK_CLOSE   = 320;
+const T3_LIB_SKEL     = 380;
 
 const DRAWER_ZONE_H = 110;
 
@@ -170,7 +171,8 @@ type Phase =
   | 'p3-tap-show'
   | 'p3-hold'
   | 'p3-back-tap'
-  | 'p3-back-skel';
+  | 'p3-back-close'
+  | 'p3-library-skeleton';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 function Ripple({ active, color = 'rgba(255,255,255,0.5)', radius = 6, clip = true, duration = 350, x, y, size = '300%' }: {
@@ -509,14 +511,16 @@ export function ContinuousMockup({
     notifyStep(p);
   }, [notifyStep]);
 
-  const runPhase3 = useCallback(() => {
-    setPhaseNotify('p3-reader-idle');
+  const runPhase3 = useCallback((startMode: 'idle' | 'tap-hide' = 'tap-hide') => {
+    setPhaseNotify(startMode === 'idle' ? 'p3-reader-idle' : 'p3-tap-hide');
     setPageIdx(0);
     setRevealedCount(5);
     setSwipeDir(null);
 
     schedule(() => {
-      setPhaseNotify('p3-tap-hide');
+      if (startMode === 'idle') {
+        setPhaseNotify('p3-tap-hide');
+      }
       schedule(() => {
         setPhaseNotify('p3-immersive');
         schedule(() => {
@@ -564,11 +568,14 @@ export function ContinuousMockup({
                                 schedule(() => {
                                   setPhaseNotify('p3-back-tap');
                                   schedule(() => {
-                                    setPhaseNotify('p3-back-skel');
+                                    setPhaseNotify('p3-back-close');
                                     schedule(() => {
-                                      onCycleEnd?.();
-                                      runCycle();
-                                    }, T3_BACK_SKEL);
+                                      setPhaseNotify('p3-library-skeleton');
+                                      schedule(() => {
+                                        onCycleEnd?.();
+                                        runCycle();
+                                      }, T3_LIB_SKEL);
+                                    }, T3_BACK_CLOSE);
                                   }, T3_BACK_TAP);
                                 }, T3_HOLD);
                               }, T3_TAP_SHOW);
@@ -584,7 +591,7 @@ export function ContinuousMockup({
           }, T3_SWIPE);
         }, T3_IMMERSIVE);
       }, T3_TAP_HIDE);
-    }, 0);
+    }, startMode === 'idle' ? 0 : T3_TAP_HIDE);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [schedule, setPhaseNotify]);
 
@@ -711,7 +718,7 @@ export function ContinuousMockup({
     setRevealedCount(5);
     if (step === 0) runPhase1();
     else if (step === 1) runPhase2();
-    else runPhase3();
+    else runPhase3('idle');
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [runPhase1, runPhase2, runPhase3]);
 
@@ -752,13 +759,15 @@ export function ContinuousMockup({
   const drawerOpen   = isPhase1 && ['p1-drawer-empty','p1-tap-flash','p1-spinner','p1-file-ready','p1-upload-tap','p1-uploading','p1-upload-done'].includes(phase);
   const btnFlash     = phase === 'p1-btn-flash';
   const p1ScrollOffset = drawerOpen ? -60 : 0;
+  const shouldRenderNewBook = showNewBook || newBookFirst || !isPhase1;
   const ALL_BOOKS = [
-    { key: 'new', color: NEW_BOOK.color, title: NEW_BOOK.title, author: NEW_BOOK.author, progress: 0, isNew: true },
+    ...(shouldRenderNewBook ? [{ key: 'new', color: NEW_BOOK.color, title: NEW_BOOK.title, author: NEW_BOOK.author, progress: 0, isNew: true }] : []),
     ...EXISTING_BOOKS.map(b => ({ key: b.title, color: b.color, title: b.title, author: b.author, progress: b.progress, isNew: false })),
   ];
   const bookSlot = (bookIdx: number) => newBookFirst ? bookIdx : (bookIdx === 0 ? 5 : bookIdx - 1);
 
-  // Phase 2 derived
+  // Shared reader derived (phase 2 + 3)
+  const isReaderPhase = isPhase2 || isPhase3;
   const showReaderSkel = phase === 'p2-reader-skeleton';
   const dropdownOpen   = ['p2-dropdown-open','p2-hover-0','p2-hover-1','p2-hover-2','p2-lang-select'].includes(phase);
   const langTapped     = phase === 'p2-lang-tap';
@@ -767,20 +776,23 @@ export function ContinuousMockup({
   const modalTapOK     = phase === 'p2-modal-tap';
   const isTranslating  = phase === 'p2-translating';
   const isTranslated   = ['p2-translated','p2-hold'].includes(phase);
-  const currentLang    = isTranslated ? 'EN' : 'GR';
+  const isReaderTranslatePhase = isPhase2 || phase === 'p3-tap-hide';
+  const currentLang    = isReaderTranslatePhase ? (isTranslated ? 'EN' : 'GR') : 'EN';
   const textLines      = isTranslated ? ENGLISH_TEXT : GREEK_TEXT;
   const textBlur       = modalVisible || isTranslating;
   const glowActive     = modalVisible || isTranslating;
 
   // Phase 3 derived
-  const p3ChromeVisible = ['p3-reader-idle','p3-tap-hide','p3-tap-show','p3-hold','p3-back-tap'].includes(phase);
+  const chromeVisible = isPhase2 || ['p3-reader-idle','p3-tap-show','p3-hold','p3-back-tap'].includes(phase);
   const p3BackTap = phase === 'p3-back-tap';
-  const p3BackSkel = phase === 'p3-back-skel';
+  const p3BackClose = phase === 'p3-back-close';
+  const p3LibrarySkeleton = phase === 'p3-library-skeleton';
   const isSwiping       = swipeDir !== null && isPhase3;
   const swipeLeft       = swipeDir === 'left';
   const incomingPageIdx = swipeLeft ? (pageIdx + 1) % PAGES.length : (pageIdx - 1 + PAGES.length) % PAGES.length;
   const isRevealing     = phase === 'p3-page2-reveal' || phase === 'p3-page3-reveal';
   const currentPage     = PAGES[pageIdx];
+  const showImmersiveTap = phase === 'p3-tap-hide' || phase === 'p3-tap-show';
 
   // Grid constants
   const GAP = 14, PAD = 16, COLS = 3;
@@ -913,35 +925,41 @@ export function ContinuousMockup({
         </div>
 
         {/* ═══════════════════════════════════════════════════════════════════
-            PHASE 2 — Reader
+            READER — Shared for phase 2 and 3
         ═══════════════════════════════════════════════════════════════════ */}
         <div style={{
           position: 'absolute', inset: 0,
-          opacity: isPhase2 && phase !== 'p2-book-tap' ? 1 : 0,
+          opacity: isReaderPhase && phase !== 'p2-book-tap' && !p3BackClose ? 1 : 0,
           pointerEvents: 'none',
           backgroundColor: C.bg,
         }}>
-          {/* Reader header — same layout as phase 3 */}
           <StatusBar />
+
           <div style={{
             position: 'absolute', top: 22, left: 0, right: 0,
             height: 44, backgroundColor: C.header, borderBottom: `0.5px solid ${C.separator}`,
             display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 12px',
+            transform: chromeVisible ? 'translateY(0)' : 'translateY(-66px)',
+            transition: 'transform 0.3s cubic-bezier(0.22,1,0.36,1)',
             zIndex: 10,
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', paddingLeft: 4 }}>
+            <div style={{ display: 'flex', alignItems: 'center', paddingLeft: 4, position: 'relative', overflow: 'hidden', borderRadius: 6, padding: '4px 8px' }}>
               <svg width="8" height="13" viewBox="0 0 8 13" fill="none">
-                <path d="M7 1L1 6.5L7 12" stroke={C.accent} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M7 1L1 6.5L7 12" stroke={p3BackTap ? 'rgba(192,90,58,0.4)' : C.accent} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ transition: 'stroke 0.08s ease' }} />
               </svg>
+              <Ripple active={p3BackTap} color="rgba(192,90,58,0.2)" radius={6} duration={300} />
             </div>
+
             <span style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', fontSize: 13, fontWeight: 600, color: C.text }}>Meditations</span>
+
             <div style={{ display: 'flex', alignItems: 'center', gap: 2, opacity: langTapped ? 0.5 : 1, transition: 'opacity 0.1s ease', position: 'relative', padding: '4px 6px', borderRadius: 6, overflow: 'hidden' }}>
               <span style={{ fontSize: 13, fontWeight: 600, color: C.accent }}>{currentLang}</span>
-              <svg width="10" height="6" viewBox="0 0 10 6" fill="none" style={{ transform: dropdownOpen ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s ease' }}>
+              <svg width="10" height="6" viewBox="0 0 10 6" fill="none" style={{ transform: dropdownOpen ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s ease', opacity: isPhase2 ? 1 : 0.999 }}>
                 <path d="M1 1L5 5L9 1" stroke={C.accent} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
               <Ripple active={langTapped} />
             </div>
+
             <Ripple active={langTapped} color="rgba(192,90,58,0.06)" clip={false} duration={600} x={304} y={22} size="500%" />
 
             {dropdownOpen && (
@@ -968,41 +986,101 @@ export function ContinuousMockup({
             )}
           </div>
 
-          {/* Content — same absolute layout as phase 3 */}
-          <div style={{ position: 'absolute', top: 22 + 44, bottom: 36, left: 0, right: 0, overflow: 'hidden', padding: '4px 20px 16px' }}>
-            {textLines.map((line, i) => (
-              <p key={`${isTranslated ? 'en' : 'gr'}-${i}`} style={{
-                fontSize: i === 0 ? 13 : 14, fontWeight: i === 0 ? 600 : 400,
-                color: i === 0 ? C.textSecond : C.text, lineHeight: 1.65,
-                marginBottom: i === 0 ? 14 : 10,
-                filter: textBlur ? 'blur(3px)' : 'none',
-                opacity: textBlur ? 0.4 : 1,
-                transition: textBlur ? 'none' : `filter 0.5s ease-out ${i * 0.12}s, opacity 0.5s ease-out ${i * 0.12}s`,
-              }}>{line}</p>
-            ))}
-            {isTranslating && (
-              <div style={{ position: 'absolute', top: '40%', left: 0, right: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
-                <span style={{
-                  fontSize: 16, fontWeight: 600, letterSpacing: '0.04em',
-                  background: `linear-gradient(90deg, rgba(192,90,58,0.2) 0%, rgba(192,90,58,0.2) 30%, ${C.accent} 50%, rgba(192,90,58,0.2) 70%, rgba(192,90,58,0.2) 100%)`,
-                  backgroundSize: '200% 100%', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-                  animation: 'contmock-shimmer 1.8s linear infinite',
-                }}>Translating...</span>
+          <div style={{ position: 'absolute', top: 22 + 44, bottom: 0, left: 0, right: 0, overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+              <div style={{
+                position: 'absolute', top: '50%', left: '50%',
+                width: showImmersiveTap ? '300%' : '0%',
+                aspectRatio: '1',
+                transform: 'translate(-50%, -50%)',
+                borderRadius: '50%',
+                backgroundColor: 'rgba(44,59,45,0.06)',
+                transition: showImmersiveTap ? 'width 0.7s ease-out, opacity 0.7s ease-out' : 'none',
+                opacity: showImmersiveTap ? 0 : 1,
+              }} />
+            </div>
+
+            {isPhase2 ? (
+              <div style={{ position: 'absolute', top: 0, bottom: 36, left: 0, right: 0, overflow: 'hidden', padding: '4px 20px 16px' }}>
+                {textLines.map((line, i) => (
+                  <p key={`${isTranslated ? 'en' : 'gr'}-${i}`} style={{
+                    fontSize: i === 0 ? 13 : 14, fontWeight: i === 0 ? 600 : 400,
+                    color: i === 0 ? C.textSecond : C.text, lineHeight: 1.65,
+                    marginBottom: i === 0 ? 14 : 10,
+                    filter: textBlur ? 'blur(3px)' : 'none',
+                    opacity: textBlur ? 0.4 : 1,
+                    transition: textBlur ? 'none' : `filter 0.5s ease-out ${i * 0.12}s, opacity 0.5s ease-out ${i * 0.12}s`,
+                  }}>{line}</p>
+                ))}
+                {isTranslating && (
+                  <div style={{ position: 'absolute', top: '40%', left: 0, right: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+                    <span style={{
+                      fontSize: 16, fontWeight: 600, letterSpacing: '0.04em',
+                      background: `linear-gradient(90deg, rgba(192,90,58,0.2) 0%, rgba(192,90,58,0.2) 30%, ${C.accent} 50%, rgba(192,90,58,0.2) 70%, rgba(192,90,58,0.2) 100%)`,
+                      backgroundSize: '200% 100%', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+                      animation: 'contmock-shimmer 1.8s linear infinite',
+                    }}>Translating...</span>
+                  </div>
+                )}
               </div>
+            ) : (
+              <>
+                <div style={{
+                  position: 'absolute', inset: 0,
+                  transform: isSwiping ? (swipeLeft ? 'translateX(-100%)' : 'translateX(100%)') : 'translateX(0)',
+                  transition: isSwiping ? `transform ${T3_SWIPE}ms cubic-bezier(0.22,1,0.36,1)` : 'none',
+                }}>
+                  <div style={{ padding: '4px 20px 16px' }}>
+                    {currentPage.map((block, i) => {
+                      const blurred = isRevealing && i >= revealedCount;
+                      return (
+                        <p key={i} style={{
+                          fontSize: block.head ? 13 : 14, fontWeight: block.head ? 600 : 400,
+                          color: block.head ? C.textSecond : C.text, lineHeight: 1.65,
+                          marginBottom: block.head ? 14 : 10,
+                          filter: blurred ? 'blur(3px)' : 'none',
+                          opacity: blurred ? 0.4 : 1,
+                          transition: blurred ? 'none' : 'filter 0.4s ease-out, opacity 0.4s ease-out',
+                        }}>{block.text}</p>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {isSwiping && (
+                  <div style={{
+                    position: 'absolute', inset: 0,
+                    transform: swipeLeft ? 'translateX(100%)' : 'translateX(-100%)',
+                    animation: `${swipeLeft ? 'contmock-slide-in' : 'contmock-slide-in-right'} ${T3_SWIPE}ms cubic-bezier(0.22,1,0.36,1) forwards`,
+                  }}>
+                    <div style={{ padding: '4px 20px 16px' }}>
+                      {PAGES[incomingPageIdx].map((block, i) => (
+                        <p key={i} style={{
+                          fontSize: block.head ? 13 : 14, fontWeight: block.head ? 600 : 400,
+                          color: block.head ? C.textSecond : C.text, lineHeight: 1.65,
+                          marginBottom: block.head ? 14 : 10,
+                          filter: revealedCount === 0 ? 'blur(3px)' : 'none',
+                          opacity: revealedCount === 0 ? 0.4 : 1,
+                        }}>{block.text}</p>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
 
-          {/* Footer — same as phase 3 */}
           <div style={{
             position: 'absolute', bottom: 0, left: 0, right: 0, height: 36,
             backgroundColor: C.bg, borderTop: `0.5px solid ${C.separator}`,
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+            transform: chromeVisible ? 'translateY(0)' : 'translateY(36px)',
+            transition: 'transform 0.3s cubic-bezier(0.22,1,0.36,1)', zIndex: 10,
           }}>
-            <span style={{ fontSize: 10, color: C.textMuted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 160 }}>Book I — To Himself</span>
-            <span style={{ fontSize: 10, color: C.textMuted, flexShrink: 0 }}>{isTranslated ? '12%' : '0%'}</span>
+            <span style={{ fontSize: 10, color: C.textMuted, maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Book I — To Himself</span>
+            <span style={{ fontSize: 10, color: C.textMuted, flexShrink: 0 }}>{isPhase2 ? (isTranslated ? '12%' : '0%') : '12%'}</span>
           </div>
 
-          {/* Reader skeleton */}
           {showReaderSkel && (
             <div style={{ position: 'absolute', inset: 0, backgroundColor: C.bg, zIndex: 20, display: 'flex', flexDirection: 'column' }}>
               <div style={{ height: 22, backgroundColor: C.statusBar, flexShrink: 0 }} />
@@ -1017,127 +1095,56 @@ export function ContinuousMockup({
             </div>
           )}
 
+          {p3LibrarySkeleton && (
+            <div style={{ position: 'absolute', inset: 0, backgroundColor: C.bg, zIndex: 20, display: 'flex', flexDirection: 'column' }}>
+              <div style={{ height: 22, backgroundColor: C.statusBar, flexShrink: 0 }} />
+              <div style={{ height: 44, backgroundColor: C.header, borderBottom: `0.5px solid ${C.separator}`, flexShrink: 0 }} />
+              <div style={{ display: 'flex', gap: 8, padding: '10px 16px' }}>
+                {[60, 50, 40].map((w, i) => (
+                  <div key={i} style={{
+                    width: w, height: 24, borderRadius: 16,
+                    background: 'linear-gradient(90deg, rgba(44,59,45,0.07) 0%, rgba(44,59,45,0.07) 30%, rgba(44,59,45,0.16) 50%, rgba(44,59,45,0.07) 70%, rgba(44,59,45,0.07) 100%)',
+                    backgroundSize: '200% 100%',
+                    animation: 'contmock-shimmer 1.4s linear infinite',
+                  }} />
+                ))}
+              </div>
+              {(() => {
+                const GAP = 14;
+                const PAD = 16;
+                const COLS = 3;
+                const cellW = Math.floor((320 - PAD * 2 - GAP * (COLS - 1)) / COLS);
+                return (
+                  <div style={{ padding: '4px 16px', display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: GAP }}>
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <div key={i}>
+                        <div style={{
+                          width: cellW,
+                          height: Math.round(cellW * 1.5),
+                          borderRadius: 6,
+                          background: 'linear-gradient(90deg, rgba(44,59,45,0.07) 0%, rgba(44,59,45,0.07) 30%, rgba(44,59,45,0.16) 50%, rgba(44,59,45,0.07) 70%, rgba(44,59,45,0.07) 100%)',
+                          backgroundSize: '200% 100%',
+                          animation: 'contmock-shimmer 1.4s linear infinite',
+                        }} />
+                        <div style={{ marginTop: 5 }}>
+                          <SkelLine w="80%" h={9} mb={4} />
+                          <SkelLine w="55%" h={8} mb={0} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 56, backgroundColor: C.bg, borderTop: `0.5px solid ${C.separator}` }} />
+            </div>
+          )}
+
           <IOSAlert visible={modalVisible} tapOK={modalTapOK} />
           <GlowBorder active={glowActive} />
         </div>
 
-        {/* ═══════════════════════════════════════════════════════════════════
-            PHASE 3 — Enjoy
-        ═══════════════════════════════════════════════════════════════════ */}
-        <div style={{
-          position: 'absolute', inset: 0,
-          opacity: isPhase3 ? 1 : 0,
-          pointerEvents: 'none',
-          backgroundColor: C.bg,
-        }}>
-          <StatusBar />
-          {/* header */}
-          <div style={{
-            height: 44, backgroundColor: C.header, borderBottom: `0.5px solid ${C.separator}`,
-            flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 12px',
-            transform: p3ChromeVisible ? 'translateY(0)' : 'translateY(-66px)',
-            transition: 'transform 0.3s cubic-bezier(0.22,1,0.36,1)',
-            position: 'relative', zIndex: 10,
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', paddingLeft: 4, position: 'relative', overflow: 'hidden', borderRadius: 6, padding: '4px 8px' }}>
-              <svg width="8" height="13" viewBox="0 0 8 13" fill="none">
-                <path d="M7 1L1 6.5L7 12" stroke={p3BackTap ? `rgba(192,90,58,0.4)` : C.accent} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ transition: 'stroke 0.08s ease' }}/>
-              </svg>
-              <Ripple active={p3BackTap} color="rgba(192,90,58,0.2)" radius={6} duration={300} />
-            </div>
-            <span style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', fontSize: 13, fontWeight: 600, color: C.text }}>Meditations</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <span style={{ fontSize: 13, fontWeight: 600, color: C.accent }}>EN</span>
-              <svg width="10" height="6" viewBox="0 0 10 6" fill="none">
-                <path d="M1 1L5 5L9 1" stroke={C.accent} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-          </div>
-
-          {/* content */}
-          <div style={{ position: 'absolute', top: 22 + 44, bottom: 0, left: 0, right: 0, overflow: 'hidden' }}>
-            {/* tap ripple */}
-            <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
-              <div style={{
-                position: 'absolute', top: '50%', left: '50%',
-                width: (phase === 'p3-tap-hide' || phase === 'p3-tap-show') ? '300%' : '0%',
-                aspectRatio: '1',
-                transform: 'translate(-50%, -50%)', borderRadius: '50%',
-                backgroundColor: 'rgba(44,59,45,0.06)',
-                transition: (phase === 'p3-tap-hide' || phase === 'p3-tap-show') ? 'width 0.7s ease-out, opacity 0.7s ease-out' : 'none',
-                opacity: (phase === 'p3-tap-hide' || phase === 'p3-tap-show') ? 0 : 1,
-              }} />
-            </div>
-            {/* swipe container */}
-            <div style={{
-              position: 'absolute', inset: 0,
-              transform: isSwiping ? (swipeLeft ? 'translateX(-100%)' : 'translateX(100%)') : 'translateX(0)',
-              transition: isSwiping ? `transform ${T3_SWIPE}ms cubic-bezier(0.22,1,0.36,1)` : 'none',
-            }}>
-              <div style={{ padding: '4px 20px 16px' }}>
-                {currentPage.map((block, i) => {
-                  const blurred = isRevealing && i >= revealedCount;
-                  return (
-                    <p key={i} style={{
-                      fontSize: block.head ? 13 : 14, fontWeight: block.head ? 600 : 400,
-                      color: block.head ? C.textSecond : C.text, lineHeight: 1.65,
-                      marginBottom: block.head ? 14 : 10,
-                      filter: blurred ? 'blur(3px)' : 'none',
-                      opacity: blurred ? 0.4 : 1,
-                      transition: blurred ? 'none' : 'filter 0.4s ease-out, opacity 0.4s ease-out',
-                    }}>{block.text}</p>
-                  );
-                })}
-              </div>
-            </div>
-            {/* incoming page during swipe */}
-            {isSwiping && (
-              <div style={{
-                position: 'absolute', inset: 0,
-                transform: swipeLeft ? 'translateX(100%)' : 'translateX(-100%)',
-                animation: `${swipeLeft ? 'contmock-slide-in' : 'contmock-slide-in-right'} ${T3_SWIPE}ms cubic-bezier(0.22,1,0.36,1) forwards`,
-              }}>
-                <div style={{ padding: '4px 20px 16px' }}>
-                  {PAGES[incomingPageIdx].map((block, i) => (
-                    <p key={i} style={{
-                      fontSize: block.head ? 13 : 14, fontWeight: block.head ? 600 : 400,
-                      color: block.head ? C.textSecond : C.text, lineHeight: 1.65,
-                      marginBottom: block.head ? 14 : 10,
-                      filter: revealedCount === 0 ? 'blur(3px)' : 'none',
-                      opacity: revealedCount === 0 ? 0.4 : 1,
-                    }}>{block.text}</p>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* footer */}
-          <div style={{
-            position: 'absolute', bottom: 0, left: 0, right: 0, height: 36,
-            backgroundColor: C.bg, borderTop: `0.5px solid ${C.separator}`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-            transform: p3ChromeVisible ? 'translateY(0)' : 'translateY(36px)',
-            transition: 'transform 0.3s cubic-bezier(0.22,1,0.36,1)', zIndex: 10,
-          }}>
-            <span style={{ fontSize: 10, color: C.textMuted, maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Book I — To Himself</span>
-            <span style={{ fontSize: 10, color: C.textMuted, flexShrink: 0 }}>12%</span>
-          </div>
-
-          {/* back-tap skeleton overlay */}
-          {p3BackSkel && (
-            <div style={{ position: 'absolute', inset: 0, backgroundColor: C.bg, zIndex: 20, display: 'flex', flexDirection: 'column' }}>
-              <div style={{ height: 22, backgroundColor: C.statusBar, flexShrink: 0 }} />
-              <div style={{ height: 44, backgroundColor: C.header, borderBottom: `0.5px solid ${C.separator}`, flexShrink: 0 }} />
-              <div style={{ flex: 1, padding: '4px 20px 16px' }}>
-                <SkelLine w="65%" h={11} mb={18} />
-                {[100,100,100,78,100,100,60,100,100,100,85,72,65,100,100,100,78,100,100,60,100,100,100,85,72].map((w, i) => (
-                  <SkelLine key={i} w={`${w}%`} h={13} mb={i % 5 === 4 ? 18 : 8} />
-                ))}
-              </div>
-              <div style={{ height: 36, flexShrink: 0, borderTop: `0.5px solid ${C.separator}` }} />
-            </div>
-          )}
+        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden', borderRadius: 20, zIndex: 15 }}>
+          <Ripple active={p3BackTap} color="rgba(192,90,58,0.10)" clip={false} duration={600} x={16} y={33} size="500%" />
         </div>
 
         <style>{`
