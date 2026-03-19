@@ -20,6 +20,7 @@ const T1_BOOK_REORDER = 700;
 const T1_HOLD         = 1800; // держим книгу в сетке, потом тап → ридер
 
 // Phase 2 — Reader (translate)
+const T2_IDLE         = 500;
 const T2_BOOK_TAP     = 320;
 const T2_READER_SKEL  = 950;
 const T2_READER_OPEN  = 400;
@@ -36,7 +37,7 @@ const T2_TRANSLATED   = 400;
 const T2_HOLD         = 2200; // держим английский текст, потом переходим к Enjoy
 
 // Phase 3 — Enjoy (immersive reading)
-const T3_IDLE         = 0;    // уже в ридере — нет паузы на старте
+const T3_IDLE         = 500;
 const T3_TAP_HIDE     = 120;
 const T3_IMMERSIVE    = 2000;
 const T3_SWIPE        = 320;
@@ -140,6 +141,7 @@ type Phase =
   | 'p1-book-reorder'
   | 'p1-hold'
   // Phase 2 — Reader
+  | 'p2-pre-tap'
   | 'p2-book-tap'
   | 'p2-reader-skeleton'
   | 'p2-reader-open'
@@ -511,7 +513,7 @@ export function ContinuousMockup({
     notifyStep(p);
   }, [notifyStep]);
 
-  const runPhase3 = useCallback((startMode: 'idle' | 'tap-hide' = 'tap-hide') => {
+  const runPhase3 = useCallback((startMode: 'idle' | 'tap-hide' = 'idle') => {
     setPhaseNotify(startMode === 'idle' ? 'p3-reader-idle' : 'p3-tap-hide');
     setPageIdx(0);
     setRevealedCount(5);
@@ -591,58 +593,61 @@ export function ContinuousMockup({
           }, T3_SWIPE);
         }, T3_IMMERSIVE);
       }, T3_TAP_HIDE);
-    }, startMode === 'idle' ? 0 : T3_TAP_HIDE);
+    }, startMode === 'idle' ? T3_IDLE : T3_TAP_HIDE);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [schedule, setPhaseNotify]);
 
   const runPhase2 = useCallback(() => {
-    setPhaseNotify('p2-book-tap');
+    setPhaseNotify('p2-pre-tap');
     schedule(() => {
-      setPhaseNotify('p2-reader-skeleton');
+      setPhaseNotify('p2-book-tap');
       schedule(() => {
-        setPhaseNotify('p2-reader-open');
+        setPhaseNotify('p2-reader-skeleton');
         schedule(() => {
-          setPhaseNotify('p2-reader-idle');
+          setPhaseNotify('p2-reader-open');
           schedule(() => {
-            setPhaseNotify('p2-lang-tap');
+            setPhaseNotify('p2-reader-idle');
             schedule(() => {
-              setPhaseNotify('p2-dropdown-open');
+              setPhaseNotify('p2-lang-tap');
               schedule(() => {
-                setPhaseNotify('p2-hover-0');
+                setPhaseNotify('p2-dropdown-open');
                 schedule(() => {
-                  setPhaseNotify('p2-hover-1');
+                  setPhaseNotify('p2-hover-0');
                   schedule(() => {
-                    setPhaseNotify('p2-hover-2');
+                    setPhaseNotify('p2-hover-1');
                     schedule(() => {
-                      setPhaseNotify('p2-lang-select');
+                      setPhaseNotify('p2-hover-2');
                       schedule(() => {
-                        setPhaseNotify('p2-modal-show');
+                        setPhaseNotify('p2-lang-select');
                         schedule(() => {
-                          setPhaseNotify('p2-modal-idle');
+                          setPhaseNotify('p2-modal-show');
                           schedule(() => {
-                            setPhaseNotify('p2-modal-tap');
+                            setPhaseNotify('p2-modal-idle');
                             schedule(() => {
-                              setPhaseNotify('p2-translating');
+                              setPhaseNotify('p2-modal-tap');
                               schedule(() => {
-                                setPhaseNotify('p2-translated');
+                                setPhaseNotify('p2-translating');
                                 schedule(() => {
-                                  setPhaseNotify('p2-hold');
-                                  schedule(() => runPhase3(), T2_HOLD);
-                                }, T2_TRANSLATED);
-                              }, T2_TRANSLATING);
-                            }, T2_MODAL_TAP);
-                          }, T2_MODAL_IDLE);
-                        }, T2_MODAL_APPEAR);
-                      }, T2_LANG_SELECT);
+                                  setPhaseNotify('p2-translated');
+                                  schedule(() => {
+                                    setPhaseNotify('p2-hold');
+                                    schedule(() => runPhase3(), T2_HOLD);
+                                  }, T2_TRANSLATED);
+                                }, T2_TRANSLATING);
+                              }, T2_MODAL_TAP);
+                            }, T2_MODAL_IDLE);
+                          }, T2_MODAL_APPEAR);
+                        }, T2_LANG_SELECT);
+                      }, T2_HOVER_STEP);
                     }, T2_HOVER_STEP);
                   }, T2_HOVER_STEP);
-                }, T2_HOVER_STEP);
-              }, T2_DROPDOWN);
-            }, T2_LANG_TAP);
-          }, T2_READER_IDLE);
-        }, T2_READER_OPEN);
-      }, T2_READER_SKEL);
-    }, T2_BOOK_TAP);
+                }, T2_DROPDOWN);
+              }, T2_LANG_TAP);
+            }, T2_READER_IDLE);
+          }, T2_READER_OPEN);
+        }, T2_READER_SKEL);
+      }, T2_BOOK_TAP);
+    }, T2_IDLE);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [schedule, setPhaseNotify]);
 
@@ -755,16 +760,11 @@ export function ContinuousMockup({
 
   // Phase 1 derived
   // keep phase1 visible during p2-book-tap so no duplicate library flash
-  const isPhase1Visible = isPhase1 || phase === 'p2-book-tap';
+  const isPhase1Visible = isPhase1 || phase === 'p2-pre-tap' || phase === 'p2-book-tap';
   const drawerOpen   = isPhase1 && ['p1-drawer-empty','p1-tap-flash','p1-spinner','p1-file-ready','p1-upload-tap','p1-uploading','p1-upload-done'].includes(phase);
   const btnFlash     = phase === 'p1-btn-flash';
   const p1ScrollOffset = drawerOpen ? -60 : 0;
   const shouldRenderNewBook = showNewBook || newBookFirst || !isPhase1;
-  const ALL_BOOKS = [
-    ...(shouldRenderNewBook ? [{ key: 'new', color: NEW_BOOK.color, title: NEW_BOOK.title, author: NEW_BOOK.author, progress: 0, isNew: true }] : []),
-    ...EXISTING_BOOKS.map(b => ({ key: b.title, color: b.color, title: b.title, author: b.author, progress: b.progress, isNew: false })),
-  ];
-  const bookSlot = (bookIdx: number) => newBookFirst ? bookIdx : (bookIdx === 0 ? 5 : bookIdx - 1);
 
   // Shared reader derived (phase 2 + 3)
   const isReaderPhase = isPhase2 || isPhase3;
@@ -866,28 +866,20 @@ export function ContinuousMockup({
             </div>
             {/* book grid */}
             <div style={{ position: 'relative', height: containerH }}>
-              {ALL_BOOKS.map((book, bookIdx) => {
-                const slot = bookSlot(bookIdx);
+              {EXISTING_BOOKS.map((book, bookIdx) => {
+                const slot = newBookFirst ? bookIdx + 1 : bookIdx;
                 const pos = slotPos(slot);
-                const isNew = book.isNew;
-                const visible = isNew ? showNewBook : true;
                 return (
-                  <div key={book.key} style={{
+                  <div key={book.title} style={{
                     position: 'absolute', width: cellW,
                     left: pos.left, top: pos.top,
-                    transform: isNew ? (visible ? 'scale(1)' : 'scale(0)') : undefined,
-                    transformOrigin: 'center center',
-                    transition: isNew
-                      ? 'transform 0.35s cubic-bezier(0.34,1.56,0.64,1)'
-                      : newBookFirst
-                        ? 'left 0.45s cubic-bezier(0.22,1,0.36,1), top 0.45s cubic-bezier(0.22,1,0.36,1)'
-                        : 'none',
+                    transition: newBookFirst
+                      ? 'left 0.45s cubic-bezier(0.22,1,0.36,1), top 0.45s cubic-bezier(0.22,1,0.36,1)'
+                      : 'none',
                   }}>
                     <div style={{
                       width: '100%', aspectRatio: '2/3', borderRadius: 6, backgroundColor: book.color,
                       position: 'relative', overflow: 'hidden', boxShadow: `0 2px 8px ${C.coverShadow}`,
-                      transform: (isNew && phase === 'p2-book-tap') ? 'scale(0.93)' : 'scale(1)',
-                      transition: 'transform 0.12s ease-out',
                     }}>
                       <div style={{ position: 'absolute', bottom: 10, left: 7, right: 7 }}>
                         <div style={{ height: 3, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.7)', marginBottom: 3, width: '88%' }} />
@@ -899,7 +891,6 @@ export function ContinuousMockup({
                           <div style={{ height: '100%', width: `${book.progress}%`, backgroundColor: C.accent }} />
                         </div>
                       )}
-                      {isNew && <Ripple active={phase === 'p2-book-tap'} color="rgba(255,255,255,0.5)" radius={6} />}
                     </div>
                     <div style={{ marginTop: 5 }}>
                       <div style={{ color: C.text, fontSize: 10, fontWeight: 500, lineHeight: 1.35, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{book.title}</div>
@@ -908,6 +899,41 @@ export function ContinuousMockup({
                   </div>
                 );
               })}
+
+              {shouldRenderNewBook && (() => {
+                const pos = slotPos(newBookFirst ? 0 : 5);
+                return (
+                  <div style={{
+                    position: 'absolute',
+                    width: cellW,
+                    left: pos.left,
+                    top: pos.top,
+                    transform: showNewBook ? 'scale(1)' : 'scale(0)',
+                    transformOrigin: 'center center',
+                    transition: newBookFirst
+                      ? 'left 0.45s cubic-bezier(0.22,1,0.36,1), top 0.45s cubic-bezier(0.22,1,0.36,1), transform 0.35s cubic-bezier(0.34,1.56,0.64,1)'
+                      : 'transform 0.35s cubic-bezier(0.34,1.56,0.64,1)',
+                  }}>
+                    <div style={{
+                      width: '100%', aspectRatio: '2/3', borderRadius: 6, backgroundColor: NEW_BOOK.color,
+                      position: 'relative', overflow: 'hidden', boxShadow: `0 2px 8px ${C.coverShadow}`,
+                      transform: phase === 'p2-book-tap' ? 'scale(0.93)' : 'scale(1)',
+                      transition: 'transform 0.12s ease-out',
+                    }}>
+                      <div style={{ position: 'absolute', bottom: 10, left: 7, right: 7 }}>
+                        <div style={{ height: 3, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.7)', marginBottom: 3, width: '88%' }} />
+                        <div style={{ height: 3, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.7)', marginBottom: 3, width: '65%' }} />
+                        <div style={{ height: 2, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.4)', width: '50%' }} />
+                      </div>
+                      <Ripple active={phase === 'p2-book-tap'} color="rgba(255,255,255,0.5)" radius={6} />
+                    </div>
+                    <div style={{ marginTop: 5 }}>
+                      <div style={{ color: C.text, fontSize: 10, fontWeight: 500, lineHeight: 1.35, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{NEW_BOOK.title}</div>
+                      <div style={{ color: C.textMuted, fontSize: 9, marginTop: 2 }}>{NEW_BOOK.author}</div>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </div>
 
@@ -929,7 +955,7 @@ export function ContinuousMockup({
         ═══════════════════════════════════════════════════════════════════ */}
         <div style={{
           position: 'absolute', inset: 0,
-          opacity: isReaderPhase && phase !== 'p2-book-tap' && !p3BackClose ? 1 : 0,
+          opacity: isReaderPhase && phase !== 'p2-pre-tap' && phase !== 'p2-book-tap' && !p3BackClose ? 1 : 0,
           pointerEvents: 'none',
           backgroundColor: C.bg,
         }}>
