@@ -1,6 +1,7 @@
 'use client';
 
 import { Hero } from '@/components/landing/Hero';
+import { LandingHeader } from '@/components/landing/LandingHeader';
 import { PrivacyManifest } from '@/components/landing/PrivacyManifest';
 import { SupportedLanguages } from '@/components/landing/SupportedLanguages';
 import { ThreeMockups } from '@/components/landing/ThreeMockups';
@@ -11,6 +12,14 @@ import { Footer } from '@/components/landing/Footer';
 export default function LandingPage() {
   return (
     <>
+      <LandingHeader
+        navItems={[
+          { label: 'How It Works', href: '#how-it-works' },
+          { label: 'Quality', href: '#quality' },
+          { label: 'Formats & Languages', href: '#formats-languages' },
+          { label: 'Start reading', href: '#start' },
+        ]}
+      />
       <style>{`
         .hero-long-title {
           font-size: 42px !important;
@@ -34,23 +43,33 @@ export default function LandingPage() {
         titleClassName="hero-long-title"
       />
 
-      <ThreeMockups />
+      <div id="how-it-works">
+        <ThreeMockups />
+      </div>
 
-      <QualityAssuranceV2
-        label="Translation Quality"
-        heading="Translations You Can Trust"
-        description="Built on an AI engine fine-tuned by expert linguists, our app delivers clear, accurate, and easy-to-read translations that capture the author's true intent."
-      />
+      <div id="quality">
+        <QualityAssuranceV2
+          label="Translation Quality"
+          heading="Translations You Can Trust"
+          description="Built on an AI engine fine-tuned by expert linguists, our app delivers clear, accurate, and easy-to-read translations that capture the author's true intent."
+        />
+      </div>
 
-      <SupportedLanguages />
+      <div id="formats-languages">
+        <SupportedLanguages />
+      </div>
 
-      <PrivacyManifest />
+      <div id="privacy">
+        <PrivacyManifest />
+      </div>
 
-      <CTA
-        heading="Start with your first book."
-        description="Upload your EPUB and enjoy it in your language."
-        buttonText="Upload Your First Book"
-      />
+      <div id="start">
+        <CTA
+          heading="Start with your first book."
+          description="Upload your EPUB and enjoy it in your language."
+          buttonText="Upload Your First Book"
+        />
+      </div>
 
       <Footer
         tagline="We are building a global book platform where any reader can discover, buy, read, and listen to any book in their native language."

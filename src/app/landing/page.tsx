@@ -1,6 +1,7 @@
 'use client';
 
 import { Hero } from '@/components/landing/Hero';
+import { LandingHeader } from '@/components/landing/LandingHeader';
 import { FeaturesGrid } from '@/components/landing/FeaturesGrid';
 import { UseCases } from '@/components/landing/UseCases';
 import { QualityAssuranceV2 } from '@/components/landing/QualityAssuranceV2';
@@ -14,6 +15,14 @@ import { Footer } from '@/components/landing/Footer';
 export default function LandingPage() {
   return (
     <>
+      <LandingHeader
+        navItems={[
+          { label: 'Use Cases', href: '#use-cases' },
+          { label: 'Features', href: '#features' },
+          { label: 'Quality', href: '#quality' },
+          { label: 'FAQ', href: '#faq' },
+        ]}
+      />
       {/* Hero: Split with books */}
       <Hero
         variant="split"
@@ -23,11 +32,12 @@ export default function LandingPage() {
       />
 
       {/* Use Cases section */}
-      <UseCases
-        label="Who Uses Globoox"
-        heading="Perfect for every kind of reader"
-        description="Whatever brings you to reading, Globoox adapts to your needs"
-        items={[
+      <div id="use-cases">
+        <UseCases
+          label="Who Uses Globoox"
+          heading="Perfect for every kind of reader"
+          description="Whatever brings you to reading, Globoox adapts to your needs"
+          items={[
           {
             title: 'Scholars',
             subtitle: 'Study sources in any language',
@@ -49,14 +59,16 @@ export default function LandingPage() {
               'Access the best non-fiction from around the world — science, history, philosophy, business — in your native language, without waiting for a traditional translation.',
             benefits: ['Read global non-fiction', 'Stay current with ideas', 'No waiting for publishers', 'Unlimited selection'],
           },
-        ]}
-      />
+          ]}
+        />
+      </div>
 
       {/* Features grid */}
-      <FeaturesGrid
-        sectionLabel="How it Works"
-        sectionHeading="Powerful features for every reader"
-        cards={[
+      <div id="features">
+        <FeaturesGrid
+          sectionLabel="How it Works"
+          sectionHeading="Powerful features for every reader"
+          cards={[
           {
             label: 'The Method',
             heading: 'Seamless by design.',
@@ -117,15 +129,18 @@ export default function LandingPage() {
             variant: 'accent',
             size: 'sm',
           },
-        ]}
-      />
+          ]}
+        />
+      </div>
 
       {/* Quality Assurance section */}
-      <QualityAssuranceV2
-        label="Quality Assurance"
-        heading="Every Translation is Vetted"
-        description="Our multi-layer quality system ensures translations preserve literary nuance while maintaining readability in your language."
-      />
+      <div id="quality">
+        <QualityAssuranceV2
+          label="Quality Assurance"
+          heading="Every Translation is Vetted"
+          description="Our multi-layer quality system ensures translations preserve literary nuance while maintaining readability in your language."
+        />
+      </div>
 
       {/* Reviews section */}
       <Reviews />
@@ -134,8 +149,9 @@ export default function LandingPage() {
       <Pricing />
 
       {/* FAQ section */}
-      <FAQ
-        items={[
+      <div id="faq">
+        <FAQ
+          items={[
           {
             question: 'How does Globoox translate books?',
             answer: 'Globoox uses advanced AI translation technology to translate e-books while preserving the original nuance, style, and literary depth. Our neural networks are trained on millions of literary texts to ensure translations sound natural in your language.',
@@ -160,8 +176,9 @@ export default function LandingPage() {
             question: 'Can I cancel my subscription anytime?',
             answer: 'Yes, you can cancel your subscription anytime without penalties or hidden fees. Your access continues until the end of your billing period.',
           },
-        ]}
-      />
+          ]}
+        />
+      </div>
 
       {/* CTA section */}
       <CTA
