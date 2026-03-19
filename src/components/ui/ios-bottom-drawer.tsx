@@ -18,7 +18,7 @@ interface IOSBottomDrawerProps {
 }
 
 const sideClassName: Record<NonNullable<IOSBottomDrawerProps['side']>, string> = {
-  bottom: 'relative mt-auto w-full rounded-t-[30px] border-0 bg-[var(--bg-grouped-secondary)] shadow-2xl sm:mt-0 sm:max-w-lg sm:rounded-[28px] sm:border sm:border-[var(--separator)] pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:pb-0',
+  bottom: 'relative mt-auto flex min-h-0 w-full flex-col overflow-y-auto rounded-t-[30px] border-0 bg-[var(--bg-grouped-secondary)] shadow-2xl sm:mt-0 sm:max-h-[calc(100dvh-2rem)] sm:max-w-lg sm:rounded-[28px] sm:border sm:border-[var(--separator)] pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:pb-0',
   left: 'relative h-full w-[min(88vw,360px)] border-r border-[var(--separator)] bg-[var(--bg-grouped-secondary)] shadow-2xl',
   right: 'relative ml-auto h-full w-[min(88vw,420px)] border-l border-[var(--separator)] bg-[var(--bg-grouped-secondary)] shadow-2xl',
 };

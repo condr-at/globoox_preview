@@ -58,9 +58,9 @@ export default function ReaderSettings({
                         onClose={() => setIsOpen(false)}
                     />
                 )}
-                className="mt-[max(240px,46vh)] flex h-[calc(100dvh-max(240px,46vh))] max-h-none flex-col rounded-t-[20px] bg-[var(--bg-grouped-secondary)] sm:mt-0 sm:h-auto sm:max-w-[320px] sm:rounded-[24px]"
+                className="mt-[max(240px,46vh)] flex h-[calc(100dvh-max(240px,46vh))] max-h-none flex-col rounded-t-[20px] bg-[var(--bg-grouped-secondary)] sm:mt-0 sm:h-auto sm:max-w-[320px] sm:overflow-hidden sm:rounded-[24px]"
             >
-                <div className="p-5 pt-0 space-y-5">
+                <div className="flex-1 overflow-y-auto p-5 pt-0 space-y-5 sm:min-h-0">
                     {/* Theme Picker */}
                     <div>
                         <p className="text-[15px] text-muted-foreground mb-[12px]">Theme</p>
