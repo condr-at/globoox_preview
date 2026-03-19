@@ -166,12 +166,11 @@ export default function LandingPage() {
       {/* CTA section */}
       <CTA
         heading="Begin your first chapter free."
-        description="No commitment required. We'll translate your first three books with our compliments."
         buttonText="Get Started — It's Free"
       />
 
       {/* Footer */}
-      <Footer tagline="© 2026 Globoox Inc. Curating the world's wisdom." />
+      <Footer tagline="We are building a global book platform where any reader can discover, buy, read, and listen to any book in their native language." />
     </>
   );
 }

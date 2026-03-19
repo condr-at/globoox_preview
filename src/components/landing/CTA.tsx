@@ -4,11 +4,15 @@ import { useState } from 'react';
 
 interface CTAProps {
   heading: string;
-  description: string;
+  description?: string;
   buttonText: string;
 }
 
-export function CTA({ heading, description, buttonText }: CTAProps) {
+export function CTA({
+  heading,
+  description = 'Upload your EPUB and enjoy it in your language.',
+  buttonText,
+}: CTAProps) {
   const [isHovered, setIsHovered] = useState(false);
 
   return (
@@ -52,8 +56,9 @@ export function CTA({ heading, description, buttonText }: CTAProps) {
       </h2>
       <p
         style={{
-          fontSize: '20px',
-          color: 'rgba(255,255,255,0.8)',
+          fontSize: '18px',
+          color: 'var(--ash)',
+          lineHeight: 1.7,
           marginBottom: '40px',
           maxWidth: '600px',
           margin: '0 auto 40px',
@@ -64,7 +69,7 @@ export function CTA({ heading, description, buttonText }: CTAProps) {
       <button
         style={{
           display: 'inline-block',
-          background: isHovered ? 'var(--dusk)' : '#FFFFFF',
+          background: isHovered ? 'var(--dusk)' : 'var(--parchment)',
           color: 'var(--ink)',
           padding: '16px 32px',
           borderRadius: '8px',
@@ -72,10 +77,12 @@ export function CTA({ heading, description, buttonText }: CTAProps) {
           textDecoration: 'none',
           fontSize: '16px',
           transition: 'all 0.2s cubic-bezier(0.22, 1, 0.36, 1)',
-          border: 'none',
+          border: '1px solid rgba(244, 240, 232, 0.12)',
           cursor: 'pointer',
           transform: isHovered ? 'translateY(-2px)' : 'translateY(0)',
-          boxShadow: isHovered ? '0 6px 20px rgba(232, 184, 154, 0.4)' : 'none',
+          boxShadow: isHovered
+            ? '0 10px 28px rgba(232, 184, 154, 0.28)'
+            : '0 1px 0 rgba(255,255,255,0.08) inset, 0 10px 24px rgba(0,0,0,0.12)',
         }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}

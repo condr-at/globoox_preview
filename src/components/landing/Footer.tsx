@@ -9,16 +9,14 @@ export function Footer({ tagline }: FooterProps) {
         padding: '32px 0',
         textAlign: 'center',
         background: 'var(--ink)',
-        color: 'var(--parchment)',
-        fontSize: '14px',
+        color: 'var(--ash)',
+        fontSize: '13.5px',
       }}
     >
-      <div className="footer-container" style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 40px' }}>
-      <p>{tagline}</p>
+      <div className="footer-container" style={{ maxWidth: '800px', margin: '0 auto', padding: '0 40px' }}>
       <div
         className="footer-links"
         style={{
-          marginTop: '20px',
           display: 'flex',
           justifyContent: 'center',
           gap: '32px',
@@ -27,9 +25,10 @@ export function Footer({ tagline }: FooterProps) {
         <a
           href="#"
           style={{
-            color: 'var(--parchment)',
+            color: 'var(--ash)',
             textDecoration: 'none',
             fontWeight: 500,
+            fontSize: '13.5px',
             transition: 'color 0.2s ease',
           }}
           onClick={(e) => e.preventDefault()}
@@ -39,9 +38,10 @@ export function Footer({ tagline }: FooterProps) {
         <a
           href="#"
           style={{
-            color: 'var(--parchment)',
+            color: 'var(--ash)',
             textDecoration: 'none',
             fontWeight: 500,
+            fontSize: '13.5px',
             transition: 'color 0.2s ease',
           }}
           onClick={(e) => e.preventDefault()}
@@ -51,9 +51,10 @@ export function Footer({ tagline }: FooterProps) {
         <a
           href="#"
           style={{
-            color: 'var(--parchment)',
+            color: 'var(--ash)',
             textDecoration: 'none',
             fontWeight: 500,
+            fontSize: '13.5px',
             transition: 'color 0.2s ease',
           }}
           onClick={(e) => e.preventDefault()}
@@ -61,6 +62,9 @@ export function Footer({ tagline }: FooterProps) {
           Contact Support
         </a>
       </div>
+      <p style={{ fontSize: '13.5px', color: 'var(--ash)', maxWidth: '760px', margin: '20px auto 0', lineHeight: 1.6 }}>
+        {tagline}<br/>Globoox © 2026
+      </p>
       </div>
 
       <style>{`

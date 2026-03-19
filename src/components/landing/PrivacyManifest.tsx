@@ -53,9 +53,9 @@ export function PrivacyManifest() {
             marginBottom: '0',
           }}
         >
-          We understand it can feel risky to upload your books. Your EPUB files are used only for translation and are never shared. Our small team is dedicated to sharing knowledge and breaking language barriers.{' '}
+          We understand it can feel risky to upload your books. Your EPUB files are used only for translation and are never shared. Our small team is dedicated to sharing knowledge and breaking language barriers.             Our first users have already tried Globoox and are enjoying it safely.
+{' '}
           <span style={{ color: 'var(--ink)', fontWeight: 500 }}>
-            Our first users have already tried Globoox and are enjoying it safely.
           </span>
         </p>
       </div>
