@@ -31,8 +31,8 @@ export function LandingHeader({ navItems = [] }: LandingHeaderProps) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: '8px 16px',
-            borderRadius: '18px',
+            padding: '8px 8px 8px 20px',
+            borderRadius: '28px',
             backdropFilter: 'blur(14px)',
             background: 'rgba(244,240,232,0.9)',
             border: '1px solid rgba(44,59,45,0.08)',
@@ -40,11 +40,11 @@ export function LandingHeader({ navItems = [] }: LandingHeaderProps) {
           }}
         >
           <Link
-            href="/landing"
+            href="/"
             className="landing-header-logo"
             style={{
               fontFamily: "'Lora', serif",
-              fontSize: '24px',
+              fontSize: '22px',
               color: 'var(--ink)',
               textDecoration: 'none',
               fontWeight: 500,

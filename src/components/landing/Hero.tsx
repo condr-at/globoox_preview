@@ -95,7 +95,7 @@ function BookSpine({
               fontFamily: "'Lora', serif",
               fontSize: '17.5px',
               color: textColor || 'var(--ink-80)',
-              fontWeight: textColor ? 500 : 600,
+              fontWeight: textColor ? 450 : 500,
               opacity: textColor ? 1 : 1,
             }}
           >
@@ -162,14 +162,12 @@ export function Hero({ variant = 'centered', withBooks = false, title, subtitle,
     @media (max-width: 639px) {
       .hero-split {
         overflow-x: visible !important;
+        padding: 40px 20px !important;
       }
       .hero-split-inner {
         grid-template-columns: 1fr !important;
         gap: 18px !important;
         min-height: auto !important;
-      }
-      .hero-split {
-        padding-top: 0px !important;
       }
       .hero-split-inner > * {
         min-width: 0 !important;
@@ -257,6 +255,7 @@ export function Hero({ variant = 'centered', withBooks = false, title, subtitle,
     @media (min-width: 640px) and (max-width: 1023px) {
       .hero-split {
         overflow-x: visible !important;
+        padding: 50px 32px !important;
       }
       .hero-split-inner {
         grid-template-columns: 1fr !important;
@@ -297,6 +296,12 @@ export function Hero({ variant = 'centered', withBooks = false, title, subtitle,
       }
       .hero-centered-btn {
         padding: 16px 34px !important;
+      }
+    }
+    @media (min-width: 1024px) {
+      .hero-split {
+        padding-top: 0px !important;
+        padding-bottom: 0px !important;
       }
     }
     @media (min-width: 1280px) {

@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
-import '../globals.css';
 import Header from '@/components/ui/Header';
 import PostHogProvider from '@/components/PostHogProvider';
 import SyncCheckClient from '@/components/SyncCheckClient';
@@ -45,9 +44,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: `
+    <>
+      <script dangerouslySetInnerHTML={{ __html: `
           (function() {
             try {
               var theme = localStorage.getItem('globoox-theme');
@@ -65,33 +63,32 @@ export default function RootLayout({
             } catch(e) {}
           })();
         ` }} />
-        {process.env.NODE_ENV === 'production' && (
-          <Script
-            id="microsoft-clarity"
-            strategy="afterInteractive"
-            dangerouslySetInnerHTML={{
-              __html: `
+      {process.env.NODE_ENV === 'production' && (
+        <Script
+          id="microsoft-clarity"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
                 (function(c,l,a,r,i,t,y){
                   c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
                   t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
                   y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
                 })(window, document, "clarity", "script", "vo25c0m78q");
-              `,
-            }}
-          />
-        )}
-      </head>
-      <body className="antialiased bg-[var(--bg-grouped)]">
-          <PostHogProvider />
-          <SyncCheckClient />
-          <PaletteSync />
-          <div className="min-h-screen">
-            <main>
-              {children}
-            </main>
+            `,
+          }}
+        />
+      )}
+      <div className="antialiased bg-[var(--bg-grouped)]">
+        <PostHogProvider />
+        <SyncCheckClient />
+        <PaletteSync />
+        <div className="min-h-screen">
+          <main>
+            {children}
+          </main>
           </div>
-          <Header />
-      </body>
-    </html>
+        <Header />
+      </div>
+    </>
   );
 }
