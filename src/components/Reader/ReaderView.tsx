@@ -1454,7 +1454,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
 
             {/* ── Header (fixed, slides out upward) ── */}
             <header
-                className="fixed left-0 right-0 z-40 bg-background/80 backdrop-blur-xl border-b transition-transform duration-300 ease-in-out"
+                className="mobile-ui-no-select fixed left-0 right-0 z-40 bg-background/80 backdrop-blur-xl border-b transition-transform duration-300 ease-in-out"
                 style={{
                     top: 0,
                     paddingTop: 'calc(env(safe-area-inset-top) + 16px)',

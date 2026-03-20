@@ -75,7 +75,7 @@ export default function PageHeader({
   const paddingBottom = isCollapsed ? 8 : 16;
 
   return (
-    <header className="pt-[env(safe-area-inset-top)] fixed top-0 left-0 right-0 z-40 bg-background/80 backdrop-blur-xl border-b">
+    <header className="mobile-ui-no-select pt-[env(safe-area-inset-top)] fixed top-0 left-0 right-0 z-40 bg-background/80 backdrop-blur-xl border-b">
       <div
         className="container max-w-2xl mx-auto px-4 sm:px-6 flex items-center justify-between gap-3 transition-[padding] duration-300 ease-in-out"
         style={{ paddingTop, paddingBottom }}

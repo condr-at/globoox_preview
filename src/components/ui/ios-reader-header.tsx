@@ -23,7 +23,7 @@ export default function IOSReaderHeader({
   return (
     <div
       className={cn(
-        'bg-background/80 backdrop-blur-xl border-b',
+        'mobile-ui-no-select bg-background/80 backdrop-blur-xl border-b',
         className,
       )}
     >

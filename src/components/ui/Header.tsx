@@ -22,7 +22,7 @@ export default function Header() {
     if (isReaderPage || isAuthPage) return null;
 
     return (
-        <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-t pb-[env(safe-area-inset-bottom)]">
+        <nav className="mobile-ui-no-select fixed bottom-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-t pb-[env(safe-area-inset-bottom)]">
             <div className="container max-w-2xl mx-auto flex items-center justify-around h-15">
                 {/* Store — disabled, coming soon */}
                 <Button
