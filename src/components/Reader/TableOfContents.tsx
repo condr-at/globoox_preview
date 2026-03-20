@@ -61,7 +61,7 @@ export default function TableOfContents({
                 onOpenChange={setIsOpen}
                 side="bottom"
                 enableDragDismiss
-                dragHandle={<div className="h-1 w-12 rounded-full bg-black/12 dark:bg-white/16" />}
+                dragHandle={<div className="h-1 w-12 rounded-full bg-[var(--separator)]" />}
                 dragRegion={(
                     <IOSBottomDrawerHeader
                         title={<span className={isContentPending ? 'blur-[3px] opacity-40' : ''}>{bookTitle}</span>}
@@ -91,7 +91,7 @@ export default function TableOfContents({
                         onClose={() => setIsOpen(false)}
                     />
                 )}
-                className="mt-[max(56px,calc(env(safe-area-inset-top)+18px))] flex h-[calc(100dvh-max(56px,calc(env(safe-area-inset-top)+18px)))] max-h-none flex-col overflow-hidden rounded-t-[20px] bg-[#f3f3f1] shadow-[0_-12px_40px_rgba(0,0,0,0.16)] dark:bg-[#1c1c1e] sm:mt-0 sm:max-h-[calc(100dvh-2rem)] sm:max-w-[640px] sm:overflow-hidden sm:rounded-[24px]"
+                className="mt-[max(56px,calc(env(safe-area-inset-top)+18px))] flex h-[calc(100dvh-max(56px,calc(env(safe-area-inset-top)+18px)))] max-h-none flex-col overflow-hidden rounded-t-[20px] bg-[var(--bg-grouped-secondary)] shadow-[0_-12px_40px_rgba(0,0,0,0.16)] sm:mt-0 sm:max-h-[calc(100dvh-2rem)] sm:max-w-[640px] sm:overflow-hidden sm:rounded-[24px]"
             >
                 <div className="relative flex-1 overflow-hidden sm:min-h-0">
                     <div className={`h-full overflow-y-auto ${isContentPending ? 'blur-[3px] opacity-40' : ''}`}>
@@ -105,7 +105,7 @@ export default function TableOfContents({
                                     key={chapter.number}
                                     onClick={() => handleSelect(chapter.number)}
                                     disabled={isContentPending}
-                                    className="relative flex min-h-[72px] w-full items-center gap-4 border-t border-black/[0.07] px-5 text-left transition-colors active:bg-black/[0.035] dark:border-white/[0.08] dark:active:bg-white/[0.03]"
+                                    className="relative flex min-h-[72px] w-full items-center gap-4 border-t border-[var(--separator)] px-5 text-left transition-colors active:bg-[var(--fill-tertiary)]"
                                     style={{ paddingLeft: `${20 + indentPx}px`, paddingRight: '20px' }}
                                 >
                                     <span className="min-w-0 flex-1">
@@ -132,7 +132,7 @@ export default function TableOfContents({
                         })}
                         <div
                             aria-hidden="true"
-                            className="min-h-[72px] border-t border-black/[0.07] dark:border-white/[0.08]"
+                            className="min-h-[72px] border-t border-[var(--separator)]"
                         />
                     </div>
                     {isContentPending && (

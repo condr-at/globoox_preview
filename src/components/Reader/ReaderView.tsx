@@ -1111,6 +1111,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
     ]);
 
     const currentPageBlocksRef = useRef<ContentBlock[]>([]);
+    const pendingChapterEntryPersistRef = useRef<number | null>(null);
 
     // Keep ref updated with current page blocks
     useEffect(() => {
@@ -1132,9 +1133,34 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
             setCurrentPageIdx(0);
             setPagesReady(false);
             setPages([]);
+            // Persist entry anchor for the destination chapter as soon as its page is ready.
+            pendingChapterEntryPersistRef.current = index;
             setCurrentChapterIndex(index);
         }
     }, [chapters.length, saveAnchor]);
+
+    useEffect(() => {
+        if (pendingChapterEntryPersistRef.current == null) return;
+        if (!pagesReady || !visiblePagesReady) return;
+        if (pendingChapterEntryPersistRef.current !== currentChapterIndex) return;
+        if (!currentChapter) return;
+
+        const anchorBlockId = pages[currentPageIdx]?.[0];
+        if (!anchorBlockId) return;
+        const block = paginatedBlocks.find((b) => b.id === anchorBlockId);
+        if (!block) return;
+
+        const entryAnchor: ReadingAnchor = {
+            chapterId: currentChapter.id,
+            blockId: block.parentId ?? block.id,
+            fragmentId: block.id,
+            blockPosition: block.position,
+            sentenceIndex: getSentenceIndex(block),
+            updatedAt: new Date().toISOString(),
+        };
+        persistAnchor(entryAnchor);
+        pendingChapterEntryPersistRef.current = null;
+    }, [pagesReady, visiblePagesReady, currentChapterIndex, currentChapter, pages, currentPageIdx, paginatedBlocks, persistAnchor]);
 
     const goToPage = useCallback((idx: number) => {
         if (idx < 0 || idx >= pages.length) return;

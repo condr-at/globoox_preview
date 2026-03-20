@@ -44,7 +44,7 @@ export default function IOSBottomDrawerHeader({
         <button
           type="button"
           onClick={onClose}
-          className="relative z-30 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black/8 text-muted-foreground transition-colors active:bg-black/12 dark:bg-white/10 dark:active:bg-white/14 before:absolute before:bottom-[-8px] before:left-[-8px] before:right-[-20px] before:top-[-20px] before:content-['']"
+          className="relative z-30 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--fill-tertiary)] text-muted-foreground transition-colors active:bg-[var(--fill-quaternary)] before:absolute before:bottom-[-8px] before:left-[-8px] before:right-[-20px] before:top-[-20px] before:content-['']"
           aria-label="Close"
         >
           <X className="h-[18px] w-[18px]" strokeWidth={2.1} />
