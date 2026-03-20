@@ -16,7 +16,7 @@ const booksCache = new Map<string, CachedBooks>()
 
 /** Expose a way for useSyncCheck to force-invalidate the cache from outside the hook */
 export function invalidateBooksCache() {
-  booksCache.delete('all')
+  booksCache.clear()
   // Also drop persisted cache so a post-sync reload doesn't resurrect stale data.
   void clearCachedBooksList()
   void clearCachedBookMeta()
@@ -24,11 +24,12 @@ export function invalidateBooksCache() {
 
 export function useBooks(options?: { scopeKey?: string }) {
   const scopeKey = options?.scopeKey ?? 'guest'
+  const cacheKey = `${scopeKey}::all`
   const isAuthenticatedScope = scopeKey !== 'guest'
   const listStatus = isAuthenticatedScope ? 'all' : 'active'
 
   // Initialise from cache immediately — no skeleton on repeated visits
-  const cached = booksCache.get('all')
+  const cached = booksCache.get(cacheKey)
   const [books, setBooks] = useState<ApiBook[]>(cached?.data ?? [])
   // loading=true only when there is absolutely no cached data yet (very first visit)
   const [loading, setLoading] = useState(!cached)
@@ -40,12 +41,12 @@ export function useBooks(options?: { scopeKey?: string }) {
   // Hydrate from persisted IndexedDB cache (fast reloads)
   useEffect(() => {
     let cancelled = false
-    if (booksCache.get('all')) return
+    if (booksCache.get(cacheKey)) return
 
     void getCachedBooksList(scopeKey, 'all').then((entry) => {
       if (cancelled) return
       if (!entry?.books?.length) return
-      booksCache.set('all', { data: entry.books, fetchedAt: entry.fetchedAt })
+      booksCache.set(cacheKey, { data: entry.books, fetchedAt: entry.fetchedAt })
       setBooks(entry.books)
       setLoading(false)
       hasSuccessfulBooksFetch.current = true
@@ -56,7 +57,7 @@ export function useBooks(options?: { scopeKey?: string }) {
     return () => {
       cancelled = true
     }
-  }, [scopeKey])
+  }, [cacheKey, scopeKey])
 
   /**
    * refresh(force=false) — stale-while-revalidate:
@@ -65,7 +66,7 @@ export function useBooks(options?: { scopeKey?: string }) {
    *   - force=true: always re-fetches (e.g. after mutating the list)
    */
   const refresh = useCallback(async (force = false) => {
-    const entry = booksCache.get('all')
+    const entry = booksCache.get(cacheKey)
     const now = Date.now()
     const isFresh = entry && now - entry.fetchedAt < STALE_TIME_MS
 
@@ -88,13 +89,13 @@ export function useBooks(options?: { scopeKey?: string }) {
     revalidating.current = true
 
     // Clear stale entry when forced so we don't risk showing it again on next mount
-    if (force) booksCache.delete('all')
+    if (force) booksCache.delete(cacheKey)
 
     setError(null)
     // Don't set loading=true here — we already have data to show
     try {
       const data = await fetchBooks(listStatus)
-      booksCache.set('all', { data, fetchedAt: Date.now() })
+      booksCache.set(cacheKey, { data, fetchedAt: Date.now() })
       setBooks(data)
       void setCachedBooksList(scopeKey, 'all', data)
       data.forEach((b) => void setCachedBookMeta(scopeKey, b))
@@ -105,7 +106,7 @@ export function useBooks(options?: { scopeKey?: string }) {
         authRetryDone.current = true
         await new Promise((resolve) => setTimeout(resolve, 1200))
         const retryData = await fetchBooks(listStatus)
-        booksCache.set('all', { data: retryData, fetchedAt: Date.now() })
+        booksCache.set(cacheKey, { data: retryData, fetchedAt: Date.now() })
         setBooks(retryData)
         void setCachedBooksList(scopeKey, 'all', retryData)
         retryData.forEach((b) => void setCachedBookMeta(scopeKey, b))
@@ -119,7 +120,7 @@ export function useBooks(options?: { scopeKey?: string }) {
       // Only clear the initial loading spinner (first ever load)
       setLoading(false)
     }
-  }, [isAuthenticatedScope, listStatus, scopeKey])
+  }, [cacheKey, isAuthenticatedScope, listStatus, scopeKey])
 
   // On mount: show cache immediately, revalidate if stale
   useEffect(() => {
@@ -140,18 +141,18 @@ export function useBooks(options?: { scopeKey?: string }) {
   const addBook = useCallback(async (data: { title: string; author?: string; cover_url?: string; source_language?: string }) => {
     const created = await createBook(data)
     setBooks((prev) => [created, ...prev])
-    booksCache.delete('all')
+    booksCache.delete(cacheKey)
     void setCachedBookMeta(scopeKey, created)
     return created
-  }, [scopeKey])
+  }, [cacheKey, scopeKey])
 
   const hideBook = useCallback(async (id: string) => {
-    const previousBooks = booksCache.get('all')?.data ?? books
+    const previousBooks = booksCache.get(cacheKey)?.data ?? books
     const nextBooks = previousBooks.map((b) => (b.id === id ? { ...b, status: 'hidden' } : b))
 
     setError(null)
     setBooks(nextBooks)
-    booksCache.set('all', { data: nextBooks, fetchedAt: Date.now() })
+    booksCache.set(cacheKey, { data: nextBooks, fetchedAt: Date.now() })
     void setCachedBooksList(scopeKey, 'all', nextBooks)
     const updated = nextBooks.find((book) => book.id === id)
     if (updated) void setCachedBookMeta(scopeKey, updated)
@@ -161,22 +162,22 @@ export function useBooks(options?: { scopeKey?: string }) {
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to hide book'
       setBooks(previousBooks)
-      booksCache.set('all', { data: previousBooks, fetchedAt: Date.now() })
+      booksCache.set(cacheKey, { data: previousBooks, fetchedAt: Date.now() })
       void setCachedBooksList(scopeKey, 'all', previousBooks)
       const restored = previousBooks.find((book) => book.id === id)
       if (restored) void setCachedBookMeta(scopeKey, restored)
       setError(message)
       throw err
     }
-  }, [books, scopeKey])
+  }, [books, cacheKey, scopeKey])
 
   const unhideBook = useCallback(async (id: string) => {
-    const previousBooks = booksCache.get('all')?.data ?? books
+    const previousBooks = booksCache.get(cacheKey)?.data ?? books
     const nextBooks = previousBooks.map((b) => (b.id === id ? { ...b, status: 'active' } : b))
 
     setError(null)
     setBooks(nextBooks)
-    booksCache.set('all', { data: nextBooks, fetchedAt: Date.now() })
+    booksCache.set(cacheKey, { data: nextBooks, fetchedAt: Date.now() })
     void setCachedBooksList(scopeKey, 'all', nextBooks)
     const updated = nextBooks.find((book) => book.id === id)
     if (updated) void setCachedBookMeta(scopeKey, updated)
@@ -186,22 +187,22 @@ export function useBooks(options?: { scopeKey?: string }) {
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to unhide book'
       setBooks(previousBooks)
-      booksCache.set('all', { data: previousBooks, fetchedAt: Date.now() })
+      booksCache.set(cacheKey, { data: previousBooks, fetchedAt: Date.now() })
       void setCachedBooksList(scopeKey, 'all', previousBooks)
       const restored = previousBooks.find((book) => book.id === id)
       if (restored) void setCachedBookMeta(scopeKey, restored)
       setError(message)
       throw err
     }
-  }, [books, scopeKey])
+  }, [books, cacheKey, scopeKey])
 
   const removeBook = useCallback(async (id: string) => {
-    const previousBooks = booksCache.get('all')?.data ?? books
+    const previousBooks = booksCache.get(cacheKey)?.data ?? books
     const nextBooks = previousBooks.filter((b) => b.id !== id)
 
     setError(null)
     setBooks(nextBooks)
-    booksCache.set('all', { data: nextBooks, fetchedAt: Date.now() })
+    booksCache.set(cacheKey, { data: nextBooks, fetchedAt: Date.now() })
     void setCachedBooksList(scopeKey, 'all', nextBooks)
     void clearCachedBookMetaEntry(scopeKey, id)
 
@@ -210,7 +211,7 @@ export function useBooks(options?: { scopeKey?: string }) {
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to delete book'
       setBooks(previousBooks)
-      booksCache.set('all', { data: previousBooks, fetchedAt: Date.now() })
+      booksCache.set(cacheKey, { data: previousBooks, fetchedAt: Date.now() })
       void setCachedBooksList(scopeKey, 'all', previousBooks)
       const restored = previousBooks.find((book) => book.id === id)
       if (restored) {
@@ -219,7 +220,7 @@ export function useBooks(options?: { scopeKey?: string }) {
       setError(message)
       throw err
     }
-  }, [books, scopeKey])
+  }, [books, cacheKey, scopeKey])
 
   return { books, loading, error, refresh, addBook, hideBook, unhideBook, removeBook }
 }

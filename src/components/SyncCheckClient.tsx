@@ -33,6 +33,7 @@ export default function SyncCheckClient() {
 
       try {
         positionCacheInvalidateAll()
+        window.localStorage.removeItem('globoox-preview-storage')
         await clearEntireContentCache()
       } catch (error) {
         console.warn('[cache-epoch] failed to clear IndexedDB:', error)

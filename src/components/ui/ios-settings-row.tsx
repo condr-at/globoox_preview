@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { ChevronsUpDown, Check } from 'lucide-react';
+import IOSIcon from '@/components/ui/ios-icon';
 import { useAdaptiveDropdown } from '@/components/ui/useAdaptiveDropdown';
 import { cn } from '@/lib/utils';
 
@@ -52,7 +53,7 @@ export default function IOSSettingsRow({
         <span>{label}</span>
         <span className="flex items-center gap-1 text-muted-foreground text-[15px]">
           {currentLabel}
-          <ChevronsUpDown className="w-[16px] h-[16px]" strokeWidth={1.8} />
+          <IOSIcon icon={ChevronsUpDown} className="size-4" strokeWidth={1.8} />
         </span>
       </button>
 
@@ -69,7 +70,7 @@ export default function IOSSettingsRow({
                 className="w-full flex items-center justify-between px-[16px] py-[12px] text-left transition-colors active:bg-[var(--fill-tertiary)]"
               >
                 <span className="text-[17px]">{opt.label}</span>
-                {value === opt.id && <Check className="w-[18px] h-[18px] text-primary" strokeWidth={2.5} />}
+                {value === opt.id && <IOSIcon icon={Check} className="size-[18px] text-primary" strokeWidth={2.5} />}
               </button>
               {i < arr.length - 1 && <div className="mx-4 h-[0.5px] bg-[var(--separator)]" />}
             </div>

@@ -22,6 +22,68 @@ import { getCachedReadingPosition, setCachedReadingPosition } from '@/lib/conten
 const FALLBACK_COVER = '/covers/great-gatsby.jpg';
 const FALLBACK_AUTHOR = 'Unknown author';
 
+type ProgressRow = BookReadingProgress & {
+  server_updated_at?: string | null;
+  idb_updated_at?: string | null;
+};
+
+function toMs(ts: string | null | undefined): number {
+  if (!ts) return Number.NEGATIVE_INFINITY;
+  const ms = Date.parse(ts);
+  return Number.isFinite(ms) ? ms : Number.NEGATIVE_INFINITY;
+}
+
+function chooseNewestTs(...candidates: Array<string | null | undefined>): string | null {
+  let best: string | null = null;
+  let bestMs = Number.NEGATIVE_INFINITY;
+  for (const ts of candidates) {
+    const ms = toMs(ts);
+    if (ms > bestMs) {
+      best = ts ?? null;
+      bestMs = ms;
+    }
+  }
+  return best;
+}
+
+function chooseByPriority(...candidates: Array<string | null | undefined>): string | null {
+  for (const ts of candidates) {
+    if (!ts) continue;
+    if (Number.isFinite(toMs(ts))) return ts;
+  }
+  return null;
+}
+
+function mergeProgressMonotonic(existing: ProgressRow | undefined, incoming: ProgressRow): ProgressRow {
+  if (!existing) {
+    const normalizedUpdated = chooseNewestTs(
+      incoming.server_updated_at,
+      incoming.idb_updated_at,
+      incoming.updated_at,
+    );
+    return {
+      ...incoming,
+      updated_at: normalizedUpdated,
+      server_updated_at: incoming.server_updated_at ?? incoming.updated_at ?? null,
+      idb_updated_at: incoming.idb_updated_at ?? incoming.updated_at ?? null,
+    };
+  }
+
+  const serverUpdated = chooseNewestTs(existing.server_updated_at, incoming.server_updated_at);
+  const idbUpdated = chooseNewestTs(existing.idb_updated_at, incoming.idb_updated_at);
+  const effectiveUpdated = chooseNewestTs(serverUpdated, idbUpdated, existing.updated_at, incoming.updated_at);
+
+  const useIncomingBlockData = toMs(incoming.updated_at) >= toMs(existing.updated_at);
+  const source = useIncomingBlockData ? incoming : existing;
+
+  return {
+    ...source,
+    server_updated_at: serverUpdated,
+    idb_updated_at: idbUpdated,
+    updated_at: effectiveUpdated,
+  };
+}
+
 export default function MyBooksPage() {
   const { progress, touchLastRead, updateServerProgress, syncVersions } = useAppStore();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
@@ -29,7 +91,7 @@ export default function MyBooksPage() {
   const { books, loading, error, hideBook, unhideBook, removeBook, refresh } = useBooks({ scopeKey });
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [isSignInOpen, setIsSignInOpen] = useState(false);
-  const [progressData, setProgressData] = useState<Record<string, BookReadingProgress>>({});
+  const [progressData, setProgressData] = useState<Record<string, ProgressRow>>({});
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
   const [isDeletingBook, setIsDeletingBook] = useState(false);
   const [statusFilter, setStatusFilter] = useState<'visible' | 'hidden' | 'all'>('visible');
@@ -123,10 +185,11 @@ export default function MyBooksPage() {
 
       if (cancelled) return;
 
-      const progressMap: Record<string, BookReadingProgress> = {};
+      const progressMap: Record<string, ProgressRow> = {};
       for (const [bookId, cached] of entries) {
         if (!cached) continue;
         const pos = cached.position;
+        const effectiveUpdatedAt = chooseNewestTs(pos.updated_at, cached.updatedAt);
         progressMap[bookId] = {
           book_id: pos.book_id,
           chapter_id: pos.chapter_id,
@@ -134,10 +197,18 @@ export default function MyBooksPage() {
           block_position: pos.block_position,
           total_blocks: pos.total_blocks ?? progressRef.current[bookId]?.totalBlocks ?? 0,
           content_version: 0,
-          updated_at: pos.updated_at ?? cached.updatedAt,
+          updated_at: effectiveUpdatedAt,
+          server_updated_at: pos.updated_at ?? null,
+          idb_updated_at: cached.updatedAt ?? null,
         };
       }
-      setProgressData(progressMap);
+      setProgressData((prev) => {
+        const next = { ...prev };
+        for (const [bookId, incoming] of Object.entries(progressMap)) {
+          next[bookId] = mergeProgressMonotonic(prev[bookId], incoming);
+        }
+        return next;
+      });
     })();
 
     return () => { cancelled = true; };
@@ -183,7 +254,7 @@ export default function MyBooksPage() {
           const { bookId, remote } = item;
           if (!remote.chapter_id) continue;
           const totalBlocks = prev[bookId]?.total_blocks ?? progressRef.current[bookId]?.totalBlocks ?? 0;
-          next[bookId] = {
+          const incoming: ProgressRow = {
             book_id: remote.book_id,
             chapter_id: remote.chapter_id,
             block_id: remote.block_id,
@@ -191,7 +262,10 @@ export default function MyBooksPage() {
             total_blocks: totalBlocks,
             content_version: 0,
             updated_at: remote.updated_at,
+            server_updated_at: remote.updated_at,
+            idb_updated_at: remote.updated_at,
           };
+          next[bookId] = mergeProgressMonotonic(prev[bookId], incoming);
           const currentServerTs = progressRef.current[bookId]?.serverUpdatedAt;
           if (remote.updated_at && currentServerTs !== remote.updated_at) {
             serverUpdates.push({
@@ -235,14 +309,20 @@ export default function MyBooksPage() {
     return 0;
   }, [progress, progressData]);
 
-  const sortedBooksRef = useRef<typeof books>([]);
-  const sortedBookIdsKey = useRef('');
-  const sortedOrderRef = useRef('');
   const progressRef = useRef(progress);
 
   useEffect(() => {
     progressRef.current = progress;
   }, [progress]);
+
+  const getEffectiveLastRead = useCallback((bookId: string) => {
+    const p = progressData[bookId];
+    return chooseByPriority(
+      p?.server_updated_at,
+      p?.idb_updated_at,
+      progress[bookId]?.lastRead ?? null,
+    );
+  }, [progressData, progress]);
 
   const filteredBooks = useMemo(() => {
     const filtered = statusFilter === 'hidden'
@@ -255,31 +335,19 @@ export default function MyBooksPage() {
       if (sortOrder === 'title_asc') return a.title.localeCompare(b.title);
       if (sortOrder === 'title_desc') return b.title.localeCompare(a.title);
       if (sortOrder === 'recently_opened') {
-        const aTime = progressData[a.id]?.updated_at ?? progress[a.id]?.lastRead ?? null;
-        const bTime = progressData[b.id]?.updated_at ?? progress[b.id]?.lastRead ?? null;
-        const aMs = aTime ? new Date(aTime).getTime() : -Infinity;
-        const bMs = bTime ? new Date(bTime).getTime() : -Infinity;
-        return bMs - aMs;
+        const aMs = toMs(getEffectiveLastRead(a.id));
+        const bMs = toMs(getEffectiveLastRead(b.id));
+        if (bMs !== aMs) return bMs - aMs;
+        return a.id.localeCompare(b.id);
       }
       // recently_added
-      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      const createdDiff = new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      if (createdDiff !== 0) return createdDiff;
+      return a.id.localeCompare(b.id);
     });
 
-    // Freeze the visible order when only progress changed (not the book list itself).
-    // This prevents the list from jumping while the user is navigating to/from a book.
-    const newIdsKey = sorted.map((b) => b.id).join(',');
-    const prevIdsKey = sortedBookIdsKey.current;
-    const bookSetChanged = filtered.map((b) => b.id).sort().join(',') !==
-      sortedBooksRef.current.map((b) => b.id).sort().join(',');
-
-    if (bookSetChanged || prevIdsKey === '' || sortOrder !== 'recently_opened' || sortedOrderRef.current !== sortOrder) {
-      sortedBooksRef.current = sorted;
-      sortedBookIdsKey.current = newIdsKey;
-      sortedOrderRef.current = sortOrder;
-    }
-
-    return sortedBooksRef.current;
-  }, [books, statusFilter, sortOrder, progressData, progress]);
+    return sorted;
+  }, [books, statusFilter, sortOrder, getEffectiveLastRead]);
 
   return (
     <div className="min-h-screen bg-background pb-[calc(60px+env(safe-area-inset-bottom))]">

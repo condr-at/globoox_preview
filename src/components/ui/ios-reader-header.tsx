@@ -2,6 +2,7 @@
 
 import { ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import IOSIcon from '@/components/ui/ios-icon';
 import { cn } from '@/lib/utils';
 
 interface IOSReaderHeaderProps {
@@ -35,7 +36,7 @@ export default function IOSReaderHeader({
               type="button"
               className="text-primary -ml-2 flex-shrink-0 relative after:absolute after:inset-y-[-10px] after:left-[-10px] after:right-[-4px]"
             >
-              <ChevronLeft className="w-6 h-6 text-primary" strokeWidth={2.5} />
+              <IOSIcon icon={ChevronLeft} className="text-primary" strokeWidth={2.5} />
             </Button>
           </div>
 

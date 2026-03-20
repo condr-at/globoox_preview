@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { BookOpen, ShoppingBag, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import IOSIcon from '@/components/ui/ios-icon';
 
 export default function Header() {
     const pathname = usePathname();
@@ -32,7 +33,7 @@ export default function Header() {
                 >
                     <div className="relative">
                         <div className="opacity-40">
-                            <ShoppingBag className="w-9 h-9" strokeWidth={1.5} />
+                            <IOSIcon icon={ShoppingBag} strokeWidth={1.5} />
                         </div>
                         <span className="absolute -top-0.5 -right-3 text-[8px] font-semibold text-white leading-none px-1 py-0.5 rounded-full bg-primary">
                             soon
@@ -52,7 +53,7 @@ export default function Header() {
                     }`}
                 >
                     <Link href="/my-books">
-                        <BookOpen className="w-8 h-8" strokeWidth={isActive('/my-books') ? 2 : 1.5} />
+                        <IOSIcon icon={BookOpen} strokeWidth={isActive('/my-books') ? 1.7 : 1.5} />
                         <span className="text-[10px] font-medium">My Books</span>
                     </Link>
                 </Button>
@@ -68,7 +69,7 @@ export default function Header() {
                     }`}
                 >
                     <Link href="/settings">
-                        <Settings className="w-8 h-8" strokeWidth={isActive('/settings') ? 2 : 1.5} />
+                        <IOSIcon icon={Settings} strokeWidth={isActive('/settings') ? 1.7 : 1.5} />
                         <span className="text-[10px] font-medium">Settings</span>
                     </Link>
                 </Button>

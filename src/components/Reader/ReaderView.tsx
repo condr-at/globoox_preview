@@ -37,6 +37,7 @@ import LanguageSwitch from './LanguageSwitch';
 import ContentBlockRenderer from './ContentBlockRenderer';
 import { Button } from '@/components/ui/button';
 import IOSAlertDialog from '@/components/ui/ios-alert-dialog';
+import IOSIcon from '@/components/ui/ios-icon';
 import { Skeleton } from '@/components/ui/skeleton';
 import TranslationLimitDialog from '@/components/TranslationLimitDialog';
 
@@ -1474,7 +1475,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                                     } catch { /* ignore */ }
                                 }}
                             >
-                                <ChevronLeft className="w-6 h-6 text-primary" strokeWidth={2.5} />
+                                <IOSIcon icon={ChevronLeft} className="text-primary" strokeWidth={2.5} />
                             </Link>
                         </Button>
                     </div>

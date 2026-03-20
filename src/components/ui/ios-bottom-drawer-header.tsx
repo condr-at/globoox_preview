@@ -1,6 +1,7 @@
 'use client';
 
 import { X } from 'lucide-react';
+import IOSIcon from '@/components/ui/ios-icon';
 import { cn } from '@/lib/utils';
 
 interface IOSBottomDrawerHeaderProps {
@@ -47,7 +48,7 @@ export default function IOSBottomDrawerHeader({
           className="relative z-30 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--fill-tertiary)] text-muted-foreground transition-colors active:bg-[var(--fill-quaternary)] before:absolute before:bottom-[-8px] before:left-[-8px] before:right-[-20px] before:top-[-20px] before:content-['']"
           aria-label="Close"
         >
-          <X className="h-[18px] w-[18px]" strokeWidth={2.1} />
+          <IOSIcon icon={X} strokeWidth={2.1} />
         </button>
       </div>
     </div>

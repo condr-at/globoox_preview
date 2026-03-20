@@ -3,6 +3,7 @@
 import { X } from 'lucide-react';
 import IOSBottomDrawer from '@/components/ui/ios-bottom-drawer';
 import IOSDialogHeaderCenterLarge from '@/components/ui/ios-dialog-header-center-large';
+import IOSIcon from '@/components/ui/ios-icon';
 
 interface IOSFlowDialogProps {
   open: boolean;
@@ -34,7 +35,7 @@ export default function IOSFlowDialog({
             className="absolute right-5 top-4 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-[var(--fill-tertiary)] text-muted-foreground transition-colors active:bg-[var(--fill-quaternary)]"
             aria-label="Close"
           >
-            <X className="h-[18px] w-[18px]" strokeWidth={2.1} />
+            <IOSIcon icon={X} strokeWidth={2.1} />
           </button>
           <div className="px-6 pt-4 sm:pt-6">
             <IOSDialogHeaderCenterLarge
