@@ -27,7 +27,7 @@ export default function IOSFeatureDialog({
     <IOSDialog
       open={open}
       onOpenChange={onOpenChange}
-      className={className ?? 'w-[min(480px,calc(100vw-32px))] max-w-none overflow-hidden rounded-[14px] border-0 bg-[rgba(242,242,247,0.82)] shadow-[0_20px_60px_rgba(0,0,0,0.24)] backdrop-blur-[24px] dark:bg-[rgba(28,28,30,0.88)]'}
+      className={className ?? 'w-[min(480px,calc(100vw-32px))] max-w-none overflow-hidden rounded-[14px] border-0 bg-[var(--bg-grouped-secondary)] shadow-[0_20px_60px_rgba(0,0,0,0.24)] backdrop-blur-[24px]'}
     >
       <div className="px-6 pb-5 pt-6 text-center">
         <IOSDialogHeaderCenterLarge title={title} description={description} />

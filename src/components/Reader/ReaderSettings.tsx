@@ -51,7 +51,7 @@ export default function ReaderSettings({
                 onOpenChange={setIsOpen}
                 side="bottom"
                 enableDragDismiss
-                dragHandle={<div className="h-1 w-12 rounded-full bg-black/12 dark:bg-white/16" />}
+                dragHandle={<div className="h-1 w-12 rounded-full bg-[var(--separator)]" />}
                 dragRegion={(
                     <IOSBottomDrawerHeader
                         title="Themes & Settings"

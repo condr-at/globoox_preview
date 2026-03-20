@@ -47,7 +47,7 @@ export default function IOSSettingsRow({
         ref={triggerRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between px-4 h-[44px] text-[17px] active:bg-black/[0.04] dark:active:bg-white/[0.06] transition-colors"
+        className="flex w-full items-center justify-between px-4 h-[44px] text-[17px] active:bg-[var(--fill-tertiary)] transition-colors"
       >
         <span>{label}</span>
         <span className="flex items-center gap-1 text-muted-foreground text-[15px]">

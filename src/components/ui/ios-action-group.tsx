@@ -35,11 +35,11 @@ function getActionClassName({
   className?: string;
 }) {
   return cn(
-    'flex h-[56px] w-full items-center justify-center px-4 text-center text-[17px] transition-colors active:bg-black/[0.04] disabled:opacity-50 dark:active:bg-white/[0.06]',
+    'flex h-[56px] w-full items-center justify-center px-4 text-center text-[17px] transition-colors active:bg-[var(--fill-tertiary)] disabled:opacity-50',
     destructive
       ? 'font-normal text-destructive'
       : emphasized
-        ? 'font-normal text-primary sm:font-medium dark:font-normal'
+        ? 'font-normal text-primary sm:font-medium'
         : 'font-normal text-primary',
     className,
   );
@@ -49,7 +49,7 @@ export function IOSActionGroup({ children, className }: IOSActionGroupProps) {
   return (
     <div
       className={cn(
-        'overflow-hidden border-t border-[rgba(60,60,67,0.18)] dark:border-[rgba(84,84,88,0.36)]',
+        'overflow-hidden border-t border-[var(--separator)]',
         className,
       )}
     >
@@ -78,7 +78,7 @@ export function IOSActionDivider({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        'h-px bg-[rgba(60,60,67,0.18)] dark:bg-[rgba(84,84,88,0.36)]',
+        'h-px bg-[var(--separator)]',
         className,
       )}
     />
@@ -89,7 +89,7 @@ export function IOSActionVerticalDivider({ className }: { className?: string }) 
   return (
     <div
       className={cn(
-        'w-px self-stretch bg-[rgba(60,60,67,0.18)] dark:bg-[rgba(84,84,88,0.36)]',
+        'w-px self-stretch bg-[var(--separator)]',
         className,
       )}
     />

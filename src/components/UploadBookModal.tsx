@@ -201,7 +201,7 @@ export default function UploadBookModal({ isOpen, onClose, onUploaded }: UploadB
           <>
             <div
               onClick={() => fileInputRef.current?.click()}
-              className={`${sectionClassName} cursor-pointer py-7 text-center transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.03]`}
+              className={`${sectionClassName} cursor-pointer py-7 text-center transition-colors hover:bg-[var(--fill-tertiary)]`}
             >
               {file ? (
                 <FileText className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />

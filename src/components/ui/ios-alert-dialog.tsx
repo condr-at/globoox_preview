@@ -53,7 +53,7 @@ export default function IOSAlertDialog({
       labelledBy={titleId}
       describedBy={descriptionId}
       closeOnOverlay={!loading}
-      className="w-[min(320px,calc(100vw-32px))] max-w-none overflow-hidden rounded-[14px] border-0 bg-[rgba(242,242,247,0.82)] shadow-[0_20px_60px_rgba(0,0,0,0.24)] backdrop-blur-[24px] sm:max-w-none sm:rounded-[14px] dark:bg-[rgba(28,28,30,0.88)]"
+      className="w-[min(320px,calc(100vw-32px))] max-w-none overflow-hidden rounded-[14px] border-0 bg-[var(--bg-grouped-secondary)] shadow-[0_20px_60px_rgba(0,0,0,0.24)] backdrop-blur-[24px] sm:max-w-none sm:rounded-[14px]"
     >
       <div className="px-[16px] pt-3 text-center" style={{ paddingBottom: '18px' }}>
         <div

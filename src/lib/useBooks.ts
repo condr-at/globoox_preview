@@ -83,7 +83,7 @@ export function useBooks(options?: { scopeKey?: string }) {
     setError(null)
     // Don't set loading=true here — we already have data to show
     try {
-      const data = await fetchBooks()
+      const data = await fetchBooks('all')
       booksCache.set('all', { data, fetchedAt: Date.now() })
       setBooks(data)
       void setCachedBooksList(scopeKey, 'all', data)

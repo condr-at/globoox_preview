@@ -16,17 +16,17 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import GoogleOneTap from '@/components/GoogleOneTap';
 import PageHeader from '@/components/ui/PageHeader';
 import { trackBookOpened } from '@/lib/posthog';
-import { BookReadingProgress, ApiBook } from '@/lib/api';
-import { getCachedReadingPosition } from '@/lib/contentCache';
+import { BookReadingProgress, ApiBook, fetchReadingPosition } from '@/lib/api';
+import { getCachedReadingPosition, setCachedReadingPosition } from '@/lib/contentCache';
 
 const FALLBACK_COVER = '/covers/great-gatsby.jpg';
 const FALLBACK_AUTHOR = 'Unknown author';
 
 export default function MyBooksPage() {
-  const { progress, touchLastRead } = useAppStore();
+  const { progress, touchLastRead, updateServerProgress, syncVersions } = useAppStore();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const scopeKey = isAuthenticated && user?.id ? user.id : 'guest';
-  const { books, loading, error, hideBook, removeBook, refresh } = useBooks({ scopeKey });
+  const { books, loading, error, hideBook, unhideBook, removeBook, refresh } = useBooks({ scopeKey });
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [isSignInOpen, setIsSignInOpen] = useState(false);
   const [progressData, setProgressData] = useState<Record<string, BookReadingProgress>>({});
@@ -132,7 +132,7 @@ export default function MyBooksPage() {
           chapter_id: pos.chapter_id,
           block_id: pos.block_id,
           block_position: pos.block_position,
-          total_blocks: pos.total_blocks ?? progress[bookId]?.totalBlocks ?? 0,
+          total_blocks: pos.total_blocks ?? progressRef.current[bookId]?.totalBlocks ?? 0,
           content_version: 0,
           updated_at: pos.updated_at ?? cached.updatedAt,
         };
@@ -141,8 +141,83 @@ export default function MyBooksPage() {
     })();
 
     return () => { cancelled = true; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [books, scopeKey]);
+
+  // Revalidate reading positions from server so Recently Read is consistent cross-device.
+  useEffect(() => {
+    if (!isAuthenticated || books.length === 0) return;
+
+    let cancelled = false;
+    void (async () => {
+      const updates: Array<{ bookId: string; remote: Awaited<ReturnType<typeof fetchReadingPosition>> } | null> = [];
+      const CONCURRENCY = 4;
+      for (let i = 0; i < books.length && !cancelled; i += CONCURRENCY) {
+        const batch = books.slice(i, i + CONCURRENCY);
+        const batchUpdates = await Promise.all(
+          batch.map(async (book) => {
+            try {
+              const remote = await fetchReadingPosition(book.id);
+              void setCachedReadingPosition(scopeKey, book.id, { position: remote, updatedAt: remote.updated_at ?? null });
+              return { bookId: book.id, remote };
+            } catch {
+              return null;
+            }
+          })
+        );
+        updates.push(...batchUpdates);
+      }
+
+      if (cancelled) return;
+
+      const serverUpdates: Array<{
+        bookId: string;
+        blockPosition?: number;
+        totalBlocks?: number;
+        serverUpdatedAt: string;
+      }> = [];
+
+      setProgressData((prev) => {
+        const next = { ...prev };
+        for (const item of updates) {
+          if (!item) continue;
+          const { bookId, remote } = item;
+          if (!remote.chapter_id) continue;
+          const totalBlocks = prev[bookId]?.total_blocks ?? progressRef.current[bookId]?.totalBlocks ?? 0;
+          next[bookId] = {
+            book_id: remote.book_id,
+            chapter_id: remote.chapter_id,
+            block_id: remote.block_id,
+            block_position: remote.block_position,
+            total_blocks: totalBlocks,
+            content_version: 0,
+            updated_at: remote.updated_at,
+          };
+          const currentServerTs = progressRef.current[bookId]?.serverUpdatedAt;
+          if (remote.updated_at && currentServerTs !== remote.updated_at) {
+            serverUpdates.push({
+              bookId,
+              blockPosition: remote.block_position ?? undefined,
+              totalBlocks,
+              serverUpdatedAt: remote.updated_at,
+            });
+          }
+        }
+        return next;
+      });
+
+      for (const update of serverUpdates) {
+        updateServerProgress(update.bookId, {
+          blockPosition: update.blockPosition,
+          totalBlocks: update.totalBlocks,
+          serverUpdatedAt: update.serverUpdatedAt,
+        });
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [books, isAuthenticated, scopeKey, syncVersions.progress, updateServerProgress]);
 
   // Get block-based progress for a book
   const getBookProgress = useCallback((book: ApiBook) => {
@@ -163,6 +238,11 @@ export default function MyBooksPage() {
   const sortedBooksRef = useRef<typeof books>([]);
   const sortedBookIdsKey = useRef('');
   const sortedOrderRef = useRef('');
+  const progressRef = useRef(progress);
+
+  useEffect(() => {
+    progressRef.current = progress;
+  }, [progress]);
 
   const filteredBooks = useMemo(() => {
     const filtered = statusFilter === 'hidden'
@@ -290,9 +370,9 @@ export default function MyBooksPage() {
                   author={book.author ?? FALLBACK_AUTHOR}
                   cover={book.cover_url ?? FALLBACK_COVER}
                   progress={getBookProgress(book)}
-                  onHide={hideBook}
+                  onHide={book.status === 'hidden' ? unhideBook : hideBook}
                   onDelete={handleRequestDelete}
-                  hideLabel="Hide"
+                  hideLabel={book.status === 'hidden' ? 'Unhide' : 'Hide'}
                   onOpen={() => {
                     touchLastRead(book.id);
                     trackBookOpened({ book_id: book.id, title: book.title, source: 'library' });
