@@ -35,11 +35,11 @@ export default function Header() {
                         <div className="opacity-40">
                             <IOSIcon icon={ShoppingBag} strokeWidth={1.5} />
                         </div>
-                        <span className="absolute -top-0.5 -right-3 text-[8px] font-semibold text-white leading-none px-1 py-0.5 rounded-full bg-primary">
+                        <span className="absolute -top-0.5 -right-3 text-[8px] font-semibold text-white dark:text-black leading-none px-1 py-0.5 rounded-full bg-primary">
                             soon
                         </span>
                     </div>
-                    <span className="text-[10px] font-medium opacity-40">Store</span>
+                    <span className="text-[12px] font-medium opacity-40">Store</span>
                 </Button>
 
                 {/* My Books — center, main tab */}
@@ -54,7 +54,7 @@ export default function Header() {
                 >
                     <Link href="/my-books">
                         <IOSIcon icon={BookOpen} strokeWidth={isActive('/my-books') ? 1.5 : 1.5} />
-                        <span className="text-[10px] font-medium">My Books</span>
+                        <span className="text-[12px] font-medium">My Books</span>
                     </Link>
                 </Button>
 
@@ -70,7 +70,7 @@ export default function Header() {
                 >
                     <Link href="/settings">
                         <IOSIcon icon={Settings} strokeWidth={isActive('/settings') ? 1.5 : 1.5} />
-                        <span className="text-[10px] font-medium">Settings</span>
+                        <span className="text-[12px] font-medium">Settings</span>
                     </Link>
                 </Button>
             </div>

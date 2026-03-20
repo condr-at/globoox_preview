@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { useAppStore, Language, ReadingAnchor } from '@/lib/store';
 import { fetchContent, fetchReadingPosition, saveReadingPosition, updateBookLanguage, checkTranslationLimit } from '@/lib/api';
@@ -1648,9 +1648,10 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                     size="sm"
                     onClick={goToPrevPage}
                     disabled={currentPageIdx === 0 && currentChapterIndex === 1}
-                    className="hidden md:flex items-center gap-0.5 text-xs text-primary disabled:opacity-30 px-1"
+                    className="hidden md:flex items-center gap-1 text-xs text-primary disabled:opacity-30 px-1"
                 >
-                    <span className="truncate">← Previous page</span>
+                    <IOSIcon icon={ChevronLeft} className="size-4" strokeWidth={2} />
+                    <span className="truncate">Previous page</span>
                 </Button>
 
                 <div className="min-w-0 max-w-[70vw] md:max-w-[50vw] flex items-center gap-2 text-center">
@@ -1669,9 +1670,10 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                     size="sm"
                     onClick={goToNextPage}
                     disabled={currentPageIdx >= pages.length - 1 && currentChapterIndex === chapters.length}
-                    className="hidden md:flex items-center gap-0.5 text-xs text-primary disabled:opacity-30 px-1"
+                    className="hidden md:flex items-center gap-1 text-xs text-primary disabled:opacity-30 px-1"
                 >
-                    <span className="truncate">Next page →</span>
+                    <span className="truncate">Next page</span>
+                    <IOSIcon icon={ChevronRight} className="size-4" strokeWidth={2} />
                 </Button>
             </div>
         </div>

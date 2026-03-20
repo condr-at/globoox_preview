@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, Check } from 'lucide-react';
+import { ChevronDown, Check, SlidersHorizontal } from 'lucide-react';
 import IOSBottomDrawer from '@/components/ui/ios-bottom-drawer';
 import IOSBottomDrawerHeader from '@/components/ui/ios-bottom-drawer-header';
 import { useAdaptiveDropdown } from '@/components/ui/useAdaptiveDropdown';
@@ -102,6 +102,7 @@ export default function MyBooksPage() {
     return (saved as 'title_asc' | 'title_desc' | 'recently_added' | 'recently_opened') || 'recently_opened';
   });
   const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
+  const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
   const [sortDrawerOpen, setSortDrawerOpen] = useState(false);
   const sortTriggerRef = useRef<HTMLButtonElement>(null);
   const sortMenuRef = useRef<HTMLDivElement>(null);
@@ -360,7 +361,47 @@ export default function MyBooksPage() {
       <div className="container max-w-2xl mx-auto px-4 sm:px-6 pt-[calc(2rem+env(safe-area-inset-top)+72px)] pb-4 space-y-6 overflow-x-clip">
         {error && <p className="text-sm text-destructive">{error}</p>}
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 relative">
+          <div className="relative hidden max-[395px]:block">
+            <button
+              type="button"
+              onClick={() => setFilterDropdownOpen((v) => !v)}
+              className={[
+                'flex items-center gap-[6px] px-[12px] min-h-[40px] rounded-full border text-[14px] font-medium transition-colors',
+                filterDropdownOpen
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'border-[var(--separator)] bg-background text-foreground active:bg-accent',
+              ].join(' ')}
+              aria-label="Filter"
+            >
+              <SlidersHorizontal className="size-4" strokeWidth={1.8} />
+              <span>
+                {statusFilter === 'visible' ? 'Visible' : statusFilter === 'hidden' ? 'Hidden' : 'All'}
+              </span>
+            </button>
+
+            {filterDropdownOpen && (
+              <div className="absolute left-0 top-[calc(100%+8px)] py-[8px] w-[180px] bg-[var(--bg-grouped-secondary)] rounded-[12px] shadow-lg border border-[var(--separator)] overflow-hidden z-[100]">
+                {([
+                  { value: 'visible', label: 'Visible' },
+                  { value: 'hidden', label: 'Hidden' },
+                  { value: 'all', label: 'All' },
+                ] as const).map(({ value, label }, i, arr) => (
+                  <div key={value}>
+                    <button
+                      onClick={() => { setStatusFilter(value); setFilterDropdownOpen(false); }}
+                      className="w-full flex items-center justify-between px-[16px] py-[12px] text-left transition-colors active:bg-[var(--fill-tertiary)]"
+                    >
+                      <span className="text-[17px]">{label}</span>
+                      {statusFilter === value && <Check className="w-[18px] h-[18px] text-primary" />}
+                    </button>
+                    {i < arr.length - 1 && <div className="mx-4 h-[0.5px] bg-[var(--separator)]" />}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           {(['visible', 'hidden', 'all'] as const).map((f) => (
             <Button
               key={f}
@@ -368,7 +409,7 @@ export default function MyBooksPage() {
               size="sm"
               onClick={() => setStatusFilter(f)}
               className={[
-                'rounded-full border',
+                'rounded-full border max-[395px]:hidden',
                 statusFilter === f
                   ? 'border-primary bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground'
                   : 'border-[var(--separator)] bg-background text-foreground hover:bg-accent hover:text-accent-foreground',
@@ -380,13 +421,14 @@ export default function MyBooksPage() {
           <button
             ref={sortTriggerRef}
             onClick={() => {
+              setFilterDropdownOpen(false);
               if (typeof window !== 'undefined' && window.innerWidth < 640) {
                 setSortDrawerOpen(true);
               } else {
                 setSortDropdownOpen((v) => !v);
               }
             }}
-            className="ml-auto relative flex items-center gap-[4px] px-[8px] min-h-[44px] text-primary active:opacity-70 transition-opacity after:absolute after:inset-y-[-10px] after:left-[-4px] after:right-0"
+            className="ml-auto relative flex items-center justify-end text-right gap-[4px] px-[8px] min-h-[44px] text-primary active:opacity-70 transition-opacity after:absolute after:inset-y-[-10px] after:left-[-4px] after:right-0"
             aria-label="Sort"
           >
             <span className="text-[15px] font-medium">
