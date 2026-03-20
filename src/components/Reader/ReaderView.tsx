@@ -723,9 +723,19 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                     return;
                 }
 
-                // Soft reconcile: only force navigation when local anchor is missing
-                // or server progress scope definitely changed.
-                const shouldApplyRemoteAnchor = !hasLocalAnchor || scopeChanged;
+                const localAnchorUpdatedMs = localAnchor?.updatedAt
+                    ? Date.parse(localAnchor.updatedAt)
+                    : NaN;
+                const remoteUpdatedMs = remote.updated_at
+                    ? Date.parse(remote.updated_at)
+                    : NaN;
+                const isRemoteNewerThanLocal =
+                    Number.isFinite(remoteUpdatedMs) &&
+                    (!Number.isFinite(localAnchorUpdatedMs) || remoteUpdatedMs > localAnchorUpdatedMs);
+
+                // Soft reconcile: force navigation when local anchor is missing,
+                // scope definitely changed, or server anchor is newer than local.
+                const shouldApplyRemoteAnchor = !hasLocalAnchor || scopeChanged || isRemoteNewerThanLocal;
                 if (shouldApplyRemoteAnchor) {
                     const chapterIdx = chapters.findIndex((c) => c.id === chapterId);
                     if (chapterIdx >= 0) {
@@ -946,15 +956,37 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
     }, [currentChapter, persistAnchor]);
 
     useEffect(() => {
+        const flushPendingAnchor = () => {
+            if (!pendingAnchorTimer.current || !lastAnchorRef.current) return;
+            clearTimeout(pendingAnchorTimer.current);
+            pendingAnchorTimer.current = null;
+            lastSavedAnchorAt.current = Date.now();
+            persistAnchor(lastAnchorRef.current);
+        };
+
         const handleBeforeUnload = () => {
-            if (pendingAnchorTimer.current && lastAnchorRef.current) {
-                persistAnchor(lastAnchorRef.current);
+            flushPendingAnchor();
+        };
+        const handlePageHide = () => {
+            flushPendingAnchor();
+        };
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'hidden') {
+                flushPendingAnchor();
             }
         };
+
         window.addEventListener('beforeunload', handleBeforeUnload);
+        window.addEventListener('pagehide', handlePageHide);
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
         return () => {
             window.removeEventListener('beforeunload', handleBeforeUnload);
-            if (pendingAnchorTimer.current) clearTimeout(pendingAnchorTimer.current);
+            window.removeEventListener('pagehide', handlePageHide);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            // Route changes in SPA unmount ReaderView without firing beforeunload.
+            // Flush pending anchor here to avoid losing the latest in-chapter position.
+            flushPendingAnchor();
         };
     }, [persistAnchor]);
 
