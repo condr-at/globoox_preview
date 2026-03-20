@@ -6,6 +6,15 @@ import { ChevronDown, Check, SlidersHorizontal } from 'lucide-react';
 import IOSBottomDrawer from '@/components/ui/ios-bottom-drawer';
 import IOSBottomDrawerHeader from '@/components/ui/ios-bottom-drawer-header';
 import { useAdaptiveDropdown } from '@/components/ui/useAdaptiveDropdown';
+import {
+  uiDrawerItemButton,
+  uiDropdownItemButton,
+  uiFilterPillActive,
+  uiFilterPillBase,
+  uiFilterPillInactive,
+  uiTextActionButton,
+  uiTextActionButtonPressed,
+} from '@/components/ui/button-styles';
 import BookCard from '@/components/Store/BookCard';
 import DeleteBookConfirmDialog from '@/components/Store/DeleteBookConfirmDialog';
 import UploadBookModal from '@/components/UploadBookModal';
@@ -367,10 +376,10 @@ export default function MyBooksPage() {
               type="button"
               onClick={() => setFilterDropdownOpen((v) => !v)}
               className={[
-                'flex items-center gap-[6px] px-[12px] min-h-[40px] rounded-full border text-[14px] font-medium transition-colors',
+                `${uiTextActionButton} flex items-center gap-[6px] px-[12px] min-h-[40px] rounded-full border text-[14px] font-medium`,
                 filterDropdownOpen
-                  ? 'border-primary bg-primary text-primary-foreground'
-                  : 'border-[var(--separator)] bg-background text-foreground active:bg-accent',
+                  ? `border-[var(--separator)] text-foreground ${uiTextActionButtonPressed}`
+                  : 'border-[var(--separator)] bg-background text-foreground',
               ].join(' ')}
               aria-label="Filter"
             >
@@ -390,7 +399,7 @@ export default function MyBooksPage() {
                   <div key={value}>
                     <button
                       onClick={() => { setStatusFilter(value); setFilterDropdownOpen(false); }}
-                      className="w-full flex items-center justify-between px-[16px] py-[12px] text-left transition-colors active:bg-[var(--fill-tertiary)]"
+                      className={uiDropdownItemButton}
                     >
                       <span className="text-[17px]">{label}</span>
                       {statusFilter === value && <Check className="w-[18px] h-[18px] text-primary" />}
@@ -409,10 +418,10 @@ export default function MyBooksPage() {
               size="sm"
               onClick={() => setStatusFilter(f)}
               className={[
-                'rounded-full border max-[395px]:hidden',
+                `${uiFilterPillBase} max-[395px]:hidden`,
                 statusFilter === f
-                  ? 'border-primary bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground'
-                  : 'border-[var(--separator)] bg-background text-foreground hover:bg-accent hover:text-accent-foreground',
+                  ? uiFilterPillActive
+                  : uiFilterPillInactive,
               ].join(' ')}
             >
               {f === 'visible' ? 'Visible' : f === 'hidden' ? 'Hidden' : 'All'}
@@ -428,7 +437,7 @@ export default function MyBooksPage() {
                 setSortDropdownOpen((v) => !v);
               }
             }}
-            className="ml-auto relative flex items-center justify-end text-right gap-[4px] px-[8px] min-h-[44px] text-primary active:opacity-70 transition-opacity after:absolute after:inset-y-[-10px] after:left-[-4px] after:right-0"
+            className={`${uiTextActionButton} ml-auto relative flex items-center justify-end text-right gap-[4px] px-[8px] min-h-[44px] after:absolute after:inset-y-[-10px] after:left-[-4px] after:right-0`}
             aria-label="Sort"
           >
             <span className="text-[15px] font-medium">
@@ -453,7 +462,7 @@ export default function MyBooksPage() {
                 <div key={value}>
                   <button
                     onClick={() => { setSortOrder(value); localStorage.setItem(SORT_STORAGE_KEY, value); setSortDropdownOpen(false); }}
-                    className="w-full flex items-center justify-between px-[16px] py-[12px] text-left transition-colors active:bg-[var(--fill-tertiary)]"
+                    className={uiDropdownItemButton}
                   >
                     <span className="text-[17px]">{label}</span>
                     {sortOrder === value && <Check className="w-[18px] h-[18px] text-primary" />}
@@ -525,7 +534,7 @@ export default function MyBooksPage() {
               key={value}
               onClick={() => { setSortOrder(value); localStorage.setItem(SORT_STORAGE_KEY, value); setSortDrawerOpen(false); }}
               className={[
-                'flex w-full items-center justify-between px-5 h-[52px] text-[17px] text-left active:bg-black/[0.04] dark:active:bg-white/[0.06] transition-colors',
+                uiDrawerItemButton,
                 i < arr.length - 1 ? 'border-b border-[var(--separator)]' : '',
               ].join(' ')}
             >

@@ -40,7 +40,7 @@ export default function ReaderSettings({
             {externalOpen === undefined && (
                 <button
                     onClick={() => setIsOpen(true)}
-                    className="flex items-center justify-center min-w-[44px] min-h-[44px] text-primary active:opacity-70 transition-opacity"
+                    className="flex items-center justify-center min-w-[44px] min-h-[44px] text-primary transition-opacity hover:opacity-80 active:opacity-70"
                 >
                     <Settings className="w-[20px] h-[20px]" />
                 </button>
@@ -75,7 +75,7 @@ export default function ReaderSettings({
                                             const mode = t.id.endsWith('dark') ? 'dark' : 'light';
                                             setAppTheme(mode, palette);
                                         }}
-                                        className="flex flex-col items-center gap-[6px] active:opacity-70 transition-opacity"
+                                        className="flex flex-col items-center gap-[6px] transition-opacity hover:opacity-85 active:opacity-70"
                                         aria-label={t.label}
                                         aria-pressed={isActive}
                                     >

@@ -44,7 +44,7 @@ export default function StorePage() {
                     {search && (
                         <button
                             onClick={() => setSearch('')}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-muted transition-colors"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-muted active:bg-muted/80 transition-colors"
                         >
                             <X className="w-3 h-3 text-muted-foreground" />
                         </button>

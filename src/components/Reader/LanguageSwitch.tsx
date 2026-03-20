@@ -60,7 +60,7 @@ export default function LanguageSwitch({
           ref={triggerRef}
           onClick={() => setIsOpen(!effectiveOpen)}
           disabled={disabled}
-          className="relative flex items-center gap-[4px] px-[8px] min-w-[44px] min-h-[44px] text-primary active:opacity-70 disabled:opacity-50 transition-opacity after:absolute after:inset-y-[-10px] after:left-[-4px] after:right-[-4px]"
+          className="relative flex items-center gap-[4px] px-[8px] min-w-[44px] min-h-[44px] text-primary transition-opacity hover:opacity-80 active:opacity-70 disabled:opacity-50 after:absolute after:inset-y-[-10px] after:left-[-4px] after:right-[-4px]"
         >
           <span className="text-[15px] font-medium">{activeLanguage.toUpperCase()}</span>
           <ChevronDown className={`w-[16px] h-[16px] transition-transform ${effectiveOpen ? 'rotate-180' : ''}`} />
@@ -77,7 +77,7 @@ export default function LanguageSwitch({
             <div key={lang}>
               <button
                 onClick={() => handleSelect(lang)}
-                className="w-full flex items-center justify-between px-[16px] py-[12px] text-left transition-colors active:bg-[var(--fill-tertiary)]"
+                className="w-full flex items-center justify-between px-[16px] py-[12px] text-left transition-colors hover:bg-[var(--fill-tertiary)] active:bg-[var(--fill-secondary)]"
               >
                 <span className="text-[17px]">{languageNames[lang]}</span>
                 {activeLanguage === lang && (

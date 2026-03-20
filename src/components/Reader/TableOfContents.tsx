@@ -50,7 +50,7 @@ export default function TableOfContents({
             {externalOpen === undefined && (
                 <button
                     onClick={() => setIsOpen(true)}
-                    className="flex items-center justify-center min-w-[44px] min-h-[44px] text-primary active:opacity-70 transition-opacity"
+                    className="flex items-center justify-center min-w-[44px] min-h-[44px] text-primary transition-opacity hover:opacity-80 active:opacity-70"
                 >
                     <List className="w-[20px] h-[20px]" />
                 </button>
@@ -105,7 +105,7 @@ export default function TableOfContents({
                                     key={chapter.number}
                                     onClick={() => handleSelect(chapter.number)}
                                     disabled={isContentPending}
-                                    className="relative flex min-h-[72px] w-full items-center gap-4 border-t border-[var(--separator)] px-5 text-left transition-colors active:bg-[var(--fill-tertiary)]"
+                                    className="relative flex min-h-[72px] w-full items-center gap-4 border-t border-[var(--separator)] px-5 text-left transition-colors hover:bg-[var(--fill-tertiary)] active:bg-[var(--fill-secondary)]"
                                     style={{ paddingLeft: `${20 + indentPx}px`, paddingRight: '20px' }}
                                 >
                                     <span className="min-w-0 flex-1">

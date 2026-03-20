@@ -32,7 +32,7 @@ export default function IOSFlowDialog({
           <button
             type="button"
             onClick={() => onOpenChange(false)}
-            className="absolute right-5 top-4 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-[var(--fill-tertiary)] text-muted-foreground transition-colors active:bg-[var(--fill-quaternary)]"
+            className="absolute right-5 top-4 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-[var(--fill-tertiary)] text-muted-foreground transition-colors hover:bg-[var(--fill-secondary)] active:bg-[var(--fill-primary)]"
             aria-label="Close"
           >
             <IOSIcon icon={X} strokeWidth={2.1} />

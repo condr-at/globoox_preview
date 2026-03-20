@@ -26,6 +26,16 @@ import IOSIconFeatureListItem from '@/components/ui/ios-icon-feature-list-item';
 import IOSReaderHeader from '@/components/ui/ios-reader-header';
 import IOSBottomDrawer from '@/components/ui/ios-bottom-drawer';
 import IOSBottomDrawerHeader from '@/components/ui/ios-bottom-drawer-header';
+import { Button } from '@/components/ui/button';
+import {
+  uiDrawerItemButton,
+  uiDropdownItemButton,
+  uiFilterPillActive,
+  uiFilterPillBase,
+  uiFilterPillInactive,
+  uiTextActionButton,
+  uiTextActionButtonPressed,
+} from '@/components/ui/button-styles';
 
 type OverlayKey =
   | null
@@ -132,7 +142,7 @@ function CatalogCard({
           <button
             type="button"
             onClick={() => onOpen(item.openKey!)}
-            className="flex h-14 items-center justify-center rounded-2xl text-[17px] font-medium text-primary transition-colors active:bg-black/[0.04] dark:active:bg-white/[0.06] px-4"
+            className={`${uiTextActionButton} flex h-14 items-center justify-center rounded-2xl text-[17px] font-medium px-4`}
           >
             Open Preview
           </button>
@@ -140,7 +150,7 @@ function CatalogCard({
             <button
               type="button"
               onClick={() => onOpen(item.secondaryOpenKey!)}
-              className="flex h-14 items-center justify-center rounded-2xl text-[17px] font-medium text-primary transition-colors active:bg-black/[0.04] dark:active:bg-white/[0.06] px-4"
+              className={`${uiTextActionButton} flex h-14 items-center justify-center rounded-2xl text-[17px] font-medium px-4`}
             >
               {item.secondaryLabel}
             </button>
@@ -469,6 +479,123 @@ export default function ComponentsPreviewPage() {
               <p className="mt-2 text-muted-foreground">
                 Reuse `IOSBottomDrawerHeader`, `IOSDialogHeaderCenterLarge`, and `IOSDialogFooter`. Do not rebuild modal chrome locally in feature files.
               </p>
+            </div>
+          </div>
+        </Section>
+
+        <Section
+          title="Buttons"
+          description="Canonical button states tied to semantic tokens. Reuse these classes to keep hover/pressed behavior consistent."
+        >
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="rounded-[22px] bg-[var(--bg-grouped)] p-4">
+              <p className="text-sm font-medium text-foreground">Text Action</p>
+              <p className="mt-1 text-xs text-muted-foreground">For top-bar actions like Add/Sort and low-emphasis toolbar actions.</p>
+              <div className="mt-3">
+                <button type="button" className={`${uiTextActionButton} h-10 px-3 text-[15px] font-medium`}>
+                  Add
+                </button>
+                <button type="button" className={`${uiTextActionButton} ${uiTextActionButtonPressed} ml-2 h-10 px-3 text-[15px] font-medium`}>
+                  Sort (Pressed)
+                </button>
+              </div>
+            </div>
+
+            <div className="rounded-[22px] bg-[var(--bg-grouped)] p-4">
+              <p className="text-sm font-medium text-foreground">Design-System Variants (`Button`)</p>
+              <p className="mt-1 text-xs text-muted-foreground">Use these first before inventing custom button chrome. For `outline/secondary/ghost`: hover = `fill-tertiary`, pressed = `fill-secondary`.</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button variant="default">Default</Button>
+                <Button variant="outline">Outline</Button>
+                <Button variant="secondary">Secondary</Button>
+                <Button variant="ghost">Ghost</Button>
+                <Button variant="link">Link</Button>
+              </div>
+            </div>
+
+            <div className="rounded-[22px] bg-[var(--bg-grouped)] p-4">
+              <p className="text-sm font-medium text-foreground">Design-System Sizes</p>
+              <p className="mt-1 text-xs text-muted-foreground">Use size tokens for spacing consistency.</p>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <Button size="sm">Small</Button>
+                <Button size="default">Default</Button>
+                <Button size="lg">Large</Button>
+                <Button size="icon" aria-label="Icon">+</Button>
+                <Button size="icon-sm" aria-label="Icon small">+</Button>
+                <Button size="icon-lg" aria-label="Icon large">+</Button>
+              </div>
+            </div>
+
+            <div className="rounded-[22px] bg-[var(--bg-grouped)] p-4">
+              <p className="text-sm font-medium text-foreground">Dropdown Row</p>
+              <p className="mt-1 text-xs text-muted-foreground">For desktop dropdown menus.</p>
+              <div className="mt-3 w-full max-w-[260px] overflow-hidden rounded-xl border border-[var(--separator)] bg-[var(--bg-grouped-secondary)]">
+                <button type="button" className={uiDropdownItemButton}>
+                  <span>Recently Added</span>
+                  <span className="text-primary">✓</span>
+                </button>
+                <div className="mx-4 h-[0.5px] bg-[var(--separator)]" />
+                <button type="button" className={uiDropdownItemButton}>
+                  <span>Title A → Z</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="rounded-[22px] bg-[var(--bg-grouped)] p-4">
+              <p className="text-sm font-medium text-foreground">Drawer Row</p>
+              <p className="mt-1 text-xs text-muted-foreground">For iOS bottom-sheet lists on mobile.</p>
+              <div className="mt-3 overflow-hidden rounded-xl border border-[var(--separator)] bg-[var(--bg-grouped-secondary)]">
+                <button type="button" className={`${uiDrawerItemButton} border-b border-[var(--separator)]`}>
+                  <span>Recently Read</span>
+                  <span className="text-primary">✓</span>
+                </button>
+                <button type="button" className={uiDrawerItemButton}>
+                  <span>Title Z → A</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="rounded-[22px] bg-[var(--bg-grouped)] p-4">
+              <p className="text-sm font-medium text-foreground">Filter Pills</p>
+              <p className="mt-1 text-xs text-muted-foreground">Status chips in library/store-like toolbars.</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" className={`${uiFilterPillBase} ${uiFilterPillActive}`}>
+                  Visible
+                </Button>
+                <Button variant="outline" size="sm" className={`${uiFilterPillBase} ${uiFilterPillInactive}`}>
+                  Hidden
+                </Button>
+                <Button variant="outline" size="sm" className={`${uiFilterPillBase} ${uiFilterPillInactive}`}>
+                  All
+                </Button>
+              </div>
+            </div>
+
+            <div className="rounded-[22px] bg-[var(--bg-grouped)] p-4">
+              <p className="text-sm font-medium text-foreground">IOS Action Rows</p>
+              <p className="mt-1 text-xs text-muted-foreground">For modal footer decisions. Do not replace with generic `Button`.</p>
+              <div className="mt-3 overflow-hidden rounded-[18px] bg-transparent">
+                <div className="h-12" />
+                <IOSDialogFooter>
+                  <IOSActionRow>
+                    <IOSAction>Cancel</IOSAction>
+                    <IOSActionVerticalDivider />
+                    <IOSAction emphasized>Continue</IOSAction>
+                  </IOSActionRow>
+                </IOSDialogFooter>
+              </div>
+            </div>
+
+            <div className="rounded-[22px] bg-[var(--bg-grouped)] p-4 text-sm text-muted-foreground">
+              <p className="font-medium text-foreground">Rules</p>
+              <ul className="mt-2 space-y-1">
+                <li>Use `uiTextActionButton` for text-only actions and add `uiTextActionButtonPressed` when a menu is open.</li>
+                <li>Use `uiDropdownItemButton` for popover/dropdown options.</li>
+                <li>Use `uiDrawerItemButton` for bottom-drawer list rows.</li>
+                <li>Use `Button` variants/sizes for primary product actions.</li>
+                <li>Use `IOSAction*` only inside iOS dialog footers.</li>
+                <li>Do not hardcode black/white hover colors; rely on semantic fill tokens.</li>
+              </ul>
             </div>
           </div>
         </Section>

@@ -58,7 +58,7 @@ export default function ReaderActionsMenu({
         ref={triggerRef}
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="relative inline-flex min-h-[44px] min-w-[44px] items-center justify-center text-primary active:opacity-70 disabled:opacity-50 after:absolute after:inset-y-[-10px] after:left-[-4px] after:right-[-10px]"
+        className="relative inline-flex min-h-[44px] min-w-[44px] items-center justify-center text-primary transition-opacity hover:opacity-80 active:opacity-70 disabled:opacity-50 after:absolute after:inset-y-[-10px] after:left-[-4px] after:right-[-10px]"
         disabled={disabled}
       >
         <MoreHorizontal className="w-6 h-6" />
@@ -72,7 +72,7 @@ export default function ReaderActionsMenu({
         >
           <button
             onClick={() => handleAction('toc')}
-            className="w-full flex items-center justify-between px-4 py-3 text-left transition-colors active:bg-[var(--fill-tertiary)]"
+            className="w-full flex items-center justify-between px-4 py-3 text-left transition-colors hover:bg-[var(--fill-tertiary)] active:bg-[var(--fill-secondary)]"
           >
             <div className="flex items-center gap-3">
               <List className="w-5 h-5 text-primary" />
@@ -85,7 +85,7 @@ export default function ReaderActionsMenu({
 
           <button
             onClick={() => handleAction('settings')}
-            className="w-full flex items-center justify-between px-4 py-3 text-left transition-colors active:bg-[var(--fill-tertiary)]"
+            className="w-full flex items-center justify-between px-4 py-3 text-left transition-colors hover:bg-[var(--fill-tertiary)] active:bg-[var(--fill-secondary)]"
           >
             <div className="flex items-center gap-3">
               <Type className="w-5 h-5 text-primary" />

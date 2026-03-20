@@ -60,7 +60,7 @@ export default function BookActionsMenu({ onHide, onDelete, hideLabel = 'Hide', 
       <button
         ref={triggerRef}
         type="button"
-        className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-background/80 backdrop-blur text-primary active:opacity-70"
+        className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-background/80 backdrop-blur text-primary transition-colors hover:bg-[var(--fill-tertiary)] active:bg-[var(--fill-secondary)]"
         onPointerDown={(e) => {
           e.stopPropagation();
         }}
@@ -92,7 +92,7 @@ export default function BookActionsMenu({ onHide, onDelete, hideLabel = 'Hide', 
               e.stopPropagation();
               handleHide();
             }}
-            className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors active:bg-[var(--fill-tertiary)]"
+            className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-[var(--fill-tertiary)] active:bg-[var(--fill-secondary)]"
           >
             {hideLabel === 'Unhide' ? (
               <Eye className="w-4 h-4 text-primary" />
@@ -113,7 +113,7 @@ export default function BookActionsMenu({ onHide, onDelete, hideLabel = 'Hide', 
               e.stopPropagation();
               handleDelete();
             }}
-            className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors active:bg-[var(--fill-tertiary)]"
+            className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-[var(--fill-tertiary)] active:bg-[var(--fill-secondary)]"
           >
             <Trash2 className="w-4 h-4 text-destructive" />
             <span className="text-[15px] text-destructive">Delete</span>

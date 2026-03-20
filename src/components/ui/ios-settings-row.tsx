@@ -48,7 +48,7 @@ export default function IOSSettingsRow({
         ref={triggerRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between px-4 h-[44px] text-[17px] active:bg-[var(--fill-tertiary)] transition-colors"
+        className="flex w-full items-center justify-between px-4 h-[44px] text-[17px] transition-colors hover:bg-[var(--fill-tertiary)] active:bg-[var(--fill-secondary)]"
       >
         <span>{label}</span>
         <span className="flex items-center gap-1 text-muted-foreground text-[15px]">
@@ -67,7 +67,7 @@ export default function IOSSettingsRow({
             <div key={opt.id}>
               <button
                 onClick={() => { onChange(opt.id); setOpen(false); }}
-                className="w-full flex items-center justify-between px-[16px] py-[12px] text-left transition-colors active:bg-[var(--fill-tertiary)]"
+                className="w-full flex items-center justify-between px-[16px] py-[12px] text-left transition-colors hover:bg-[var(--fill-tertiary)] active:bg-[var(--fill-secondary)]"
               >
                 <span className="text-[17px]">{opt.label}</span>
                 {value === opt.id && <IOSIcon icon={Check} className="size-[18px] text-primary" strokeWidth={1.9} />}

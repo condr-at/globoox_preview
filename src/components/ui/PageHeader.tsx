@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { uiTextActionButton } from '@/components/ui/button-styles';
 
 type PageHeaderAction = {
   label: string;
@@ -93,7 +94,7 @@ export default function PageHeader({
           {action ? (
             <button
               onClick={action.onClick}
-              className="h-9 text-[15px] font-medium text-primary active:opacity-50 transition-[opacity,transform] duration-300 ease-in-out px-2"
+              className={`${uiTextActionButton} h-9 text-[15px] font-medium transition-[opacity,transform] duration-300 ease-in-out px-2`}
               style={{
                 opacity: isCollapsed ? 0 : 1,
                 transform: isCollapsed ? 'scale(0)' : 'scale(1)',
