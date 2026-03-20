@@ -40,7 +40,7 @@ export default function BookDetailPage({ params }: BookDetailPageProps) {
             <header className="nav-bar fixed top-0 left-0 right-0 z-40 safe-area-inset-top">
                 <div className="flex items-center h-[44px] px-[16px]">
                     <Link href="/store" className="flex items-center gap-[4px] text-primary -ml-[8px] min-w-[44px] min-h-[44px] pl-[8px]">
-                        <IOSIcon icon={ChevronLeft} className="text-primary" strokeWidth={2.5} />
+                        <IOSIcon icon={ChevronLeft} className="text-primary" strokeWidth={2} />
                         <span className="text-[17px]">Store</span>
                     </Link>
                 </div>

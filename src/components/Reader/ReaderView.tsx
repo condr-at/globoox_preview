@@ -1475,7 +1475,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                                     } catch { /* ignore */ }
                                 }}
                             >
-                                <IOSIcon icon={ChevronLeft} className="text-primary" strokeWidth={2.5} />
+                                <IOSIcon icon={ChevronLeft} className="text-primary" strokeWidth={2} />
                             </Link>
                         </Button>
                     </div>

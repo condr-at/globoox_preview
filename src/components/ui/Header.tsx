@@ -53,7 +53,7 @@ export default function Header() {
                     }`}
                 >
                     <Link href="/my-books">
-                        <IOSIcon icon={BookOpen} strokeWidth={isActive('/my-books') ? 1.7 : 1.5} />
+                        <IOSIcon icon={BookOpen} strokeWidth={isActive('/my-books') ? 1.5 : 1.5} />
                         <span className="text-[10px] font-medium">My Books</span>
                     </Link>
                 </Button>
@@ -69,7 +69,7 @@ export default function Header() {
                     }`}
                 >
                     <Link href="/settings">
-                        <IOSIcon icon={Settings} strokeWidth={isActive('/settings') ? 1.7 : 1.5} />
+                        <IOSIcon icon={Settings} strokeWidth={isActive('/settings') ? 1.5 : 1.5} />
                         <span className="text-[10px] font-medium">Settings</span>
                     </Link>
                 </Button>

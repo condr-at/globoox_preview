@@ -94,7 +94,7 @@ export default function ReaderSettings({
                                             />
                                             {isActive && (
                                                 <span className="absolute bottom-[4px] right-[4px] flex items-center justify-center w-[16px] h-[16px] rounded-full" style={{ background: t.accent }}>
-                                                    <Check className="w-[10px] h-[10px]" style={{ color: t.bg }} strokeWidth={3} />
+                                                    <Check className="w-[10px] h-[10px]" style={{ color: t.bg }} strokeWidth={2} />
                                                 </span>
                                             )}
                                         </div>

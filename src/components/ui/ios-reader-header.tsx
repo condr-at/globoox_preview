@@ -36,7 +36,7 @@ export default function IOSReaderHeader({
               type="button"
               className="text-primary -ml-2 flex-shrink-0 relative after:absolute after:inset-y-[-10px] after:left-[-10px] after:right-[-4px]"
             >
-              <IOSIcon icon={ChevronLeft} className="text-primary" strokeWidth={2.5} />
+              <IOSIcon icon={ChevronLeft} className="text-primary" strokeWidth={2} />
             </Button>
           </div>
 
