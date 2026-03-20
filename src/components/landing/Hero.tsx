@@ -165,8 +165,11 @@ export function Hero({ variant = 'centered', withBooks = false, title, subtitle,
       }
       .hero-split-inner {
         grid-template-columns: 1fr !important;
-        gap: 32px !important;
+        gap: 18px !important;
         min-height: auto !important;
+      }
+      .hero-split {
+        padding-top: 0px !important;
       }
       .hero-split-inner > * {
         min-width: 0 !important;
@@ -186,6 +189,7 @@ export function Hero({ variant = 'centered', withBooks = false, title, subtitle,
       }
       .hero-split-p {
         font-size: 17px !important;
+        margin-bottom: 8px !important;        
       }
       .hero-split-btn {
         padding: 14px 28px !important;

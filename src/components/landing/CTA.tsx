@@ -95,7 +95,7 @@ export function CTA({
       <style>{`
         @media (max-width: 639px) {
           .cta-section {
-            padding: 80px 0 60px 0 !important;
+            padding: 160px 0 120px 0 !important;
           }
           .cta-heading {
             font-size: 36px !important;
@@ -103,9 +103,7 @@ export function CTA({
           .cta-container {
             padding: 0 20px !important;
           }
-          .floating-script {
-            display: none !important;
-          }
+
         }
         @media (min-width: 640px) and (max-width: 1023px) {
           .cta-section {

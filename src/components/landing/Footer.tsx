@@ -380,7 +380,7 @@ export function Footer({ tagline }: FooterProps) {
           <div
             className="footer-links"
             style={{
-              display: 'flex',
+              display: 'none',
               justifyContent: 'center',
               gap: '32px',
             }}

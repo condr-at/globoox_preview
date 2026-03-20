@@ -1012,7 +1012,10 @@ export function AnimatedIPhoneMockup({
               <Ripple active={p3BackTap} color="rgba(192,90,58,0.2)" radius={6} duration={300} />
             </div>
 
-            <span style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', fontSize: 13, fontWeight: 600, color: C.text }}>Meditations</span>
+            <div style={{ position: 'absolute', left: 40, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1.05, gap: 2, maxWidth: 'calc(100% - 106px)' }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: C.text }}>Meditations</span>
+              <span style={{ fontSize: 10, fontWeight: 500, color: C.textMuted }}>Marcus Aurelius</span>
+            </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 2, opacity: langTapped ? 0.5 : 1, transition: 'opacity 0.1s ease', position: 'relative', padding: '4px 6px', borderRadius: 6, overflow: 'hidden' }}>
               <span style={{ fontSize: 13, fontWeight: 600, color: C.accent }}>{currentLang}</span>
