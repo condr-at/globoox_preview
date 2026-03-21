@@ -21,6 +21,7 @@ const MIN_PARAGRAPH_LINES_AT_PAGE_BOTTOM = 2
 const MIN_PARAGRAPH_LINES_AT_PAGE_TOP = 3
 const MIN_LIST_ITEMS_AT_PAGE_BOTTOM = 2
 const PAGINATION_TRACE_LIMIT = 200
+const PARAGRAPH_KEEP_WITH_NEXT_TYPES = new Set<ContentBlock['type']>(['hr', 'list', 'quote'])
 
 type PaginationHeadingTraceEvent = {
   ts: number
@@ -500,46 +501,8 @@ function fitParagraphByDom(
     return bestResult
   }
 
-  const consumedChars = bestResult.firstPart.length
-  let wordStart = consumedChars
-  while (wordStart > 0 && !isWhitespace(normalizedText[wordStart - 1]!)) {
-    wordStart--
-  }
-  let wordEnd = consumedChars
-  while (wordEnd < normalizedText.length && !isWhitespace(normalizedText[wordEnd]!)) {
-    wordEnd++
-  }
-
-  if (wordStart < consumedChars && wordEnd > consumedChars) {
-    const prefix = normalizedText.slice(0, wordStart).trimEnd()
-    const word = normalizedText.slice(wordStart, wordEnd)
-    const suffix = normalizedText.slice(wordEnd).trimStart()
-    const policy = getHyphenPolicy(lang)
-    const parts = canHyphenateWordByPolicy(word, lang) ? hyphenateWord(word, lang) : []
-    if (parts.length > 1) {
-      let chunk = ''
-      let bestHyphenated: SplitResult | null = null
-      for (let i = 0; i < parts.length - 1; i++) {
-        chunk += parts[i]
-        const right = parts.slice(i + 1).join('')
-        if (chunk.length < policy.minLeft || right.length < policy.minRight) {
-          continue
-        }
-        const hyphenatedPrefix = prefix ? `${prefix} ${chunk}-` : `${chunk}-`
-        if (fitsText(hyphenatedPrefix, false)) {
-          bestHyphenated = {
-            firstPart: hyphenatedPrefix,
-            restPart: [right, suffix].filter(Boolean).join(' ').trim(),
-          }
-        } else {
-          break
-        }
-      }
-      if (bestHyphenated) {
-        bestResult = bestHyphenated
-      }
-    }
-  }
+  // Manual intra-word hyphen split between pages is disabled.
+  // Line-level hyphenation remains browser-driven via CSS (`hyphens: auto`).
 
   probe.removeChild(wrapper)
   return bestResult
@@ -789,6 +752,25 @@ function computePagesDom(
         )
         probe.appendChild(wholeNode)
         if (fitsProbe(probe, effectiveHeight)) {
+          // Keep paragraph with the immediately following structural block
+          // (hr/list/quote) to avoid awkward page starts.
+          const nextBlock = blocks[i + 1]
+          const shouldKeepWithNext =
+            !!nextBlock &&
+            PARAGRAPH_KEEP_WITH_NEXT_TYPES.has(nextBlock.type) &&
+            currentPage.length >= minBlocksPerPage
+          if (shouldKeepWithNext) {
+            const nextNode = createMeasuredWrapper(nextBlock!, fontSize, lang, lineHeightScale, measuredBlockRoots)
+            probe.appendChild(nextNode)
+            const nextFits = fitsProbe(probe, effectiveHeight)
+            probe.removeChild(nextNode)
+            if (!nextFits) {
+              probe.removeChild(wholeNode)
+              pushCurrentPage()
+              continue
+            }
+          }
+
           const finalId = partIndex === (block.partIndex ?? 0) ? block.id : `${block.id}-part-${partIndex}`
           const isFirstPart = (block.isFirstPart ?? true) && partIndex === (block.partIndex ?? 0)
           const finalBlock: ParagraphBlock & { sentenceIndex: number } = {
@@ -983,36 +965,7 @@ function splitParagraphByHeight(
   let firstPart = words.slice(0, best).join(' ')
   const restWords = words.slice(best)
 
-  if (best < words.length && best > 0 && best < words.length - 1) {
-    const nextWord = words[best]
-    const policy = getHyphenPolicy(lang)
-    const parts = canHyphenateWordByPolicy(nextWord, lang) ? hyphenateWord(nextWord, lang) : []
-    if (parts.length > 1) {
-      let maxFittingSyllables = 0
-      let currentSyllableStr = ''
-      for (let i = 0; i < parts.length - 1; i++) {
-        currentSyllableStr += parts[i]
-        const right = parts.slice(i + 1).join('')
-        if (currentSyllableStr.length < policy.minLeft || right.length < policy.minRight) {
-          continue
-        }
-        const testStr = `${firstPart} ${currentSyllableStr}-`
-        const h = measureTextHeight(testStr, temp)
-        if (h <= availableHeight) {
-          maxFittingSyllables = i + 1
-        } else {
-          break
-        }
-      }
-
-      if (maxFittingSyllables > 0) {
-        const fittingSyllables = parts.slice(0, maxFittingSyllables).join('')
-        const remainingSyllables = parts.slice(maxFittingSyllables).join('')
-        firstPart += ` ${fittingSyllables}-`
-        restWords[0] = remainingSyllables
-      }
-    }
-  }
+  // Manual intra-word hyphen split is disabled in fallback mode too.
 
   containerRef.removeChild(temp)
   return { firstPart, restPart: restWords.join(' ') }
@@ -1123,6 +1076,21 @@ function computePagesFallback(
     const canStartNewPage = currentPage.length >= minBlocksPerPage
 
     if (!wouldOverflow || !canStartNewPage) {
+      if (
+        block.type === 'paragraph' &&
+        currentPage.length >= minBlocksPerPage
+      ) {
+        const nextBlock = blocks[i + 1]
+        if (nextBlock && PARAGRAPH_KEEP_WITH_NEXT_TYPES.has(nextBlock.type)) {
+          const nextH = blockHeights.get(nextBlock.id) ?? 48
+          if (currentHeight + h + nextH > effectiveHeight) {
+            pages.push(currentPage)
+            currentPage = []
+            currentHeight = 0
+          }
+        }
+      }
+
       if (block.type === 'list' && currentPage.length > 0) {
         const blockParentId = block.parentId ?? block.id
         const prevId = currentPage[currentPage.length - 1]

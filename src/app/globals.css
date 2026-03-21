@@ -264,6 +264,16 @@ body {
   margin-top: 0 !important;
 }
 
+/* Browser hyphenation policy: keep automatic line hyphenation, but with stricter limits. */
+.reader-page p,
+.reader-page li {
+  hyphens: auto;
+  -webkit-hyphens: auto;
+  word-break: normal;
+  overflow-wrap: normal;
+  hyphenate-limit-chars: 8 4 4;
+}
+
 /* Dedicated chapter-title page: keep lone h1 vertically centered */
 .reader-page > .flow-root.page-single-h1 {
   height: 100%;

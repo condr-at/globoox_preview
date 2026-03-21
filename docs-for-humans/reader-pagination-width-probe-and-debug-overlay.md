@@ -1,5 +1,7 @@
 # Reader Pagination: Width Probe and Debug Overlay
 
+> Current canonical docs moved to: `docs/reader-layout/` (architecture, rules, typography/hyphenation, cache/versioning, debugging).
+
 ## Why this exists
 - Pagination must be computed using the real column width.
 - Measuring width from the visible page shell caused unstable behavior:
