@@ -1658,6 +1658,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
     const isLoading = chaptersLoading || isContentLoading;
     const renderPageBlocks = useCallback((pageBlocks: ContentBlock[]) => {
         let firstPendingFound = false;
+        let firstRenderableFound = false;
         return pageBlocks.map((block) => {
             const blockId = block.parentId ?? block.id;
             const isCoverImage = block.id === firstImageBlockId;
@@ -1667,12 +1668,18 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                 const isAbsolute = src?.startsWith('http://') || src?.startsWith('https://') || src?.startsWith('data:') || src?.startsWith('/');
                 if (!isAbsolute && !(isCoverImage && coverUrl)) return null;
             }
+            const isFirstRenderable = !firstRenderableFound;
+            if (!firstRenderableFound) firstRenderableFound = true;
             const isPending = isBlockPendingForActiveLang(block, pendingBlockIds);
             const showTranslatingLabel = isPending && !firstPendingFound;
             const pendingLabel = isSourceLang ? 'Loading...' : 'Translating...';
             if (isPending && !firstPendingFound) firstPendingFound = true;
             return (
-                <div key={block.id} className="flow-root" ref={getRefCallback(blockId, block.type)}>
+                <div
+                    key={block.id}
+                    className={`flow-root${isFirstRenderable ? ' page-first-block' : ''}`}
+                    ref={getRefCallback(blockId, block.type)}
+                >
                     <ContentBlockRenderer
                         block={block}
                         fontSize={settings.fontSize}

@@ -257,10 +257,9 @@ body {
 }
 
 /* Reader pagination polish:
-   when a page starts with a heading, remove top margin only for that first block */
-.reader-page > .flow-root:first-child h1,
-.reader-page > .flow-root:first-child h2,
-.reader-page > .flow-root:first-child h3 {
+   when a page starts with a heading, remove top margin only for the first rendered block */
+.reader-page > .flow-root:first-child :is(h1, h2, h3, h4, h5, h6),
+.reader-page > .flow-root.page-first-block :is(h1, h2, h3, h4, h5, h6) {
   margin-top: 0 !important;
 }
 
