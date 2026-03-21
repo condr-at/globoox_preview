@@ -20,6 +20,30 @@ const PARAGRAPH_FRAGMENT_MIDDLE_CLASS = 'mb-0'
 const MIN_PARAGRAPH_LINES_AT_PAGE_BOTTOM = 2
 const MIN_PARAGRAPH_LINES_AT_PAGE_TOP = 3
 const MIN_LIST_ITEMS_AT_PAGE_BOTTOM = 2
+const PAGINATION_TRACE_LIMIT = 200
+
+type PaginationHeadingTraceEvent = {
+  ts: number
+  pageSize: number
+  headingId: string
+  headingLevel?: number
+  nextType?: string
+  nextLevel?: number
+  action: string
+  note?: string
+}
+
+function pushHeadingTrace(event: PaginationHeadingTraceEvent): void {
+  if (process.env.NODE_ENV !== 'development') return
+  if (typeof window === 'undefined') return
+  const w = window as Window & { __PAGINATION_HEADING_TRACE__?: PaginationHeadingTraceEvent[] }
+  const arr = w.__PAGINATION_HEADING_TRACE__ ?? []
+  arr.push(event)
+  if (arr.length > PAGINATION_TRACE_LIMIT) {
+    arr.splice(0, arr.length - PAGINATION_TRACE_LIMIT)
+  }
+  w.__PAGINATION_HEADING_TRACE__ = arr
+}
 
 interface SplitResult {
   firstPart: string
@@ -488,10 +512,20 @@ function computePagesDom(
       const block = blocks[i]
       const prevBlock = i > 0 ? blocks[i - 1] : undefined
       const isHeadingRunStart = block.type === 'heading' && (!prevBlock || prevBlock.type !== 'heading')
+      const nextBlock = i + 1 < blocks.length ? blocks[i + 1] : undefined
 
       // Rule: each heading run starts on a new page.
       // Apply only before the first heading in consecutive heading chains.
       if (isHeadingRunStart && currentPage.length > 0) {
+        pushHeadingTrace({
+          ts: Date.now(),
+          pageSize: currentPage.length,
+          headingId: block.id,
+          headingLevel: block.type === 'heading' ? block.level : undefined,
+          nextType: nextBlock?.type,
+          nextLevel: nextBlock?.type === 'heading' ? nextBlock.level : undefined,
+          action: 'forced_page_break_before_heading_run',
+        })
         pushCurrentPage()
       }
 
@@ -515,6 +549,16 @@ function computePagesDom(
           }
 
           if (runFits) {
+            pushHeadingTrace({
+              ts: Date.now(),
+              pageSize: currentPage.length,
+              headingId: block.id,
+              headingLevel: block.type === 'heading' ? block.level : undefined,
+              nextType: nextBlock?.type,
+              nextLevel: nextBlock?.type === 'heading' ? nextBlock.level : undefined,
+              action: 'heading_run_atomic_fit',
+              note: `run=${runEnd - i + 1}`,
+            })
             for (let j = i; j <= runEnd; j++) {
               currentPage.push(blocks[j].id)
               finalBlocks.push(blocks[j])
@@ -524,6 +568,16 @@ function computePagesDom(
           }
 
           // Cleanup and fallback to regular single-block logic below.
+          pushHeadingTrace({
+            ts: Date.now(),
+            pageSize: currentPage.length,
+            headingId: block.id,
+            headingLevel: block.type === 'heading' ? block.level : undefined,
+            nextType: nextBlock?.type,
+            nextLevel: nextBlock?.type === 'heading' ? nextBlock.level : undefined,
+            action: 'heading_run_atomic_not_fit',
+            note: `run=${runEnd - i + 1}`,
+          })
           for (const node of runNodes) {
             if (node.parentElement === probe) probe.removeChild(node)
           }
@@ -571,6 +625,17 @@ function computePagesDom(
               const headingFits = fitsProbe(probe, effectiveHeight)
               probe.removeChild(nextHeadingNode)
               if (!headingFits) {
+                const lookaheadBlock = blocks[lookaheadIndex]
+                const lookaheadHeadingLevel = lookaheadBlock && lookaheadBlock.type === 'heading' ? lookaheadBlock.level : undefined
+                pushHeadingTrace({
+                  ts: Date.now(),
+                  pageSize: currentPage.length,
+                  headingId: block.id,
+                  headingLevel: block.type === 'heading' ? block.level : undefined,
+                  nextType: lookaheadBlock?.type,
+                  nextLevel: lookaheadHeadingLevel,
+                  action: 'heading_lookahead_not_fit',
+                })
                 probe.removeChild(node)
                 pushCurrentPage()
                 probe.appendChild(node)
@@ -579,12 +644,35 @@ function computePagesDom(
               lookaheadIndex++
             }
           }
+          if (block.type === 'heading') {
+            const nextHeadingLevel = nextBlock && nextBlock.type === 'heading' ? nextBlock.level : undefined
+            pushHeadingTrace({
+              ts: Date.now(),
+              pageSize: currentPage.length,
+              headingId: block.id,
+              headingLevel: block.level,
+              nextType: nextBlock?.type,
+              nextLevel: nextHeadingLevel,
+              action: 'heading_added_to_page',
+            })
+          }
           currentPage.push(block.id)
           finalBlocks.push(block)
           continue
         }
 
         probe.removeChild(node)
+        if (block.type === 'heading') {
+          pushHeadingTrace({
+            ts: Date.now(),
+            pageSize: currentPage.length,
+            headingId: block.id,
+            headingLevel: block.level,
+            nextType: nextBlock?.type,
+            nextLevel: nextBlock?.type === 'heading' ? nextBlock.level : undefined,
+            action: 'heading_overflow_new_page',
+          })
+        }
         pushCurrentPage()
         probe.appendChild(node)
         currentPage.push(block.id)

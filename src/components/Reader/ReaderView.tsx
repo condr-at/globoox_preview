@@ -52,10 +52,11 @@ const SPREAD_SIDE_PADDING_PX = 40;
 const SPREAD_MAX_COLUMN_PX = 560;
 const LAYOUT_SIGNIFICANT_DELTA_PX = 2;
 const REPAGINATE_DEBOUNCE_MS = 160;
+const PAGINATION_ALGO_VERSION = 'v2026-03-21-heading-run';
 const PAGE_SHELL_CLASS = 'reader-page container max-w-2xl mx-auto px-4 h-full';
 const SPREAD_PAGE_SHELL_CLASS = 'reader-page container max-w-2xl mx-auto h-full';
 const IS_DEV = process.env.NODE_ENV === 'development';
-const SHOW_READER_DEBUG_OVERLAY = false;
+const SHOW_READER_DEBUG_OVERLAY = true;
 
 interface ReaderViewProps {
     bookId: string;
@@ -362,6 +363,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
     const resolveWidthTimerRef = useRef<number | null>(null);
     const repaginateTimerRef = useRef<number | null>(null);
     const [debugSnapshot, setDebugSnapshot] = useState<ReaderDebugSnapshot | null>(null);
+    const [headingTraceLines, setHeadingTraceLines] = useState<string[]>([]);
 
     const normalizedCurrentPageIdx = useMemo(() => {
         if (!spreadModeEnabled) return currentPageIdx;
@@ -536,6 +538,28 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
     }, [rawColumnWidthPx, resolvedColumnWidthPx, pageWidth, spreadModeEnabled, pagesReady, visiblePagesReady, chaptersLoading, isContentLoading, pageHeight, displayBlocks.length]);
 
     useEffect(() => {
+        if (!IS_DEV || !SHOW_READER_DEBUG_OVERLAY) return;
+        const readTrace = () => {
+            const w = window as Window & {
+                __PAGINATION_HEADING_TRACE__?: Array<{
+                    headingId: string;
+                    headingLevel?: number;
+                    action: string;
+                    nextType?: string;
+                    nextLevel?: number;
+                }>;
+            };
+            const tail = (w.__PAGINATION_HEADING_TRACE__ ?? []).slice(-8);
+            setHeadingTraceLines(
+                tail.map((e) => `${e.action} h${e.headingLevel ?? '?'} id=${e.headingId.slice(0, 6)} next=${e.nextType ?? '-'}${e.nextLevel ? `:${e.nextLevel}` : ''}`)
+            );
+        };
+        readTrace();
+        const timer = window.setInterval(readTrace, 250);
+        return () => window.clearInterval(timer);
+    }, []);
+
+    useEffect(() => {
         if (!pagesReady || isSourceLang || isContentLoading) return;
 
         let cancelled = false;
@@ -665,7 +689,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
     const blockStructureKey = useMemo(
         () => {
             const contentSignature = getLayoutContentSignature(normalizedBlocks);
-            return `${contentSignature}__${pageHeight}__${resolvedColumnWidthPx}__${settings.fontSize}__${settings.lineHeightScale}__${displayBlocksLang}`;
+            return `${PAGINATION_ALGO_VERSION}__${contentSignature}__${pageHeight}__${resolvedColumnWidthPx}__${settings.fontSize}__${settings.lineHeightScale}__${displayBlocksLang}`;
         },
         [normalizedBlocks, pageHeight, resolvedColumnWidthPx, settings.fontSize, settings.lineHeightScale, displayBlocksLang]
     );
@@ -1723,6 +1747,9 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                     <div>{`loading=${debugSnapshot.isLoading ? '1' : '0'} ready=${debugSnapshot.pagesReady ? '1' : '0'} visible=${debugSnapshot.visiblePagesReady ? '1' : '0'}`}</div>
                     <div>{`gateBlocked=${debugSnapshot.computeGateBlocked ? '1' : '0'}`}</div>
                     <div>{`wf=${debugSnapshot.widthFlips} wr=${debugSnapshot.widthRange}px mf=${debugSnapshot.modeFlips} p2s=${debugSnapshot.paginateRuns2s}`}</div>
+                    {headingTraceLines.map((line, idx) => (
+                        <div key={`${idx}-${line}`}>{`H>${line}`}</div>
+                    ))}
                 </div>
             )}
             <AppleIntelligenceGlow bookId={bookId} />
