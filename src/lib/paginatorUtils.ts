@@ -1,5 +1,5 @@
 import { ContentBlock, ParagraphBlock } from './api'
-import { getLineHeightStyle } from './readerTypography'
+import { getLineHeightMultiplier, getLineHeightStyle } from './readerTypography'
 import { hyphenateSync as hyphenRu } from 'hyphen/ru'
 import { hyphenateSync as hyphenEn } from 'hyphen/en-us'
 import { hyphenateSync as hyphenFr } from 'hyphen/fr'
@@ -17,6 +17,9 @@ const hyphenators: Record<string, (text: string) => string> = {
 const PAGE_HEIGHT_BUFFER_PX = 6
 const PARAGRAPH_FRAGMENT_LAST_CLASS = 'mb-2'
 const PARAGRAPH_FRAGMENT_MIDDLE_CLASS = 'mb-0'
+const MIN_PARAGRAPH_LINES_AT_PAGE_BOTTOM = 2
+const MIN_PARAGRAPH_LINES_AT_PAGE_TOP = 3
+const MIN_LIST_ITEMS_AT_PAGE_BOTTOM = 2
 
 interface SplitResult {
   firstPart: string
@@ -274,6 +277,74 @@ function isTinyParagraphFragment(text: string): boolean {
   return words.length <= 2 || trimmed.length < 24
 }
 
+function countRenderedLines(el: HTMLElement): number {
+  const computed = getComputedStyle(el)
+  const lineHeight = Number.parseFloat(computed.lineHeight || '')
+  const height = el.getBoundingClientRect().height
+  if (!Number.isFinite(lineHeight) || lineHeight <= 0) return 1
+  return Math.max(1, Math.round(height / lineHeight))
+}
+
+function measureParagraphLinesInProbe(
+  probe: HTMLElement,
+  sourceBlockId: string,
+  text: string,
+  fontSize: number,
+  lang: string,
+  isLastPart: boolean,
+  lineHeightScale: number,
+  measuredBlockRoots?: MeasuredBlockRoots,
+): number {
+  const wrapper = createParagraphMeasuredWrapper(
+    sourceBlockId,
+    text,
+    fontSize,
+    lang,
+    isLastPart,
+    lineHeightScale,
+    measuredBlockRoots,
+  )
+  probe.appendChild(wrapper)
+  const paragraph = wrapper.querySelector('p') as HTMLParagraphElement | null
+  const lines = paragraph ? countRenderedLines(paragraph) : 1
+  probe.removeChild(wrapper)
+  return lines
+}
+
+function violatesParagraphWidowOrphan(
+  probe: HTMLElement,
+  sourceBlockId: string,
+  firstText: string,
+  restText: string,
+  fontSize: number,
+  lang: string,
+  lineHeightScale: number,
+  measuredBlockRoots?: MeasuredBlockRoots,
+): boolean {
+  if (!restText.trim()) return false
+  const firstLines = measureParagraphLinesInProbe(
+    probe,
+    sourceBlockId,
+    firstText,
+    fontSize,
+    lang,
+    false,
+    lineHeightScale,
+    measuredBlockRoots,
+  )
+  const restLines = measureParagraphLinesInProbe(
+    probe,
+    sourceBlockId,
+    restText,
+    fontSize,
+    lang,
+    false,
+    lineHeightScale,
+    measuredBlockRoots,
+  )
+  return firstLines < MIN_PARAGRAPH_LINES_AT_PAGE_BOTTOM || restLines < MIN_PARAGRAPH_LINES_AT_PAGE_TOP
+}
+
 function fitParagraphByDom(
   text: string,
   probe: HTMLElement,
@@ -419,6 +490,27 @@ function computePagesDom(
         const node = createMeasuredWrapper(block, fontSize, lang, lineHeightScale, measuredBlockRoots)
         probe.appendChild(node)
         if (fitsProbe(probe, effectiveHeight) || currentPage.length < minBlocksPerPage) {
+          // List lookahead: avoid starting list at page bottom with a single list item.
+          if (block.type === 'list' && currentPage.length >= minBlocksPerPage) {
+            const blockParentId = block.parentId ?? block.id
+            const prevId = currentPage[currentPage.length - 1]
+            const prevBlock = finalBlocks.length > 0 ? finalBlocks[finalBlocks.length - 1] : undefined
+            const startsNewListOnPage = !prevId || !prevBlock || prevBlock.type !== 'list' || (prevBlock.parentId ?? prevBlock.id) !== blockParentId
+            const nextBlock = blocks[i + 1]
+            const nextSameList = !!nextBlock && nextBlock.type === 'list' && (nextBlock.parentId ?? nextBlock.id) === blockParentId
+            if (startsNewListOnPage && nextSameList && MIN_LIST_ITEMS_AT_PAGE_BOTTOM > 1) {
+              const nextNode = createMeasuredWrapper(nextBlock!, fontSize, lang, lineHeightScale, measuredBlockRoots)
+              probe.appendChild(nextNode)
+              const nextFits = fitsProbe(probe, effectiveHeight)
+              probe.removeChild(nextNode)
+              if (!nextFits) {
+                probe.removeChild(node)
+                pushCurrentPage()
+                probe.appendChild(node)
+              }
+            }
+          }
+
           // Heading lookahead: if heading fits but the next block won't, push heading to next page
           if (block.type === 'heading' && currentPage.length >= minBlocksPerPage) {
             const nextBlock = blocks[i + 1]
@@ -509,6 +601,24 @@ function computePagesDom(
         }
 
         if (currentPage.length > 0 && restText && isTinyParagraphFragment(firstText)) {
+          pushCurrentPage()
+          continue
+        }
+
+        if (
+          currentPage.length > 0 &&
+          restText &&
+          violatesParagraphWidowOrphan(
+            probe,
+            block.id,
+            firstText,
+            restText,
+            fontSize,
+            lang,
+            lineHeightScale,
+            measuredBlockRoots,
+          )
+        ) {
           pushCurrentPage()
           continue
         }
@@ -685,6 +795,8 @@ function computePagesFallback(
   let currentHeight = 0
   const finalBlocks: ContentBlock[] = []
   const fragmentMap = new Map<string, string>()
+  const lineHeightPx = fontSize * getLineHeightMultiplier(fontSize, lineHeightScale)
+  const estimateLinesByHeight = (height: number) => Math.max(1, Math.round(height / lineHeightPx))
 
   for (let i = 0; i < blocks.length; i++) {
     const block = blocks[i]
@@ -707,6 +819,21 @@ function computePagesFallback(
     const canStartNewPage = currentPage.length >= minBlocksPerPage
 
     if (!wouldOverflow || !canStartNewPage) {
+      if (block.type === 'list' && currentPage.length > 0) {
+        const blockParentId = block.parentId ?? block.id
+        const prevId = currentPage[currentPage.length - 1]
+        const prevBlock = finalBlocks.length > 0 ? finalBlocks[finalBlocks.length - 1] : undefined
+        const startsNewListOnPage = !prevId || !prevBlock || prevBlock.type !== 'list' || (prevBlock.parentId ?? prevBlock.id) !== blockParentId
+        const nextBlock = blocks[i + 1]
+        const nextSameList = !!nextBlock && nextBlock.type === 'list' && (nextBlock.parentId ?? nextBlock.id) === blockParentId
+        const nextH = nextBlock ? (blockHeights.get(nextBlock.id) ?? 48) : 0
+        const secondItemWouldOverflow = nextSameList && (currentHeight + h + nextH > effectiveHeight)
+        if (startsNewListOnPage && secondItemWouldOverflow) {
+          pages.push(currentPage)
+          currentPage = []
+          currentHeight = 0
+        }
+      }
       currentPage.push(block.id)
       finalBlocks.push(block)
       currentHeight += h
@@ -750,6 +877,22 @@ function computePagesFallback(
           currentPage = []
           currentHeight = 0
           continue
+        }
+
+        if (currentPage.length > 0 && restText) {
+          const firstHeight = measureParagraphFragmentHeight(firstText, fontSize, lang, lineHeightScale, containerRef, false)
+          const restHeight = measureParagraphFragmentHeight(restText, fontSize, lang, lineHeightScale, containerRef, false)
+          const firstLines = estimateLinesByHeight(firstHeight)
+          const restLines = estimateLinesByHeight(restHeight)
+          if (
+            firstLines < MIN_PARAGRAPH_LINES_AT_PAGE_BOTTOM ||
+            restLines < MIN_PARAGRAPH_LINES_AT_PAGE_TOP
+          ) {
+            pages.push(currentPage)
+            currentPage = []
+            currentHeight = 0
+            continue
+          }
         }
 
         const fragmentId = `${block.id}-part-${partIndex}`
