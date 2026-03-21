@@ -46,8 +46,11 @@ import TranslationLimitDialog from '@/components/TranslationLimitDialog';
 type NavigationSource = 'toc' | 'search' | 'slider' | 'link' | 'restore_anchor' | 'manual_scroll'
 const LAST_PAGE_SENTINEL = '__LAST_PAGE__';
 const SPREAD_MIN_VIEWPORT_PX = 1408;
-const SPREAD_GAP_PX = 32;
-const PAGE_SHELL_CLASS = 'container max-w-2xl mx-auto px-4 h-full';
+const SPREAD_GAP_PX = 80;
+const SPREAD_SIDE_PADDING_PX = 40;
+const PAGE_SHELL_CLASS = 'reader-page container max-w-2xl mx-auto px-4 h-full';
+const SPREAD_PAGE_SHELL_CLASS = 'reader-page container max-w-2xl mx-auto h-full';
+const IS_DEV = process.env.NODE_ENV === 'development';
 
 interface ReaderViewProps {
     bookId: string;
@@ -66,6 +69,18 @@ type PaginationCacheEntry = {
     fragmentMap: Map<string, string>;
     currentPageIdx: number;
     savedAt: number;
+};
+
+type ReaderDebugSnapshot = {
+    status: 'ANALYZING' | 'STABLE';
+    cause: 'none' | 'width_jitter' | 'mode_flap' | 'repaginate_without_width_change' | 'unknown';
+    targetWidth: number;
+    pageWidth: number;
+    spread: boolean;
+    widthFlips: number;
+    widthRange: number;
+    modeFlips: number;
+    paginateRuns2s: number;
 };
 
 async function waitForMeasuredImages(container: HTMLElement | null): Promise<void> {
@@ -324,7 +339,16 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
     const [remoteAnchorReady, setRemoteAnchorReady] = useState(false);
     const [layoutCacheReadyKey, setLayoutCacheReadyKey] = useState('');
     const currentPageIdxRef = useRef(0);
+    const [activeColumnShellEl, setActiveColumnShellEl] = useState<HTMLDivElement | null>(null);
+    const [rawColumnWidthPx, setRawColumnWidthPx] = useState(0);
+    const [resolvedColumnWidthPx, setResolvedColumnWidthPx] = useState(0);
     const spreadModeEnabled = settings.pageLayoutMode === 'spread' && pageWidth >= SPREAD_MIN_VIEWPORT_PX;
+    const widthHistoryRef = useRef<Array<{ t: number; w: number }>>([]);
+    const modeHistoryRef = useRef<Array<{ t: number; spread: boolean }>>([]);
+    const paginateHistoryRef = useRef<number[]>([]);
+    const analyzeTimerRef = useRef<number | null>(null);
+    const resolveWidthTimerRef = useRef<number | null>(null);
+    const [debugSnapshot, setDebugSnapshot] = useState<ReaderDebugSnapshot | null>(null);
 
     const normalizedCurrentPageIdx = useMemo(() => {
         if (!spreadModeEnabled) return currentPageIdx;
@@ -365,6 +389,123 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
         if (normalizedCurrentPageIdx === currentPageIdx) return;
         setCurrentPageIdx(normalizedCurrentPageIdx);
     }, [normalizedCurrentPageIdx, currentPageIdx]);
+
+    useEffect(() => {
+        if (!activeColumnShellEl) return;
+        const update = () => {
+            const rect = activeColumnShellEl.getBoundingClientRect();
+            const width = Math.max(0, Math.round(rect.width));
+            setRawColumnWidthPx((prev) => (prev === width ? prev : width));
+        };
+        const ro = new ResizeObserver(update);
+        ro.observe(activeColumnShellEl);
+        update();
+        return () => ro.disconnect();
+    }, [activeColumnShellEl]);
+
+    // Stabilize measured width before using it in pagination key/compute.
+    // This avoids feedback loops from 1px oscillation near spread thresholds.
+    useEffect(() => {
+        if (!rawColumnWidthPx) return;
+        if (resolveWidthTimerRef.current != null) {
+            window.clearTimeout(resolveWidthTimerRef.current);
+        }
+        resolveWidthTimerRef.current = window.setTimeout(() => {
+            setResolvedColumnWidthPx((prev) => {
+                if (!prev) return rawColumnWidthPx;
+                const delta = Math.abs(rawColumnWidthPx - prev);
+                return delta >= 2 ? rawColumnWidthPx : prev;
+            });
+            resolveWidthTimerRef.current = null;
+        }, 140);
+
+        return () => {
+            if (resolveWidthTimerRef.current != null) {
+                window.clearTimeout(resolveWidthTimerRef.current);
+                resolveWidthTimerRef.current = null;
+            }
+        };
+    }, [rawColumnWidthPx]);
+
+    useEffect(() => {
+        if (!IS_DEV) return;
+        const now = performance.now();
+        widthHistoryRef.current.push({ t: now, w: rawColumnWidthPx });
+        widthHistoryRef.current = widthHistoryRef.current.filter((x) => now - x.t <= 1500);
+
+        modeHistoryRef.current.push({ t: now, spread: spreadModeEnabled });
+        modeHistoryRef.current = modeHistoryRef.current.filter((x) => now - x.t <= 2000);
+
+        paginateHistoryRef.current = paginateHistoryRef.current.filter((t) => now - t <= 2000);
+
+        const widths = widthHistoryRef.current.map((x) => x.w).filter((w) => w > 0);
+        const minW = widths.length ? Math.min(...widths) : 0;
+        const maxW = widths.length ? Math.max(...widths) : 0;
+        const widthRange = maxW - minW;
+        const widthFlips = widthHistoryRef.current.slice(1).reduce((acc, x, i) => (
+            x.w !== widthHistoryRef.current[i].w ? acc + 1 : acc
+        ), 0);
+        const modeFlips = modeHistoryRef.current.slice(1).reduce((acc, x, i) => (
+            x.spread !== modeHistoryRef.current[i].spread ? acc + 1 : acc
+        ), 0);
+        const paginateRuns2s = paginateHistoryRef.current.length;
+
+        setDebugSnapshot({
+            status: 'ANALYZING',
+            cause: 'unknown',
+            targetWidth: resolvedColumnWidthPx || rawColumnWidthPx,
+            pageWidth,
+            spread: spreadModeEnabled,
+            widthFlips,
+            widthRange,
+            modeFlips,
+            paginateRuns2s,
+        });
+
+        if (analyzeTimerRef.current != null) {
+            window.clearTimeout(analyzeTimerRef.current);
+        }
+        analyzeTimerRef.current = window.setTimeout(() => {
+            const stableNow = performance.now();
+            const widthsStable = widthHistoryRef.current.filter((x) => stableNow - x.t <= 2000).map((x) => x.w).filter((w) => w > 0);
+            const minWs = widthsStable.length ? Math.min(...widthsStable) : 0;
+            const maxWs = widthsStable.length ? Math.max(...widthsStable) : 0;
+            const widthRangeStable = maxWs - minWs;
+            const widthFlipsStable = widthsStable.slice(1).reduce((acc, w, i) => (
+                w !== widthsStable[i] ? acc + 1 : acc
+            ), 0);
+            const modeStable = modeHistoryRef.current.filter((x) => stableNow - x.t <= 2000);
+            const modeFlipsStable = modeStable.slice(1).reduce((acc, x, i) => (
+                x.spread !== modeStable[i].spread ? acc + 1 : acc
+            ), 0);
+            const paginateRunsStable = paginateHistoryRef.current.filter((t) => stableNow - t <= 2000).length;
+
+            let cause: ReaderDebugSnapshot['cause'] = 'none';
+            if (modeFlipsStable >= 1) cause = 'mode_flap';
+            else if (widthFlipsStable >= 4 && widthRangeStable >= 1) cause = 'width_jitter';
+            else if (paginateRunsStable >= 4) cause = 'repaginate_without_width_change';
+
+            setDebugSnapshot({
+                status: 'STABLE',
+                cause,
+                targetWidth: resolvedColumnWidthPx || rawColumnWidthPx,
+                pageWidth,
+                spread: spreadModeEnabled,
+                widthFlips: widthFlipsStable,
+                widthRange: widthRangeStable,
+                modeFlips: modeFlipsStable,
+                paginateRuns2s: paginateRunsStable,
+            });
+            analyzeTimerRef.current = null;
+        }, 1200);
+
+        return () => {
+            if (analyzeTimerRef.current != null) {
+                window.clearTimeout(analyzeTimerRef.current);
+                analyzeTimerRef.current = null;
+            }
+        };
+    }, [rawColumnWidthPx, resolvedColumnWidthPx, pageWidth, spreadModeEnabled]);
 
     useEffect(() => {
         if (!pagesReady || isSourceLang || isContentLoading) return;
@@ -485,9 +626,10 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
     const blockStructureKey = useMemo(
         () => {
             const contentSignature = getLayoutContentSignature(normalizedBlocks);
-            return `${contentSignature}__${pageWidth}__${pageHeight}__${settings.fontSize}__${settings.lineHeightScale}__${displayBlocksLang}`;
+            const effectiveColumnWidth = resolvedColumnWidthPx > 0 ? resolvedColumnWidthPx : pageWidth;
+            return `${contentSignature}__${pageWidth}__${pageHeight}__${effectiveColumnWidth}__${settings.fontSize}__${settings.lineHeightScale}__${displayBlocksLang}`;
         },
-        [normalizedBlocks, pageWidth, pageHeight, settings.fontSize, settings.lineHeightScale, displayBlocksLang]
+        [normalizedBlocks, pageWidth, pageHeight, resolvedColumnWidthPx, settings.fontSize, settings.lineHeightScale, displayBlocksLang]
     );
     const prevBlockStructureKey = useRef('');
     const lastProgressFetchAtRef = useRef<Map<string, number>>(new Map());
@@ -520,12 +662,17 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
     useEffect(() => {
         if (layoutCacheReadyKey !== paginationCacheKey) return;
         if (blockStructureKey === prevBlockStructureKey.current) return;
-        if (pageHeight === 0 || pageWidth === 0 || normalizedBlocks.length === 0) return;
+        if (pageHeight === 0 || pageWidth === 0 || resolvedColumnWidthPx === 0 || normalizedBlocks.length === 0) return;
 
         let cancelled = false;
         setVisiblePagesReady(false);
 
         async function measureAndCompute() {
+            if (IS_DEV) {
+                const now = performance.now();
+                paginateHistoryRef.current.push(now);
+                paginateHistoryRef.current = paginateHistoryRef.current.filter((t) => now - t <= 2000);
+            }
             // Ensure fonts are loaded before measuring
             if (document.fonts && document.fonts.ready) {
                 await document.fonts.ready;
@@ -548,6 +695,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                 settings.lineHeightScale,
                 1,
                 blockMeasureRefs.current,
+                resolvedColumnWidthPx,
             );
 
             setPages(computed.pages);
@@ -583,7 +731,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
         return () => {
             cancelled = true;
         };
-    }, [layoutCacheReadyKey, paginationCacheKey, blockStructureKey, pageHeight, pageWidth, normalizedBlocks, settings.fontSize, settings.lineHeightScale, displayBlocksLang, activeLang, currentChapter?.id, bookId]);
+    }, [layoutCacheReadyKey, paginationCacheKey, blockStructureKey, pageHeight, pageWidth, resolvedColumnWidthPx, normalizedBlocks, settings.fontSize, settings.lineHeightScale, displayBlocksLang, activeLang, currentChapter?.id, bookId]);
 
     // ─── Anchor restore ──────────────────────────────────────────────────────
     // Set by language-switch handler: blockId + sentenceIndex to jump to on next page recompute
@@ -1500,6 +1648,29 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
     // ─── Render ───────────────────────────────────────────────────────────────
     return (
         <div className="bg-background" style={{ position: 'fixed', inset: 0, overflow: 'hidden', overscrollBehavior: 'none' } as React.CSSProperties}>
+            {IS_DEV && debugSnapshot && (
+                <div
+                    style={{
+                        position: 'fixed',
+                        right: 8,
+                        top: 8,
+                        zIndex: 9999,
+                        background: 'rgba(0,0,0,0.78)',
+                        color: '#fff',
+                        fontSize: 11,
+                        lineHeight: 1.35,
+                        padding: '8px 10px',
+                        borderRadius: 8,
+                        pointerEvents: 'none',
+                        fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+                    }}
+                >
+                    <div>{`STATUS=${debugSnapshot.status}`}</div>
+                    <div>{`CAUSE=${debugSnapshot.cause}`}</div>
+                    <div>{`w=${debugSnapshot.targetWidth} page=${debugSnapshot.pageWidth} spread=${debugSnapshot.spread ? '1' : '0'}`}</div>
+                    <div>{`wf=${debugSnapshot.widthFlips} wr=${debugSnapshot.widthRange}px mf=${debugSnapshot.modeFlips} p2s=${debugSnapshot.paginateRuns2s}`}</div>
+                </div>
+            )}
             <AppleIntelligenceGlow bookId={bookId} />
             <IOSAlertDialog
                 open={shouldShowTranslationNotice}
@@ -1658,7 +1829,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                     <TranslationGlow>
                         <div className="h-full select-none md:select-text" lang={activeLang}>
                             {isLoading || !visiblePagesReady ? (
-                                <div className={PAGE_SHELL_CLASS}>
+                                <div className={PAGE_SHELL_CLASS} ref={setActiveColumnShellEl}>
                                     <Skeleton className="h-7 w-64 mb-5" />
                                     <div className="space-y-5">
                                         {[100, 95, 88, 100, 72, 100, 90, 85, 100, 60, 100, 92].map((width, i) => (
@@ -1671,20 +1842,26 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                             ) : contentError ? (
                                 <p className="text-sm text-destructive py-8 text-center">{contentError}</p>
                             ) : spreadModeEnabled ? (
-                                <div className="mx-auto flex h-full items-stretch justify-center gap-8 px-4">
+                                <div
+                                    className="mx-auto flex h-full w-full items-stretch justify-center"
+                                    style={{
+                                        columnGap: `${SPREAD_GAP_PX}px`,
+                                        paddingInline: `${SPREAD_SIDE_PADDING_PX}px`,
+                                    }}
+                                >
                                     <div className="h-full overflow-hidden">
-                                        <div className={PAGE_SHELL_CLASS}>
+                                        <div className={SPREAD_PAGE_SHELL_CLASS} ref={setActiveColumnShellEl}>
                                             {renderPageBlocks(currentPageBlocks)}
                                         </div>
                                     </div>
                                     <div className="h-full overflow-hidden">
-                                        <div className={PAGE_SHELL_CLASS}>
+                                        <div className={SPREAD_PAGE_SHELL_CLASS}>
                                             {spreadRightPageBlocks.length > 0 ? renderPageBlocks(spreadRightPageBlocks) : null}
                                         </div>
                                     </div>
                                 </div>
                             ) : (
-                                <div className={PAGE_SHELL_CLASS}>
+                                <div className={PAGE_SHELL_CLASS} ref={setActiveColumnShellEl}>
                                     {renderPageBlocks(currentPageBlocks)}
                                 </div>
                             )}

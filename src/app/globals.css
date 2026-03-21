@@ -256,6 +256,14 @@ body {
   line-height: 1.41;
 }
 
+/* Reader pagination polish:
+   when a page starts with a heading, remove top margin only for that first block */
+.reader-page > .flow-root:first-child h1,
+.reader-page > .flow-root:first-child h2,
+.reader-page > .flow-root:first-child h3 {
+  margin-top: 0 !important;
+}
+
 /* ============================================
    iOS-like spinner
    ============================================ */
