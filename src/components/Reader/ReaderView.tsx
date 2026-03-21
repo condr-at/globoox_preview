@@ -48,10 +48,11 @@ const LAST_PAGE_SENTINEL = '__LAST_PAGE__';
 const SPREAD_MIN_VIEWPORT_PX = 1408;
 const SPREAD_GAP_PX = 80;
 const SPREAD_SIDE_PADDING_PX = 40;
+const SPREAD_MAX_COLUMN_PX = 560;
 const LAYOUT_SIGNIFICANT_DELTA_PX = 2;
 const REPAGINATE_DEBOUNCE_MS = 160;
 const PAGE_SHELL_CLASS = 'reader-page container max-w-2xl mx-auto px-4 h-full';
-const SPREAD_PAGE_SHELL_CLASS = 'reader-page container max-w-2xl mx-auto h-full';
+const SPREAD_PAGE_SHELL_CLASS = 'reader-page w-full mx-auto h-full';
 const IS_DEV = process.env.NODE_ENV === 'development';
 
 interface ReaderViewProps {
@@ -1863,12 +1864,12 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                                         paddingInline: `${SPREAD_SIDE_PADDING_PX}px`,
                                     }}
                                 >
-                                    <div className="h-full overflow-hidden">
+                                    <div className="h-full w-full shrink-0 overflow-hidden" style={{ maxWidth: `${SPREAD_MAX_COLUMN_PX}px` }}>
                                         <div className={SPREAD_PAGE_SHELL_CLASS} ref={setActiveColumnShellEl}>
                                             {renderPageBlocks(currentPageBlocks)}
                                         </div>
                                     </div>
-                                    <div className="h-full overflow-hidden">
+                                    <div className="h-full w-full shrink-0 overflow-hidden" style={{ maxWidth: `${SPREAD_MAX_COLUMN_PX}px` }}>
                                         <div className={SPREAD_PAGE_SHELL_CLASS}>
                                             {spreadRightPageBlocks.length > 0 ? renderPageBlocks(spreadRightPageBlocks) : null}
                                         </div>
