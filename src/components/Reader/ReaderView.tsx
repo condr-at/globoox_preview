@@ -48,6 +48,8 @@ const LAST_PAGE_SENTINEL = '__LAST_PAGE__';
 const SPREAD_MIN_VIEWPORT_PX = 1408;
 const SPREAD_GAP_PX = 80;
 const SPREAD_SIDE_PADDING_PX = 40;
+const LAYOUT_SIGNIFICANT_DELTA_PX = 2;
+const REPAGINATE_DEBOUNCE_MS = 160;
 const PAGE_SHELL_CLASS = 'reader-page container max-w-2xl mx-auto px-4 h-full';
 const SPREAD_PAGE_SHELL_CLASS = 'reader-page container max-w-2xl mx-auto h-full';
 const IS_DEV = process.env.NODE_ENV === 'development';
@@ -348,6 +350,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
     const paginateHistoryRef = useRef<number[]>([]);
     const analyzeTimerRef = useRef<number | null>(null);
     const resolveWidthTimerRef = useRef<number | null>(null);
+    const repaginateTimerRef = useRef<number | null>(null);
     const [debugSnapshot, setDebugSnapshot] = useState<ReaderDebugSnapshot | null>(null);
 
     const normalizedCurrentPageIdx = useMemo(() => {
@@ -414,7 +417,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
             setResolvedColumnWidthPx((prev) => {
                 if (!prev) return rawColumnWidthPx;
                 const delta = Math.abs(rawColumnWidthPx - prev);
-                return delta >= 2 ? rawColumnWidthPx : prev;
+                return delta >= LAYOUT_SIGNIFICANT_DELTA_PX ? rawColumnWidthPx : prev;
             });
             resolveWidthTimerRef.current = null;
         }, 140);
@@ -600,8 +603,14 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
         if (!pageViewportRef.current) return;
         const updateHeight = () => {
             if (pageViewportRef.current) {
-                setPageHeight(pageViewportRef.current.clientHeight);
-                setPageWidth(pageViewportRef.current.clientWidth);
+                const nextHeight = pageViewportRef.current.clientHeight;
+                const nextWidth = pageViewportRef.current.clientWidth;
+                setPageHeight((prev) => (
+                    !prev || Math.abs(nextHeight - prev) >= LAYOUT_SIGNIFICANT_DELTA_PX ? nextHeight : prev
+                ));
+                setPageWidth((prev) => (
+                    !prev || Math.abs(nextWidth - prev) >= LAYOUT_SIGNIFICANT_DELTA_PX ? nextWidth : prev
+                ));
             }
         };
         const ro = new ResizeObserver(updateHeight);
@@ -626,10 +635,9 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
     const blockStructureKey = useMemo(
         () => {
             const contentSignature = getLayoutContentSignature(normalizedBlocks);
-            const effectiveColumnWidth = resolvedColumnWidthPx > 0 ? resolvedColumnWidthPx : pageWidth;
-            return `${contentSignature}__${pageWidth}__${pageHeight}__${effectiveColumnWidth}__${settings.fontSize}__${settings.lineHeightScale}__${displayBlocksLang}`;
+            return `${contentSignature}__${pageHeight}__${resolvedColumnWidthPx}__${settings.fontSize}__${settings.lineHeightScale}__${displayBlocksLang}`;
         },
-        [normalizedBlocks, pageWidth, pageHeight, resolvedColumnWidthPx, settings.fontSize, settings.lineHeightScale, displayBlocksLang]
+        [normalizedBlocks, pageHeight, resolvedColumnWidthPx, settings.fontSize, settings.lineHeightScale, displayBlocksLang]
     );
     const prevBlockStructureKey = useRef('');
     const lastProgressFetchAtRef = useRef<Map<string, number>>(new Map());
@@ -665,7 +673,6 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
         if (pageHeight === 0 || pageWidth === 0 || resolvedColumnWidthPx === 0 || normalizedBlocks.length === 0) return;
 
         let cancelled = false;
-        setVisiblePagesReady(false);
 
         async function measureAndCompute() {
             if (IS_DEV) {
@@ -726,10 +733,17 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
             });
         }
 
-        void measureAndCompute();
+        repaginateTimerRef.current = window.setTimeout(() => {
+            void measureAndCompute();
+            repaginateTimerRef.current = null;
+        }, REPAGINATE_DEBOUNCE_MS);
 
         return () => {
             cancelled = true;
+            if (repaginateTimerRef.current != null) {
+                window.clearTimeout(repaginateTimerRef.current);
+                repaginateTimerRef.current = null;
+            }
         };
     }, [layoutCacheReadyKey, paginationCacheKey, blockStructureKey, pageHeight, pageWidth, resolvedColumnWidthPx, normalizedBlocks, settings.fontSize, settings.lineHeightScale, displayBlocksLang, activeLang, currentChapter?.id, bookId]);
 
@@ -1829,7 +1843,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                     <TranslationGlow>
                         <div className="h-full select-none md:select-text" lang={activeLang}>
                             {isLoading || !visiblePagesReady ? (
-                                <div className={PAGE_SHELL_CLASS} ref={setActiveColumnShellEl}>
+                                <div className={PAGE_SHELL_CLASS}>
                                     <Skeleton className="h-7 w-64 mb-5" />
                                     <div className="space-y-5">
                                         {[100, 95, 88, 100, 72, 100, 90, 85, 100, 60, 100, 92].map((width, i) => (
