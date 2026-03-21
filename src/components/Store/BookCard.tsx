@@ -323,6 +323,21 @@ export default function BookCard({
         }
       }}
     >
+      {hasActions && (
+        <div
+          className={`absolute z-20 pointer-events-none transition-opacity ${showMenuButton ? 'opacity-100' : 'opacity-0'}`}
+          style={{ ...effectiveCoverFrameStyle, left: 0, top: 0 }}
+        >
+          <div className="absolute top-1 right-1 pointer-events-auto">
+            <BookActionsMenu
+              onHide={() => onHide?.(id)}
+              onDelete={() => onDelete?.(id)}
+              hideLabel={hideLabel}
+              onOpenChange={setIsMenuOpen}
+            />
+          </div>
+        </div>
+      )}
       <Link
         href={`/reader/${id}`}
         className={`block transition-transform ${isMenuOpen ? 'pointer-events-none' : 'active:scale-[0.98]'}`}
@@ -346,21 +361,6 @@ export default function BookCard({
             }}
           />
           <div className="aspect-[2/3] relative">
-            {hasActions && (
-              <div
-                className={`absolute z-20 transition-opacity ${showMenuButton ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
-                style={{ ...effectiveCoverFrameStyle, left: 0, bottom: 0 }}
-              >
-                <div className="absolute top-1 right-1">
-                  <BookActionsMenu
-                    onHide={() => onHide?.(id)}
-                    onDelete={() => onDelete?.(id)}
-                    hideLabel={hideLabel}
-                    onOpenChange={setIsMenuOpen}
-                  />
-                </div>
-              </div>
-            )}
             <div className="absolute left-0 bottom-0" style={effectiveCoverFrameStyle}>
               <div className="relative h-full w-full">
                 <div
