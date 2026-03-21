@@ -21,7 +21,7 @@ export function SupportedLanguages() {
         className="supported-split"
       >
         <div className="supported-copy" style={{ maxWidth: '500px' }}>
-          <div style={{ marginBottom: '24px' }}>
+          <div className="supported-globe-wrap" style={{ marginBottom: '24px' }}>
             <Image
               src="/images/globe.png"
               alt="Globe icon"
@@ -225,6 +225,10 @@ export function SupportedLanguages() {
           }
           .supported-heading {
             font-size: 36px !important;
+          }
+          .supported-globe-wrap {
+            display: flex !important;
+            justify-content: center !important;
           }
           .supported-card {
             min-height: 360px !important;

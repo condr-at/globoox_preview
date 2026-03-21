@@ -25,7 +25,15 @@ function getTypograf(locale: string): Typograf {
 }
 
 function processText(tp: Typograf, value: string): string {
-    return tp.execute(value);
+    return tp.execute(normalizeSoftWrapHyphens(value));
+}
+
+// EPUB/OCR sources sometimes store legacy line-wrap hyphenation as "fu- ture".
+// Join only when hyphen is followed by whitespace and both sides look like word letters.
+function normalizeSoftWrapHyphens(value: string): string {
+    return value
+        .replace(/([A-Za-zÀ-ÖØ-öø-ÿА-Яа-яЁё]{2,})-\s+([A-Za-zÀ-ÖØ-öø-ÿА-Яа-яЁё]{2,})/g, '$1$2')
+        .replace(/\u00AD/g, '');
 }
 
 export function applyTypografToBlocks(blocks: ContentBlock[], lang?: string | null): ContentBlock[] {

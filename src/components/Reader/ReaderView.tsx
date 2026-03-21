@@ -15,6 +15,7 @@ import { ContentBlock } from '@/lib/api';
 import { applyTypografToBlocks } from '@/lib/typograf';
 import { useAuth } from '@/lib/hooks/useAuth';
 import {
+    clearCachedChapterLayouts,
     getCachedChapterBlockIds,
     getCachedChapterLayout,
     getCachedReadingPosition,
@@ -52,7 +53,8 @@ const SPREAD_SIDE_PADDING_PX = 40;
 const SPREAD_MAX_COLUMN_PX = 560;
 const LAYOUT_SIGNIFICANT_DELTA_PX = 2;
 const REPAGINATE_DEBOUNCE_MS = 160;
-const PAGINATION_ALGO_VERSION = 'v2026-03-21-heading-run';
+const PAGINATION_ALGO_VERSION = 'v2026-03-21-hyphen-normalize';
+const PAGINATION_ALGO_VERSION_STORAGE_KEY = 'reader.pagination_algo_version';
 const PAGE_SHELL_CLASS = 'reader-page container max-w-2xl mx-auto px-4 h-full';
 const SPREAD_PAGE_SHELL_CLASS = 'reader-page container max-w-2xl mx-auto h-full';
 const IS_DEV = process.env.NODE_ENV === 'development';
@@ -169,6 +171,16 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
         updateServerProgress,
     } = useAppStore();
     const isTranslating = useAppStore((state) => state.isTranslatingByBook[bookId] ?? false);
+
+    useEffect(() => {
+        const previousVersion = window.localStorage.getItem(PAGINATION_ALGO_VERSION_STORAGE_KEY);
+        if (previousVersion === PAGINATION_ALGO_VERSION) return;
+
+        paginationCache.clear();
+        void clearCachedChapterLayouts().finally(() => {
+            window.localStorage.setItem(PAGINATION_ALGO_VERSION_STORAGE_KEY, PAGINATION_ALGO_VERSION);
+        });
+    }, []);
 
     const [currentChapterIndex, setCurrentChapterIndex] = useState(1);
     const [pendingLang, setPendingLang] = useState<Language | null>(null);

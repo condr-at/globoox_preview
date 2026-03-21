@@ -50,6 +50,26 @@ interface SplitResult {
   restPart: string
 }
 
+type HyphenPolicy = {
+  minLeft: number
+  minRight: number
+  minWordLen: number
+}
+
+const DEFAULT_HYPHEN_POLICY: HyphenPolicy = {
+  minLeft: 3,
+  minRight: 3,
+  minWordLen: 6,
+}
+
+const HYPHEN_POLICY_BY_LANG: Record<string, HyphenPolicy> = {
+  ru: { minLeft: 3, minRight: 3, minWordLen: 6 },
+  en: { minLeft: 3, minRight: 3, minWordLen: 6 },
+  de: { minLeft: 4, minRight: 3, minWordLen: 7 },
+  fr: { minLeft: 3, minRight: 3, minWordLen: 6 },
+  es: { minLeft: 3, minRight: 3, minWordLen: 6 },
+}
+
 export interface ComputedPagesResult {
   pages: string[][]
   finalBlocks: ContentBlock[]
@@ -61,6 +81,33 @@ type MeasuredBlockRoots = Map<string, HTMLElement>
 function hyphenateWord(word: string, lang: string): string[] {
   const hyphenator = hyphenators[lang] ?? hyphenators.en
   return hyphenator(word).split('\u00AD')
+}
+
+function resolveLangBase(lang: string): string {
+  return (lang || '').toLowerCase().split('-')[0] || 'en'
+}
+
+function getHyphenPolicy(lang: string): HyphenPolicy {
+  return HYPHEN_POLICY_BY_LANG[resolveLangBase(lang)] ?? DEFAULT_HYPHEN_POLICY
+}
+
+function isProtectedNoBreakToken(word: string): boolean {
+  if (!word) return true
+  const lower = word.toLowerCase()
+  if (/https?:\/\//.test(lower) || lower.includes('www.') || lower.includes('@')) return true
+  if (/^\d+([.,:/-]\d+)*$/.test(word)) return true
+  if (/^(doi|isbn)[:\s]/i.test(word)) return true
+  if (/^[A-Z]{2,6}$/.test(word)) return true
+  if (/[’']/.test(word)) return true
+  return false
+}
+
+function canHyphenateWordByPolicy(word: string, lang: string): boolean {
+  const policy = getHyphenPolicy(lang)
+  if (word.length < policy.minWordLen) return false
+  if (isProtectedNoBreakToken(word)) return false
+  if (!/\p{L}/u.test(word)) return false
+  return true
 }
 
 export function normalizeBlocks(blocks: ContentBlock[]): ContentBlock[] {
@@ -467,17 +514,22 @@ function fitParagraphByDom(
     const prefix = normalizedText.slice(0, wordStart).trimEnd()
     const word = normalizedText.slice(wordStart, wordEnd)
     const suffix = normalizedText.slice(wordEnd).trimStart()
-    const parts = hyphenateWord(word, lang)
+    const policy = getHyphenPolicy(lang)
+    const parts = canHyphenateWordByPolicy(word, lang) ? hyphenateWord(word, lang) : []
     if (parts.length > 1) {
       let chunk = ''
       let bestHyphenated: SplitResult | null = null
       for (let i = 0; i < parts.length - 1; i++) {
         chunk += parts[i]
+        const right = parts.slice(i + 1).join('')
+        if (chunk.length < policy.minLeft || right.length < policy.minRight) {
+          continue
+        }
         const hyphenatedPrefix = prefix ? `${prefix} ${chunk}-` : `${chunk}-`
         if (fitsText(hyphenatedPrefix, false)) {
           bestHyphenated = {
             firstPart: hyphenatedPrefix,
-            restPart: [parts.slice(i + 1).join(''), suffix].filter(Boolean).join(' ').trim(),
+            restPart: [right, suffix].filter(Boolean).join(' ').trim(),
           }
         } else {
           break
@@ -933,12 +985,17 @@ function splitParagraphByHeight(
 
   if (best < words.length && best > 0 && best < words.length - 1) {
     const nextWord = words[best]
-    const parts = hyphenateWord(nextWord, lang)
+    const policy = getHyphenPolicy(lang)
+    const parts = canHyphenateWordByPolicy(nextWord, lang) ? hyphenateWord(nextWord, lang) : []
     if (parts.length > 1) {
       let maxFittingSyllables = 0
       let currentSyllableStr = ''
       for (let i = 0; i < parts.length - 1; i++) {
         currentSyllableStr += parts[i]
+        const right = parts.slice(i + 1).join('')
+        if (currentSyllableStr.length < policy.minLeft || right.length < policy.minRight) {
+          continue
+        }
         const testStr = `${firstPart} ${currentSyllableStr}-`
         const h = measureTextHeight(testStr, temp)
         if (h <= availableHeight) {
