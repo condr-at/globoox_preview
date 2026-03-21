@@ -46,33 +46,33 @@ export default function LandingPage() {
           titleClassName="hero-long-title"
         />
 
-        <div id="how-it-works">
+        <section id="how-it-works" aria-label="How it works">
           <UsageAnimation />
-        </div>
+        </section>
 
-        <div id="quality">
+        <section id="quality" aria-label="Translation quality">
           <QualityAssuranceV2
             label="Translation Quality"
             heading="Translations You Can Trust"
             description="Built on an AI engine fine-tuned by expert linguists, our app delivers clear, accurate, and easy-to-read translations that capture the author's true intent."
           />
-        </div>
+        </section>
 
-        <div id="formats-languages">
+        <section id="formats-languages" aria-label="Supported formats and languages">
           <SupportedLanguages />
-        </div>
+        </section>
 
-        <div id="privacy">
+        <section id="privacy" aria-label="Privacy">
           <PrivacyManifest />
-        </div>
+        </section>
 
-        <div id="start">
+        <section id="start" aria-label="Get started">
           <CTA
             heading="Start with your first book."
             description="Upload your EPUB and enjoy it in your language."
             buttonText="Upload Your First Book"
           />
-        </div>
+        </section>
 
         <Footer
           tagline="We are building a global book platform where any reader can discover, buy, read, and listen to any book in their native language."

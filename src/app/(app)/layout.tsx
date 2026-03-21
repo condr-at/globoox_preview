@@ -20,7 +20,16 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: 'Globoox',
   description: 'Reading app that translates ebooks into your language with AI',
-  keywords: ['reading', 'books', 'translation', 'language learning', 'ebooks'],
+  keywords: [
+    'reading',
+    'books',
+    'translation',
+    'language learning',
+    'ebooks',
+    'epub reader',
+    'AI translation',
+    'book translator',
+  ],
   manifest: '/manifest.json',
   icons: { icon: '/favicon.ico' },
   appleWebApp: {
@@ -32,9 +41,16 @@ export const metadata: Metadata = {
     telephone: false,
   },
   openGraph: {
-    title: 'Globoox',
-    description: 'Reading app that translates ebooks into your language with AI.',
+    title: 'Globoox — AI-Powered Ebook Translation',
+    description:
+      'Reading app that translates ebooks into your language with AI.',
     type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Globoox — AI-Powered Ebook Translation',
+    description:
+      'Upload any EPUB and read it in your native language with AI translation.',
   },
 };
 
