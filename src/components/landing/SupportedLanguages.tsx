@@ -43,7 +43,7 @@ export function SupportedLanguages() {
               fontWeight: 400,
             }}
           >
-            EPUB and growing.
+            EPUB. More to come.
           </h2>
           <p
             style={{
@@ -52,7 +52,7 @@ export function SupportedLanguages() {
               lineHeight: 1.7,
             }}
           >
-            Right now we support EPUB books and can translate them into English, Spanish, Russian, and French. Arabic, Chinese, and dozens of other languages will be available soon.
+            Currently, we support EPUB books and can translate them into English, Spanish, Russian, and French. Arabic, Chinese, and other languages are coming soon.
           </p>
         </div>
 
