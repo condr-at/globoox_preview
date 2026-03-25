@@ -25,9 +25,11 @@ function useCompressedCover(src: string, maxWidth = 480): string {
     if (!isDataUri) return;
     let cancelled = false;
     const img = new window.Image();
-    img.onload = () => {
+    img.src = src;
+    // Use decode() to ensure image data is fully ready before canvas draw.
+    // Safari fires onload before pixel data is decoded, producing black canvas.
+    img.decode().then(() => {
       if (cancelled) return;
-      // Guard against 0-dimension images producing black canvas
       if (img.naturalWidth === 0 || img.naturalHeight === 0) return;
       const scale = Math.min(1, maxWidth / img.naturalWidth);
       const w = Math.round(img.naturalWidth * scale);
@@ -39,10 +41,10 @@ function useCompressedCover(src: string, maxWidth = 480): string {
       if (!ctx) return;
       ctx.drawImage(img, 0, 0, w, h);
       const webp = canvas.toDataURL('image/webp', 0.80);
-      // Fall back to JPEG if WebP is not supported (very rare)
       setCompressed(webp.startsWith('data:image/webp') ? webp : canvas.toDataURL('image/jpeg', 0.75));
-    };
-    img.src = src;
+    }).catch(() => {
+      // Keep original src on decode failure
+    });
     return () => { cancelled = true; };
   }, [src, maxWidth, isDataUri]);
 
@@ -97,7 +99,8 @@ function useCoverAccent(src: string): string {
 
     const img = new window.Image();
     img.crossOrigin = 'anonymous';
-    img.onload = () => {
+    img.src = src;
+    img.decode().then(() => {
       if (cancelled) return;
       try {
         const sampleW = 32;
@@ -163,11 +166,9 @@ function useCoverAccent(src: string): string {
       } catch {
         // keep fallback accent
       }
-    };
-    img.onerror = () => {
+    }).catch(() => {
       // keep fallback accent
-    };
-    img.src = src;
+    });
 
     return () => {
       cancelled = true;
@@ -214,7 +215,8 @@ function useImageAspect(src: string): { aspect: number | null; isReady: boolean 
     let cancelled = false;
     const img = new window.Image();
     img.crossOrigin = 'anonymous';
-    img.onload = () => {
+    img.src = src;
+    img.decode().then(() => {
       if (cancelled || img.naturalHeight === 0) return;
       const nextAspect = img.naturalWidth / img.naturalHeight;
       setAspect(nextAspect);
@@ -224,12 +226,10 @@ function useImageAspect(src: string): { aspect: number | null; isReady: boolean 
       } catch {
         // noop
       }
-    };
-    img.onerror = () => {
+    }).catch(() => {
       if (cancelled) return;
       setIsReady(true);
-    };
-    img.src = src;
+    });
     return () => {
       cancelled = true;
     };
