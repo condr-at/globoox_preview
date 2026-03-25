@@ -10,7 +10,6 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { createClient } from '@/lib/supabase/client';
-import { getSiteUrl } from '@/lib/supabase/utils';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 export default function RegisterPage() {
@@ -86,11 +85,11 @@ function RegisterForm() {
     setLoading(true);
     setError(null);
     const supabase = getSupabase();
-    const siteUrl = getSiteUrl();
+    const callbackUrl = `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextUrl)}`;
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${siteUrl}/auth/callback?next=${encodeURIComponent(nextUrl)}`,
+        redirectTo: callbackUrl,
       },
     });
     if (error) {
@@ -226,4 +225,3 @@ function RegisterForm() {
     </div>
   );
 }
-

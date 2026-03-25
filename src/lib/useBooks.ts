@@ -22,8 +22,9 @@ export function invalidateBooksCache() {
   void clearCachedBookMeta()
 }
 
-export function useBooks(options?: { scopeKey?: string }) {
+export function useBooks(options?: { scopeKey?: string; stabilizeOnMount?: boolean }) {
   const scopeKey = options?.scopeKey ?? 'guest'
+  const stabilizeOnMount = options?.stabilizeOnMount ?? false
   const cacheKey = `${scopeKey}::all`
   const isAuthenticatedScope = scopeKey !== 'guest'
   const listStatus = isAuthenticatedScope ? 'all' : 'active'
@@ -33,11 +34,13 @@ export function useBooks(options?: { scopeKey?: string }) {
   const [books, setBooks] = useState<ApiBook[]>(cached?.data ?? [])
   // loading=true only when there is absolutely no cached data yet (very first visit)
   const [loading, setLoading] = useState(!cached)
+  const [stabilizing, setStabilizing] = useState(Boolean(cached && stabilizeOnMount))
   const [error, setError] = useState<string | null>(null)
   const revalidating = useRef<string | null>(null)
   const hasSuccessfulBooksFetch = useRef(Boolean(cached))
   const authRetryDone = useRef(false)
   const activeCacheKeyRef = useRef(cacheKey)
+  const initialStabilizationDoneRef = useRef(false)
 
   const commitBooks = useCallback((nextBooks: ApiBook[], fetchedAt = Date.now()) => {
     if (activeCacheKeyRef.current !== cacheKey) return
@@ -52,7 +55,9 @@ export function useBooks(options?: { scopeKey?: string }) {
     revalidating.current = null
     authRetryDone.current = false
     hasSuccessfulBooksFetch.current = Boolean(booksCache.get(cacheKey))
-  }, [cacheKey])
+    initialStabilizationDoneRef.current = false
+    setStabilizing(Boolean(booksCache.get(cacheKey) && stabilizeOnMount))
+  }, [cacheKey, stabilizeOnMount])
 
   // Hydrate from persisted IndexedDB cache (fast reloads)
   useEffect(() => {
@@ -147,8 +152,18 @@ export function useBooks(options?: { scopeKey?: string }) {
 
   // On mount: show cache immediately, revalidate if stale
   useEffect(() => {
+    const hasCache = Boolean(booksCache.get(cacheKey))
+    if (stabilizeOnMount && hasCache && !initialStabilizationDoneRef.current) {
+      initialStabilizationDoneRef.current = true
+      setStabilizing(true)
+      void refresh(true).finally(() => {
+        if (activeCacheKeyRef.current === cacheKey) setStabilizing(false)
+      })
+      return
+    }
+
     void refresh()
-  }, [refresh])
+  }, [cacheKey, refresh, stabilizeOnMount])
 
   // On tab focus: silent background revalidation (no skeleton)
   useEffect(() => {
@@ -245,5 +260,5 @@ export function useBooks(options?: { scopeKey?: string }) {
     }
   }, [books, cacheKey, scopeKey])
 
-  return { books, loading, error, refresh, addBook, hideBook, unhideBook, removeBook }
+  return { books, loading, stabilizing, error, refresh, addBook, hideBook, unhideBook, removeBook }
 }
