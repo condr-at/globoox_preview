@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 export type Language = 'en' | 'fr' | 'es' | 'de' | 'ru';
+export type PageLayoutMode = 'single' | 'spread';
 
 export const languageNames: Record<Language, string> = {
   en: 'English',
@@ -22,8 +23,8 @@ export const languageFlags: Record<Language, string> = {
 interface ReaderSettings {
   fontSize: number;
   lineHeightScale: number;
-  theme: 'dark' | 'light';
   language: Language;
+  pageLayoutMode: PageLayoutMode;
 }
 
 interface ReadingProgress {
@@ -53,8 +54,8 @@ interface AppState {
   settings: ReaderSettings;
   setFontSize: (size: number) => void;
   setLineHeightScale: (scale: number) => void;
-  setTheme: (theme: 'dark' | 'light') => void;
   setLanguage: (language: Language) => void;
+  setPageLayoutMode: (mode: PageLayoutMode) => void;
 
   // Per-book language preferences
   perBookLanguages: Record<string, Language>;
@@ -98,8 +99,8 @@ export const useAppStore = create<AppState>()(
       settings: {
         fontSize: 16,
         lineHeightScale: 1,
-        theme: 'dark',
-        language: 'en'
+        language: 'en',
+        pageLayoutMode: 'single',
       },
 
       setFontSize: (size) =>
@@ -112,14 +113,14 @@ export const useAppStore = create<AppState>()(
           settings: { ...state.settings, lineHeightScale: scale }
         })),
 
-      setTheme: (theme) =>
-        set((state) => ({
-          settings: { ...state.settings, theme }
-        })),
-
       setLanguage: (language) =>
         set((state) => ({
           settings: { ...state.settings, language }
+        })),
+
+      setPageLayoutMode: (mode) =>
+        set((state) => ({
+          settings: { ...state.settings, pageLayoutMode: mode }
         })),
 
       // Per-book language preferences

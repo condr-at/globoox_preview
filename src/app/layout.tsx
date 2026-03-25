@@ -1,84 +1,61 @@
-import type { Metadata, Viewport } from 'next';
-import Script from 'next/script';
+import { ReactNode } from 'react';
+import type { Metadata } from 'next';
+import UtmCapture from '@/components/UtmCapture';
 import './globals.css';
-import Header from '@/components/ui/Header';
-import { ThemeProvider } from '@/components/theme-provider';
-import PostHogProvider from '@/components/PostHogProvider';
-import SyncCheckClient from '@/components/SyncCheckClient';
 
-export const viewport: Viewport = {
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)', color: '#000000' },
-  ],
-  width: 'device-width',
-  initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
-  viewportFit: 'cover',
-};
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://globoox.co';
 
 export const metadata: Metadata = {
-  title: 'Globoox Preview',
-  description: 'Reading app that translates ebooks into your language with AI',
-  keywords: ['reading', 'books', 'translation', 'language learning', 'ebooks'],
-  manifest: '/manifest.json',
-  icons: { icon: '/favicon.ico' },
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'black-translucent',
-    title: 'Globoox',
+  title: {
+    default: 'Globoox — AI-Powered Ebook Translation',
+    template: '%s | Globoox',
   },
-  formatDetection: {
-    telephone: false,
+  description:
+    'Reading app that instantly translates ebooks into your native language with AI. Upload EPUBs and read in English, French, Spanish, German, or Russian.',
+  metadataBase: new URL(SITE_URL),
+  alternates: {
+    canonical: '/',
   },
   openGraph: {
-    title: 'Globoox Preview',
-    description: 'Reading app that translates ebooks into your language with AI.',
+    siteName: 'Globoox',
     type: 'website',
+    locale: 'en_US',
+  },
+  twitter: {
+    card: 'summary_large_image',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    'max-snippet': -1,
+    'max-image-preview': 'large',
+    'max-video-preview': -1,
   },
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+const organizationJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'Globoox',
+  url: SITE_URL,
+  logo: `${SITE_URL}/icon-512.png`,
+  description:
+    'A global book platform where any reader can discover, read, and translate any book in their native language.',
+  sameAs: [],
+};
+
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      {process.env.NODE_ENV === 'production' && (
-        <head>
-          <Script
-            id="microsoft-clarity"
-            strategy="afterInteractive"
-            dangerouslySetInnerHTML={{
-              __html: `
-                (function(c,l,a,r,i,t,y){
-                  c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-                  t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-                  y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-                })(window, document, "clarity", "script", "vo25c0m78q");
-              `,
-            }}
-          />
-        </head>
-      )}
-      <body className="antialiased bg-[var(--bg-grouped)]">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <PostHogProvider />
-          <SyncCheckClient />
-          <div className="min-h-screen">
-            <main>
-              {children}
-            </main>
-          </div>
-          <Header />
-        </ThemeProvider>
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+        />
+      </head>
+      <body>
+        <UtmCapture />
+        {children}
       </body>
     </html>
   );

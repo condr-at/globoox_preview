@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { useAppStore, Language, ReadingAnchor } from '@/lib/store';
 import { fetchContent, fetchReadingPosition, saveReadingPosition, updateBookLanguage, checkTranslationLimit } from '@/lib/api';
@@ -12,8 +12,10 @@ import { useViewportTranslation } from '@/lib/hooks/useViewportTranslation';
 import { usePageGestures } from '@/lib/hooks/usePageGestures';
 import { computePages, findPageForBlock, findPageForBlockAndSentence, findPageByBlockPosition, normalizeBlocks } from '@/lib/paginatorUtils';
 import { ContentBlock } from '@/lib/api';
+import { applyTypografToBlocks } from '@/lib/typograf';
 import { useAuth } from '@/lib/hooks/useAuth';
 import {
+    clearCachedChapterLayouts,
     getCachedChapterBlockIds,
     getCachedChapterLayout,
     getCachedReadingPosition,
@@ -37,13 +39,27 @@ import LanguageSwitch from './LanguageSwitch';
 import ContentBlockRenderer from './ContentBlockRenderer';
 import { Button } from '@/components/ui/button';
 import IOSAlertDialog from '@/components/ui/ios-alert-dialog';
+import IOSIcon from '@/components/ui/ios-icon';
 import { Skeleton } from '@/components/ui/skeleton';
-import UnlimitedAccessModal from '@/components/UnlimitedAccessModal';
+import TranslationLimitDialog from '@/components/TranslationLimitDialog';
+import { uiHeaderControlHitArea, uiIconTriggerButton } from '@/components/ui/button-styles';
 
 // Source of a navigation event. Any source other than manual_scroll is a "jump"
 // that aborts in-flight prefetch requests and updates readingAnchor immediately.
 type NavigationSource = 'toc' | 'search' | 'slider' | 'link' | 'restore_anchor' | 'manual_scroll'
 const LAST_PAGE_SENTINEL = '__LAST_PAGE__';
+const SPREAD_MIN_VIEWPORT_PX = 1408;
+const SPREAD_GAP_PX = 120;
+const SPREAD_SIDE_PADDING_PX = 40;
+const SPREAD_MAX_COLUMN_PX = 560;
+const LAYOUT_SIGNIFICANT_DELTA_PX = 2;
+const REPAGINATE_DEBOUNCE_MS = 160;
+const PAGINATION_ALGO_VERSION = 'v2026-03-25-probe-visible-css-parity';
+const PAGINATION_ALGO_VERSION_STORAGE_KEY = 'reader.pagination_algo_version';
+const PAGE_SHELL_CLASS = 'reader-page container max-w-2xl mx-auto px-4 h-full';
+const SPREAD_PAGE_SHELL_CLASS = 'reader-page container max-w-2xl mx-auto h-full';
+const IS_DEV = process.env.NODE_ENV === 'development';
+const SHOW_READER_DEBUG_OVERLAY = false;
 
 interface ReaderViewProps {
     bookId: string;
@@ -62,6 +78,25 @@ type PaginationCacheEntry = {
     fragmentMap: Map<string, string>;
     currentPageIdx: number;
     savedAt: number;
+};
+
+type ReaderDebugSnapshot = {
+    status: 'ANALYZING' | 'STABLE';
+    cause: 'none' | 'width_jitter' | 'mode_flap' | 'repaginate_without_width_change' | 'unknown';
+    targetWidth: number;
+    rawWidth: number;
+    resolvedWidth: number;
+    pageWidth: number;
+    spread: boolean;
+    widthFlips: number;
+    widthRange: number;
+    modeFlips: number;
+    paginateRuns2s: number;
+    hasShellRef: boolean;
+    pagesReady: boolean;
+    visiblePagesReady: boolean;
+    isLoading: boolean;
+    computeGateBlocked: boolean;
 };
 
 async function waitForMeasuredImages(container: HTMLElement | null): Promise<void> {
@@ -137,6 +172,16 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
         updateServerProgress,
     } = useAppStore();
     const isTranslating = useAppStore((state) => state.isTranslatingByBook[bookId] ?? false);
+
+    useEffect(() => {
+        const previousVersion = window.localStorage.getItem(PAGINATION_ALGO_VERSION_STORAGE_KEY);
+        if (previousVersion === PAGINATION_ALGO_VERSION) return;
+
+        paginationCache.clear();
+        void clearCachedChapterLayouts().finally(() => {
+            window.localStorage.setItem(PAGINATION_ALGO_VERSION_STORAGE_KEY, PAGINATION_ALGO_VERSION);
+        });
+    }, []);
 
     const [currentChapterIndex, setCurrentChapterIndex] = useState(1);
     const [pendingLang, setPendingLang] = useState<Language | null>(null);
@@ -250,7 +295,6 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
             translationAllowedRef.current = true; // fail open
         });
     }, [isOwn, isAlpha, isAuthenticated, authLoading, bookId]);
-
     // NOTE: glow state is derived later, once pagination + currentPageBlocks are available.
 
     // ─── Reading session tracking ─────────────────────────────────────────────
@@ -306,6 +350,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
     const contentAreaRef = useRef<HTMLDivElement>(null);
     const pageViewportRef = useRef<HTMLDivElement>(null);
     const measureContainerRef = useRef<HTMLDivElement>(null);
+    const widthProbeShellRef = useRef<HTMLDivElement>(null);
     const blockMeasureRefs = useRef<Map<string, HTMLElement>>(new Map());
 
     const [pageHeight, setPageHeight] = useState(0);
@@ -321,6 +366,30 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
     const [remoteAnchorReady, setRemoteAnchorReady] = useState(false);
     const [layoutCacheReadyKey, setLayoutCacheReadyKey] = useState('');
     const currentPageIdxRef = useRef(0);
+    const [rawColumnWidthPx, setRawColumnWidthPx] = useState(0);
+    const [resolvedColumnWidthPx, setResolvedColumnWidthPx] = useState(0);
+    const spreadModeEnabled = settings.pageLayoutMode === 'spread' && pageWidth >= SPREAD_MIN_VIEWPORT_PX;
+    const widthHistoryRef = useRef<Array<{ t: number; w: number }>>([]);
+    const modeHistoryRef = useRef<Array<{ t: number; spread: boolean }>>([]);
+    const paginateHistoryRef = useRef<number[]>([]);
+    const analyzeTimerRef = useRef<number | null>(null);
+    const resolveWidthTimerRef = useRef<number | null>(null);
+    const repaginateTimerRef = useRef<number | null>(null);
+    const [debugSnapshot, setDebugSnapshot] = useState<ReaderDebugSnapshot | null>(null);
+    const [headingTraceLines, setHeadingTraceLines] = useState<string[]>([]);
+
+    const normalizedCurrentPageIdx = useMemo(() => {
+        if (!spreadModeEnabled) return currentPageIdx;
+        if (currentPageIdx % 2 === 0) return currentPageIdx;
+        return Math.max(0, currentPageIdx - 1);
+    }, [currentPageIdx, spreadModeEnabled]);
+
+    const activePageIdx = spreadModeEnabled ? normalizedCurrentPageIdx : currentPageIdx;
+    const rightPageIdx = spreadModeEnabled ? activePageIdx + 1 : -1;
+    const normalizeForLayout = useCallback((idx: number) => {
+        if (!spreadModeEnabled) return idx;
+        return idx % 2 === 0 ? idx : Math.max(0, idx - 1);
+    }, [spreadModeEnabled]);
 
     // Translation windows are block-based around the current reading position.
     const PREFETCH_BLOCKS_FORWARD = 20;
@@ -345,12 +414,171 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
     }, [paginatedBlocks]);
 
     useEffect(() => {
+        if (normalizedCurrentPageIdx === currentPageIdx) return;
+        setCurrentPageIdx(normalizedCurrentPageIdx);
+    }, [normalizedCurrentPageIdx, currentPageIdx]);
+
+    useEffect(() => {
+        const probeEl = widthProbeShellRef.current;
+        if (!probeEl) return;
+        const update = () => {
+            const rect = probeEl.getBoundingClientRect();
+            const width = Math.max(0, Math.round(rect.width));
+            setRawColumnWidthPx((prev) => (prev === width ? prev : width));
+        };
+        const ro = new ResizeObserver(update);
+        ro.observe(probeEl);
+        update();
+        return () => ro.disconnect();
+    }, [spreadModeEnabled, pageWidth]);
+
+    // Stabilize measured width before using it in pagination key/compute.
+    // This avoids feedback loops from 1px oscillation near spread thresholds.
+    useEffect(() => {
+        if (!rawColumnWidthPx) return;
+        if (resolveWidthTimerRef.current != null) {
+            window.clearTimeout(resolveWidthTimerRef.current);
+        }
+        resolveWidthTimerRef.current = window.setTimeout(() => {
+            setResolvedColumnWidthPx((prev) => {
+                if (!prev) return rawColumnWidthPx;
+                const delta = Math.abs(rawColumnWidthPx - prev);
+                return delta >= LAYOUT_SIGNIFICANT_DELTA_PX ? rawColumnWidthPx : prev;
+            });
+            resolveWidthTimerRef.current = null;
+        }, 140);
+
+        return () => {
+            if (resolveWidthTimerRef.current != null) {
+                window.clearTimeout(resolveWidthTimerRef.current);
+                resolveWidthTimerRef.current = null;
+            }
+        };
+    }, [rawColumnWidthPx]);
+
+    useEffect(() => {
+        if (!IS_DEV) return;
+        const now = performance.now();
+        widthHistoryRef.current.push({ t: now, w: rawColumnWidthPx });
+        widthHistoryRef.current = widthHistoryRef.current.filter((x) => now - x.t <= 1500);
+
+        modeHistoryRef.current.push({ t: now, spread: spreadModeEnabled });
+        modeHistoryRef.current = modeHistoryRef.current.filter((x) => now - x.t <= 2000);
+
+        paginateHistoryRef.current = paginateHistoryRef.current.filter((t) => now - t <= 2000);
+
+        const widths = widthHistoryRef.current.map((x) => x.w).filter((w) => w > 0);
+        const minW = widths.length ? Math.min(...widths) : 0;
+        const maxW = widths.length ? Math.max(...widths) : 0;
+        const widthRange = maxW - minW;
+        const widthFlips = widthHistoryRef.current.slice(1).reduce((acc, x, i) => (
+            x.w !== widthHistoryRef.current[i].w ? acc + 1 : acc
+        ), 0);
+        const modeFlips = modeHistoryRef.current.slice(1).reduce((acc, x, i) => (
+            x.spread !== modeHistoryRef.current[i].spread ? acc + 1 : acc
+        ), 0);
+        const paginateRuns2s = paginateHistoryRef.current.length;
+
+        setDebugSnapshot({
+            status: 'ANALYZING',
+            cause: 'unknown',
+            targetWidth: resolvedColumnWidthPx || rawColumnWidthPx,
+            rawWidth: rawColumnWidthPx,
+            resolvedWidth: resolvedColumnWidthPx,
+            pageWidth,
+            spread: spreadModeEnabled,
+            widthFlips,
+            widthRange,
+            modeFlips,
+            paginateRuns2s,
+            hasShellRef: !!widthProbeShellRef.current,
+            pagesReady,
+            visiblePagesReady,
+            isLoading: chaptersLoading || isContentLoading,
+            computeGateBlocked: pageHeight === 0 || pageWidth === 0 || resolvedColumnWidthPx === 0 || displayBlocks.length === 0,
+        });
+
+        if (analyzeTimerRef.current != null) {
+            window.clearTimeout(analyzeTimerRef.current);
+        }
+        analyzeTimerRef.current = window.setTimeout(() => {
+            const stableNow = performance.now();
+            const widthsStable = widthHistoryRef.current.filter((x) => stableNow - x.t <= 2000).map((x) => x.w).filter((w) => w > 0);
+            const minWs = widthsStable.length ? Math.min(...widthsStable) : 0;
+            const maxWs = widthsStable.length ? Math.max(...widthsStable) : 0;
+            const widthRangeStable = maxWs - minWs;
+            const widthFlipsStable = widthsStable.slice(1).reduce((acc, w, i) => (
+                w !== widthsStable[i] ? acc + 1 : acc
+            ), 0);
+            const modeStable = modeHistoryRef.current.filter((x) => stableNow - x.t <= 2000);
+            const modeFlipsStable = modeStable.slice(1).reduce((acc, x, i) => (
+                x.spread !== modeStable[i].spread ? acc + 1 : acc
+            ), 0);
+            const paginateRunsStable = paginateHistoryRef.current.filter((t) => stableNow - t <= 2000).length;
+
+            let cause: ReaderDebugSnapshot['cause'] = 'none';
+            if (modeFlipsStable >= 1) cause = 'mode_flap';
+            else if (widthFlipsStable >= 4 && widthRangeStable >= 1) cause = 'width_jitter';
+            else if (paginateRunsStable >= 4) cause = 'repaginate_without_width_change';
+
+            setDebugSnapshot({
+                status: 'STABLE',
+                cause,
+                targetWidth: resolvedColumnWidthPx || rawColumnWidthPx,
+                rawWidth: rawColumnWidthPx,
+                resolvedWidth: resolvedColumnWidthPx,
+                pageWidth,
+                spread: spreadModeEnabled,
+                widthFlips: widthFlipsStable,
+                widthRange: widthRangeStable,
+                modeFlips: modeFlipsStable,
+                paginateRuns2s: paginateRunsStable,
+                hasShellRef: !!widthProbeShellRef.current,
+                pagesReady,
+                visiblePagesReady,
+                isLoading: chaptersLoading || isContentLoading,
+                computeGateBlocked: pageHeight === 0 || pageWidth === 0 || resolvedColumnWidthPx === 0 || displayBlocks.length === 0,
+            });
+            analyzeTimerRef.current = null;
+        }, 1200);
+
+        return () => {
+            if (analyzeTimerRef.current != null) {
+                window.clearTimeout(analyzeTimerRef.current);
+                analyzeTimerRef.current = null;
+            }
+        };
+    }, [rawColumnWidthPx, resolvedColumnWidthPx, pageWidth, spreadModeEnabled, pagesReady, visiblePagesReady, chaptersLoading, isContentLoading, pageHeight, displayBlocks.length]);
+
+    useEffect(() => {
+        if (!IS_DEV || !SHOW_READER_DEBUG_OVERLAY) return;
+        const readTrace = () => {
+            const w = window as Window & {
+                __PAGINATION_HEADING_TRACE__?: Array<{
+                    headingId: string;
+                    headingLevel?: number;
+                    action: string;
+                    nextType?: string;
+                    nextLevel?: number;
+                }>;
+            };
+            const tail = (w.__PAGINATION_HEADING_TRACE__ ?? []).slice(-8);
+            setHeadingTraceLines(
+                tail.map((e) => `${e.action} h${e.headingLevel ?? '?'} id=${e.headingId.slice(0, 6)} next=${e.nextType ?? '-'}${e.nextLevel ? `:${e.nextLevel}` : ''}`)
+            );
+        };
+        readTrace();
+        const timer = window.setInterval(readTrace, 250);
+        return () => window.clearInterval(timer);
+    }, []);
+
+    useEffect(() => {
         if (!pagesReady || isSourceLang || isContentLoading) return;
 
         let cancelled = false;
 
         const run = async () => {
-            const currentFragmentIds = pages[currentPageIdx] ?? [];
+            const currentFragmentIds = pages[activePageIdx] ?? [];
             const currentIds = resolveBlockIds(currentFragmentIds);
             const anchorBlockId = currentIds[0] ?? null;
             const anchorIdx = anchorBlockId ? displayBlocks.findIndex((block) => block.id === anchorBlockId) : -1;
@@ -402,7 +630,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                 const visibleRemainingIds = currentIds.slice(HIGH_PRIORITY_VISIBLE_BLOCKS);
                 console.log(JSON.stringify({
                     event: 'translate_current_page',
-                    pageIdx: currentPageIdx,
+                    pageIdx: activePageIdx,
                     blockCount: currentIds.length,
                     visibleHighCount: visibleHighIds.length,
                     visibleDeferredCount: visibleRemainingIds.length,
@@ -416,11 +644,11 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
             }
 
             if (boundedForwardIds.length > 0) {
-                console.log(JSON.stringify({ event: 'prefetch_forward_enqueue', pageIdx: currentPageIdx, totalBlocks: boundedForwardIds.length }));
+                console.log(JSON.stringify({ event: 'prefetch_forward_enqueue', pageIdx: activePageIdx, totalBlocks: boundedForwardIds.length }));
                 enqueueBlocks(boundedForwardIds);
             }
             if (boundedBackwardIds.length > 0) {
-                console.log(JSON.stringify({ event: 'prefetch_backward_enqueue', pageIdx: currentPageIdx, totalBlocks: boundedBackwardIds.length }));
+                console.log(JSON.stringify({ event: 'prefetch_backward_enqueue', pageIdx: activePageIdx, totalBlocks: boundedBackwardIds.length }));
                 enqueueBlocks(boundedBackwardIds);
             }
         };
@@ -430,15 +658,21 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
         return () => {
             cancelled = true;
         };
-    }, [currentPageIdx, pagesReady, pages, enqueueBlocks, enqueueBlocksImmediate, isSourceLang, isContentLoading, resolveBlockIds, displayBlocks, reconcileBlocks, chapters, currentChapterIndex, activeLang]);
+    }, [activePageIdx, pagesReady, pages, enqueueBlocks, enqueueBlocksImmediate, isSourceLang, isContentLoading, resolveBlockIds, displayBlocks, reconcileBlocks, chapters, currentChapterIndex, activeLang]);
 
     // Measure the available height for content after the header
     useEffect(() => {
         if (!pageViewportRef.current) return;
         const updateHeight = () => {
             if (pageViewportRef.current) {
-                setPageHeight(pageViewportRef.current.clientHeight);
-                setPageWidth(pageViewportRef.current.clientWidth);
+                const nextHeight = pageViewportRef.current.clientHeight;
+                const nextWidth = pageViewportRef.current.clientWidth;
+                setPageHeight((prev) => (
+                    !prev || Math.abs(nextHeight - prev) >= LAYOUT_SIGNIFICANT_DELTA_PX ? nextHeight : prev
+                ));
+                setPageWidth((prev) => (
+                    !prev || Math.abs(nextWidth - prev) >= LAYOUT_SIGNIFICANT_DELTA_PX ? nextWidth : prev
+                ));
             }
         };
         const ro = new ResizeObserver(updateHeight);
@@ -447,14 +681,19 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
         return () => ro.disconnect();
     }, []);
 
+    const typographedBlocks = useMemo(
+        () => applyTypografToBlocks(displayBlocks, activeLang),
+        [displayBlocks, activeLang]
+    );
+
     // Normalized blocks split lists into items but keep paragraphs intact
-    const normalizedBlocks = useMemo(() => normalizeBlocks(displayBlocks), [displayBlocks]);
+    const normalizedBlocks = useMemo(() => normalizeBlocks(typographedBlocks), [typographedBlocks]);
 
     // ID of the first image block in chapter 1 — only it should be rendered as the book cover.
     // Images in all other chapters are relative EPUB paths that cannot be resolved and are hidden.
     const firstImageBlockId = useMemo(
-        () => currentChapterIndex === 1 ? displayBlocks.find((b) => b.type === 'image')?.id : undefined,
-        [displayBlocks, currentChapterIndex]
+        () => currentChapterIndex === 1 ? typographedBlocks.find((b) => b.type === 'image')?.id : undefined,
+        [typographedBlocks, currentChapterIndex]
     );
 
     // Recompute pages when block structure, text content, or page height changes.
@@ -463,9 +702,9 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
     const blockStructureKey = useMemo(
         () => {
             const contentSignature = getLayoutContentSignature(normalizedBlocks);
-            return `${contentSignature}__${pageWidth}__${pageHeight}__${settings.fontSize}__${settings.lineHeightScale}__${displayBlocksLang}`;
+            return `${PAGINATION_ALGO_VERSION}__${contentSignature}__${pageHeight}__${resolvedColumnWidthPx}__${settings.fontSize}__${settings.lineHeightScale}__${displayBlocksLang}`;
         },
-        [normalizedBlocks, pageWidth, pageHeight, settings.fontSize, settings.lineHeightScale, displayBlocksLang]
+        [normalizedBlocks, pageHeight, resolvedColumnWidthPx, settings.fontSize, settings.lineHeightScale, displayBlocksLang]
     );
     const prevBlockStructureKey = useRef('');
     const lastProgressFetchAtRef = useRef<Map<string, number>>(new Map());
@@ -498,12 +737,16 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
     useEffect(() => {
         if (layoutCacheReadyKey !== paginationCacheKey) return;
         if (blockStructureKey === prevBlockStructureKey.current) return;
-        if (pageHeight === 0 || pageWidth === 0 || normalizedBlocks.length === 0) return;
+        if (pageHeight === 0 || pageWidth === 0 || resolvedColumnWidthPx === 0 || normalizedBlocks.length === 0) return;
 
         let cancelled = false;
-        setVisiblePagesReady(false);
 
         async function measureAndCompute() {
+            if (IS_DEV) {
+                const now = performance.now();
+                paginateHistoryRef.current.push(now);
+                paginateHistoryRef.current = paginateHistoryRef.current.filter((t) => now - t <= 2000);
+            }
             // Ensure fonts are loaded before measuring
             if (document.fonts && document.fonts.ready) {
                 await document.fonts.ready;
@@ -526,6 +769,8 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                 settings.lineHeightScale,
                 1,
                 blockMeasureRefs.current,
+                resolvedColumnWidthPx,
+                spreadModeEnabled ? SPREAD_PAGE_SHELL_CLASS : PAGE_SHELL_CLASS,
             );
 
             setPages(computed.pages);
@@ -556,12 +801,19 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
             });
         }
 
-        void measureAndCompute();
+        repaginateTimerRef.current = window.setTimeout(() => {
+            void measureAndCompute();
+            repaginateTimerRef.current = null;
+        }, REPAGINATE_DEBOUNCE_MS);
 
         return () => {
             cancelled = true;
+            if (repaginateTimerRef.current != null) {
+                window.clearTimeout(repaginateTimerRef.current);
+                repaginateTimerRef.current = null;
+            }
         };
-    }, [layoutCacheReadyKey, paginationCacheKey, blockStructureKey, pageHeight, pageWidth, normalizedBlocks, settings.fontSize, settings.lineHeightScale, displayBlocksLang, activeLang, currentChapter?.id, bookId]);
+    }, [layoutCacheReadyKey, paginationCacheKey, blockStructureKey, pageHeight, pageWidth, resolvedColumnWidthPx, normalizedBlocks, settings.fontSize, settings.lineHeightScale, displayBlocksLang, activeLang, currentChapter?.id, bookId, spreadModeEnabled]);
 
     // ─── Anchor restore ──────────────────────────────────────────────────────
     // Set by language-switch handler: blockId + sentenceIndex to jump to on next page recompute
@@ -628,8 +880,8 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
         if (!pagesReady || pages.length === 0) return;
         const cached = paginationCache.get(paginationCacheKey);
         if (!cached) return;
-        paginationCache.set(paginationCacheKey, { ...cached, currentPageIdx, savedAt: Date.now() });
-    }, [currentPageIdx, pagesReady, pages.length, paginationCacheKey]);
+        paginationCache.set(paginationCacheKey, { ...cached, currentPageIdx: activePageIdx, savedAt: Date.now() });
+    }, [activePageIdx, pagesReady, pages.length, paginationCacheKey]);
 
     // Authenticated users: local-first anchor restore + conditional server revalidation.
     useEffect(() => {
@@ -724,9 +976,19 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                     return;
                 }
 
-                // Soft reconcile: only force navigation when local anchor is missing
-                // or server progress scope definitely changed.
-                const shouldApplyRemoteAnchor = !hasLocalAnchor || scopeChanged;
+                const localAnchorUpdatedMs = localAnchor?.updatedAt
+                    ? Date.parse(localAnchor.updatedAt)
+                    : NaN;
+                const remoteUpdatedMs = remote.updated_at
+                    ? Date.parse(remote.updated_at)
+                    : NaN;
+                const isRemoteNewerThanLocal =
+                    Number.isFinite(remoteUpdatedMs) &&
+                    (!Number.isFinite(localAnchorUpdatedMs) || remoteUpdatedMs > localAnchorUpdatedMs);
+
+                // Soft reconcile: force navigation when local anchor is missing,
+                // scope definitely changed, or server anchor is newer than local.
+                const shouldApplyRemoteAnchor = !hasLocalAnchor || scopeChanged || isRemoteNewerThanLocal;
                 if (shouldApplyRemoteAnchor) {
                     const chapterIdx = chapters.findIndex((c) => c.id === chapterId);
                     if (chapterIdx >= 0) {
@@ -786,7 +1048,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
             if (targetBlockId === LAST_PAGE_SENTINEL) {
                 pendingAnchorBlockId.current = null;
                 pendingAnchorSentenceIndex.current = 0;
-                setCurrentPageIdx(Math.max(0, pages.length - 1));
+                setCurrentPageIdx(normalizeForLayout(Math.max(0, pages.length - 1)));
                 setVisiblePagesReady(true);
                 return;
             }
@@ -795,7 +1057,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
             pendingAnchorSentenceIndex.current = 0;
             const idx = findPageForBlockAndSentence(pages, paginatedBlocks, targetBlockId, targetSentenceIndex, fragmentMapRef.current);
             if (idx >= 0) {
-                setCurrentPageIdx(idx);
+                setCurrentPageIdx(normalizeForLayout(idx));
                 setVisiblePagesReady(true);
                 return;
             }
@@ -803,7 +1065,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
             const block = displayBlocks.find((b) => b.id === targetBlockId);
             if (block) {
                 const byPos = findPageByBlockPosition(pages, paginatedBlocks, block.position);
-                setCurrentPageIdx(Math.max(0, byPos));
+                setCurrentPageIdx(normalizeForLayout(Math.max(0, byPos)));
             }
             setVisiblePagesReady(true);
             return;
@@ -815,22 +1077,22 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
             if (anchor.fragmentId) {
                 const exactPageIdx = pages.findIndex((page) => page.includes(anchor.fragmentId!));
                 if (exactPageIdx >= 0) {
-                    setCurrentPageIdx(exactPageIdx);
+                    setCurrentPageIdx(normalizeForLayout(exactPageIdx));
                     setVisiblePagesReady(true);
                     return;
                 }
             }
             const idx = findPageForBlockAndSentence(pages, paginatedBlocks, anchor.blockId, anchor.sentenceIndex ?? 0, fragmentMapRef.current);
             if (idx >= 0) {
-                setCurrentPageIdx(idx);
+                setCurrentPageIdx(normalizeForLayout(idx));
                 setVisiblePagesReady(true);
                 return;
             }
             const byPos = findPageByBlockPosition(pages, paginatedBlocks, anchor.blockPosition);
-            setCurrentPageIdx(Math.max(0, byPos));
+            setCurrentPageIdx(normalizeForLayout(Math.max(0, byPos)));
         }
         setVisiblePagesReady(true);
-    }, [remoteAnchorReady, pagesReady, pages, bookId, currentChapter?.id, displayBlocks, getAnchor, paginatedBlocks, visiblePagesReady]);
+    }, [remoteAnchorReady, pagesReady, pages, bookId, currentChapter?.id, displayBlocks, getAnchor, paginatedBlocks, visiblePagesReady, normalizeForLayout]);
 
     // ─── Anchor save (throttled ~1 s) ────────────────────────────────────────
     const lastSavedAnchorAt = useRef(0);
@@ -947,26 +1209,59 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
     }, [currentChapter, persistAnchor]);
 
     useEffect(() => {
+        const flushPendingAnchor = () => {
+            if (!pendingAnchorTimer.current || !lastAnchorRef.current) return;
+            clearTimeout(pendingAnchorTimer.current);
+            pendingAnchorTimer.current = null;
+            lastSavedAnchorAt.current = Date.now();
+            persistAnchor(lastAnchorRef.current);
+        };
+
         const handleBeforeUnload = () => {
-            if (pendingAnchorTimer.current && lastAnchorRef.current) {
-                persistAnchor(lastAnchorRef.current);
+            flushPendingAnchor();
+        };
+        const handlePageHide = () => {
+            flushPendingAnchor();
+        };
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'hidden') {
+                flushPendingAnchor();
             }
         };
+
         window.addEventListener('beforeunload', handleBeforeUnload);
+        window.addEventListener('pagehide', handlePageHide);
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
         return () => {
             window.removeEventListener('beforeunload', handleBeforeUnload);
-            if (pendingAnchorTimer.current) clearTimeout(pendingAnchorTimer.current);
+            window.removeEventListener('pagehide', handlePageHide);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            // Route changes in SPA unmount ReaderView without firing beforeunload.
+            // Flush pending anchor here to avoid losing the latest in-chapter position.
+            flushPendingAnchor();
         };
     }, [persistAnchor]);
 
     // ─── Current page blocks (needed for goToChapter) ───────────────────────
     const currentPageBlockIds = useMemo(() => (
-        pagesReady && pages[currentPageIdx] ? new Set(pages[currentPageIdx]) : new Set<string>()
-    ), [pagesReady, pages, currentPageIdx]);
+        pagesReady && pages[activePageIdx] ? new Set(pages[activePageIdx]) : new Set<string>()
+    ), [pagesReady, pages, activePageIdx]);
 
     const currentPageBlocks = useMemo(
         () => paginatedBlocks.filter((b) => currentPageBlockIds.has(b.id)),
         [paginatedBlocks, currentPageBlockIds]
+    );
+
+    const spreadRightPageBlockIds = useMemo(() => (
+        spreadModeEnabled && pagesReady && rightPageIdx >= 0 && pages[rightPageIdx]
+            ? new Set(pages[rightPageIdx])
+            : new Set<string>()
+    ), [spreadModeEnabled, pagesReady, rightPageIdx, pages]);
+
+    const spreadRightPageBlocks = useMemo(
+        () => paginatedBlocks.filter((b) => spreadRightPageBlockIds.has(b.id)),
+        [paginatedBlocks, spreadRightPageBlockIds]
     );
 
     const currentPageTranslatableBlocks = useMemo(
@@ -997,8 +1292,8 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
     ]);
 
     useEffect(() => {
-        currentPageIdxRef.current = currentPageIdx;
-    }, [currentPageIdx]);
+        currentPageIdxRef.current = activePageIdx;
+    }, [activePageIdx]);
 
     const chapterEntryTransitionKey = currentChapterId
         ? `${currentChapterId}::${activeLang.toLowerCase()}`
@@ -1112,6 +1407,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
     ]);
 
     const currentPageBlocksRef = useRef<ContentBlock[]>([]);
+    const pendingChapterEntryPersistRef = useRef<number | null>(null);
 
     // Keep ref updated with current page blocks
     useEffect(() => {
@@ -1133,41 +1429,69 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
             setCurrentPageIdx(0);
             setPagesReady(false);
             setPages([]);
+            // Persist entry anchor for the destination chapter as soon as its page is ready.
+            pendingChapterEntryPersistRef.current = index;
             setCurrentChapterIndex(index);
         }
     }, [chapters.length, saveAnchor]);
 
+    useEffect(() => {
+        if (pendingChapterEntryPersistRef.current == null) return;
+        if (!pagesReady || !visiblePagesReady) return;
+        if (pendingChapterEntryPersistRef.current !== currentChapterIndex) return;
+        if (!currentChapter) return;
+
+        const anchorBlockId = pages[activePageIdx]?.[0];
+        if (!anchorBlockId) return;
+        const block = paginatedBlocks.find((b) => b.id === anchorBlockId);
+        if (!block) return;
+
+        const entryAnchor: ReadingAnchor = {
+            chapterId: currentChapter.id,
+            blockId: block.parentId ?? block.id,
+            fragmentId: block.id,
+            blockPosition: block.position,
+            sentenceIndex: getSentenceIndex(block),
+            updatedAt: new Date().toISOString(),
+        };
+        persistAnchor(entryAnchor);
+        pendingChapterEntryPersistRef.current = null;
+    }, [pagesReady, visiblePagesReady, currentChapterIndex, currentChapter, pages, activePageIdx, paginatedBlocks, persistAnchor]);
+
     const goToPage = useCallback((idx: number) => {
-        if (idx < 0 || idx >= pages.length) return;
+        const normalizedIdx = normalizeForLayout(idx);
+        if (normalizedIdx < 0 || normalizedIdx >= pages.length) return;
         pagesReadRef.current += 1;
-        setCurrentPageIdx(idx);
-        const anchorBlockId = pages[idx][0];
+        setCurrentPageIdx(normalizedIdx);
+        const anchorBlockId = pages[normalizedIdx][0];
         const block = paginatedBlocks.find((b) => b.id === anchorBlockId);
         if (block) saveAnchor(block.parentId ?? block.id, block.position, getSentenceIndex(block), block.id);
         // Translation enqueue is handled by the useEffect on currentPageIdx change.
         // No direct enqueue here to avoid double-enqueuing (which would cause an
         // unnecessary abort of the batch the useEffect just started).
-    }, [pages, paginatedBlocks, saveAnchor]);
+    }, [pages, paginatedBlocks, saveAnchor, normalizeForLayout]);
 
     const goToNextPage = useCallback(() => {
-        if (currentPageIdx < pages.length - 1) {
-            goToPage(currentPageIdx + 1);
+        const step = spreadModeEnabled ? 2 : 1;
+        if (activePageIdx + step <= pages.length - 1) {
+            goToPage(activePageIdx + step);
             return;
         }
         if (currentChapterIndex < chapters.length) {
             goToChapter(currentChapterIndex + 1, { targetPage: 'start' });
         }
-    }, [currentPageIdx, pages.length, goToPage, currentChapterIndex, chapters.length, goToChapter]);
+    }, [activePageIdx, spreadModeEnabled, pages.length, goToPage, currentChapterIndex, chapters.length, goToChapter]);
 
     const goToPrevPage = useCallback(() => {
-        if (currentPageIdx > 0) {
-            goToPage(currentPageIdx - 1);
+        const step = spreadModeEnabled ? 2 : 1;
+        if (activePageIdx - step >= 0) {
+            goToPage(activePageIdx - step);
             return;
         }
         if (currentChapterIndex > 1) {
             goToChapter(currentChapterIndex - 1, { targetPage: 'end' });
         }
-    }, [currentPageIdx, goToPage, currentChapterIndex, goToChapter]);
+    }, [activePageIdx, spreadModeEnabled, goToPage, currentChapterIndex, goToChapter]);
 
     // ─── Navigation intent API ────────────────────────────────────────────────
     // Single entry point for all navigation events. Any source other than
@@ -1196,16 +1520,16 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
         if (!blockId || !pagesReady) return;
         const pageIdx = findPageForBlock(pages, blockId, fragmentMapRef.current);
         if (pageIdx >= 0) {
-            setCurrentPageIdx(pageIdx);
+            setCurrentPageIdx(normalizeForLayout(pageIdx));
             return;
         }
         // Fallback: find nearest page by block position
         const block = displayBlocks.find((b) => b.id === blockId);
         if (block) {
             const byPos = findPageByBlockPosition(pages, paginatedBlocks, block.position);
-            setCurrentPageIdx(Math.max(0, byPos));
+            setCurrentPageIdx(normalizeForLayout(Math.max(0, byPos)));
         }
-    }, [abortAll, currentChapter, displayBlocks, bookId, storeSetAnchor, pages, pagesReady, paginatedBlocks]);
+    }, [abortAll, currentChapter, displayBlocks, bookId, storeSetAnchor, pages, pagesReady, paginatedBlocks, normalizeForLayout]);
 
     // TOC selects chapters (not blocks). Abort prefetch immediately, then switch chapter.
     const handleSelectChapterFromToc = useCallback((chapterIndex: number) => {
@@ -1241,11 +1565,10 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                 return;
             }
         }
-
         trackLanguageSwitched({ book_id: bookId, from_language: activeLang, to_language: lang });
         // Lock the current anchor so we can restore it after the language reloads
         if (pages.length > 0 && currentChapter) {
-            const anchorBlockId = pages[currentPageIdx]?.[0];
+            const anchorBlockId = pages[activePageIdx]?.[0];
             const block = paginatedBlocks.find((b) => b.id === anchorBlockId);
             if (block) {
                 const sentenceIndex = getSentenceIndex(block);
@@ -1321,6 +1644,8 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
         onToggleChrome: toggleChrome,
         enabled: !isTranslating && pagesReady,
         preserveScroll: allowInternalScroll,
+        spreadModeEnabled,
+        getViewportRect: () => pageViewportRef.current?.getBoundingClientRect() ?? null,
     });
 
     // ─── Keyboard navigation (ArrowLeft / ArrowRight) ───────────────────────
@@ -1353,28 +1678,105 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
     const bookFinishedTrackedRef = useRef(false);
     useEffect(() => {
         if (!pagesReady || pages.length === 0 || chapters.length === 0) return;
-        if (currentChapterIndex === chapters.length && currentPageIdx === pages.length - 1) {
+        if (currentChapterIndex === chapters.length && activePageIdx >= pages.length - 1) {
             if (!bookFinishedTrackedRef.current) {
                 bookFinishedTrackedRef.current = true;
                 trackBookFinished({ book_id: bookId, total_chapters: chapters.length });
             }
         }
-    }, [currentChapterIndex, currentPageIdx, chapters.length, pages.length, pagesReady, bookId]);
+    }, [currentChapterIndex, activePageIdx, chapters.length, pages.length, pagesReady, bookId]);
 
     // ─── Block-level progress ─────────────────────────────────────────────────
     const blockProgressPct = useMemo(() => {
         if (!pagesReady || pages.length === 0 || paginatedBlocks.length === 0) return 0;
-        const anchorId = pages[currentPageIdx]?.[0];
+        const anchorId = pages[activePageIdx]?.[0];
         const anchorIdx = paginatedBlocks.findIndex((b) => b.id === anchorId);
         if (anchorIdx < 0) return 0;
         return Math.round((anchorIdx / paginatedBlocks.length) * 100);
-    }, [pagesReady, pages, currentPageIdx, paginatedBlocks]);
+    }, [pagesReady, pages, activePageIdx, paginatedBlocks]);
 
     const isLoading = chaptersLoading || isContentLoading;
+    const renderPageBlocks = useCallback((pageBlocks: ContentBlock[]) => {
+        let firstPendingFound = false;
+        let firstRenderableFound = false;
+        const renderableBlocks = pageBlocks.filter((block) => {
+            if (block.type !== 'image') return true;
+            const src = block.src;
+            const isAbsolute = src?.startsWith('http://') || src?.startsWith('https://') || src?.startsWith('data:') || src?.startsWith('/');
+            const isCoverImage = block.id === firstImageBlockId;
+            return isAbsolute || (isCoverImage && !!coverUrl);
+        });
+        const isSingleH1Page = renderableBlocks.length === 1 && renderableBlocks[0]?.type === 'heading' && renderableBlocks[0]?.level === 1;
+        return pageBlocks.map((block) => {
+            const blockId = block.parentId ?? block.id;
+            const isCoverImage = block.id === firstImageBlockId;
+            // Skip image blocks that cannot be rendered to avoid empty divs in the DOM
+            if (block.type === 'image') {
+                const src = block.src;
+                const isAbsolute = src?.startsWith('http://') || src?.startsWith('https://') || src?.startsWith('data:') || src?.startsWith('/');
+                if (!isAbsolute && !(isCoverImage && coverUrl)) return null;
+            }
+            const isFirstRenderable = !firstRenderableFound;
+            if (!firstRenderableFound) firstRenderableFound = true;
+            const isPending = isBlockPendingForActiveLang(block, pendingBlockIds);
+            const showTranslatingLabel = isPending && !firstPendingFound;
+            const pendingLabel = isSourceLang ? 'Loading...' : 'Translating...';
+            if (isPending && !firstPendingFound) firstPendingFound = true;
+            return (
+                <div
+                    key={block.id}
+                    className={`flow-root${isFirstRenderable ? ' page-first-block' : ''}${isSingleH1Page ? ' page-single-h1' : ''}`}
+                    data-block-type={block.type}
+                    ref={getRefCallback(blockId, block.type)}
+                >
+                    <ContentBlockRenderer
+                        block={block}
+                        fontSize={settings.fontSize}
+                        isPending={isPending}
+                        showTranslatingLabel={showTranslatingLabel}
+                        pendingLabel={pendingLabel}
+                        coverUrl={coverUrl}
+                        isCoverImage={isCoverImage}
+                        imageMaxHeight={pageHeight}
+                        lineHeightScale={settings.lineHeightScale}
+                    />
+                </div>
+            );
+        });
+    }, [coverUrl, firstImageBlockId, getRefCallback, isSourceLang, pageHeight, pendingBlockIds, settings.fontSize, settings.lineHeightScale]);
 
     // ─── Render ───────────────────────────────────────────────────────────────
     return (
         <div className="bg-background" style={{ position: 'fixed', inset: 0, overflow: 'hidden', overscrollBehavior: 'none' } as React.CSSProperties}>
+            {IS_DEV && SHOW_READER_DEBUG_OVERLAY && debugSnapshot && (
+                <div
+                    style={{
+                        position: 'fixed',
+                        right: 8,
+                        top: 8,
+                        zIndex: 9999,
+                        background: 'rgba(0,0,0,0.78)',
+                        color: '#fff',
+                        fontSize: 11,
+                        lineHeight: 1.35,
+                        padding: '8px 10px',
+                        borderRadius: 8,
+                        pointerEvents: 'none',
+                        fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+                    }}
+                >
+                    <div>{`STATUS=${debugSnapshot.status}`}</div>
+                    <div>{`CAUSE=${debugSnapshot.cause}`}</div>
+                    <div>{`w=${debugSnapshot.targetWidth} page=${debugSnapshot.pageWidth} spread=${debugSnapshot.spread ? '1' : '0'}`}</div>
+                    <div>{`raw=${debugSnapshot.rawWidth} resolved=${debugSnapshot.resolvedWidth} shellRef=${debugSnapshot.hasShellRef ? '1' : '0'}`}</div>
+                    <div>{`loading=${debugSnapshot.isLoading ? '1' : '0'} ready=${debugSnapshot.pagesReady ? '1' : '0'} visible=${debugSnapshot.visiblePagesReady ? '1' : '0'}`}</div>
+                    <div>{`gateBlocked=${debugSnapshot.computeGateBlocked ? '1' : '0'}`}</div>
+                    <div>{`wf=${debugSnapshot.widthFlips} wr=${debugSnapshot.widthRange}px mf=${debugSnapshot.modeFlips} p2s=${debugSnapshot.paginateRuns2s}`}</div>
+                    {headingTraceLines.map((line, idx) => (
+                        <div key={`${idx}-${line}`}>{`H>${line}`}</div>
+                    ))}
+                </div>
+            )}
             <AppleIntelligenceGlow bookId={bookId} />
             <IOSAlertDialog
                 open={shouldShowTranslationNotice}
@@ -1388,17 +1790,16 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                 icon={null}
             />
             {user && (
-                <UnlimitedAccessModal
+                <TranslationLimitDialog
                     open={showTranslationLimitModal}
                     onOpenChange={setShowTranslationLimitModal}
                     userEmail={user.email ?? ''}
-                    trigger="translation_limit"
                 />
             )}
 
             {/* ── Header (fixed, slides out upward) ── */}
             <header
-                className="fixed left-0 right-0 z-40 bg-background/80 backdrop-blur-xl border-b transition-transform duration-300 ease-in-out"
+                className="mobile-ui-no-select fixed left-0 right-0 z-40 bg-background/80 backdrop-blur-xl border-b transition-transform duration-300 ease-in-out"
                 style={{
                     top: 0,
                     paddingTop: 'calc(env(safe-area-inset-top) + 16px)',
@@ -1407,21 +1808,20 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
             >
                 <div className="flex h-11 items-center px-4">
                     <div className="flex h-full items-center justify-start shrink-0">
-                        <Button variant="ghost" size="icon" asChild className="text-[var(--system-blue)] -ml-2 flex-shrink-0 relative after:absolute after:inset-y-[-10px] after:left-[-10px] after:right-[-4px]">
-                            <Link
-                                href="/library"
-                                onClick={() => {
-                                    try {
-                                        sessionStorage.setItem(
-                                            'globoox:last_read_book',
-                                            JSON.stringify({ bookId, at: Date.now() })
-                                        );
-                                    } catch { /* ignore */ }
-                                }}
-                            >
-                                <ChevronLeft className="w-6 h-6 text-[var(--system-blue)]" strokeWidth={2.5} />
-                            </Link>
-                        </Button>
+                        <Link
+                            href="/my-books"
+                            onClick={() => {
+                                try {
+                                    sessionStorage.setItem(
+                                        'globoox:last_read_book',
+                                        JSON.stringify({ bookId, at: Date.now() })
+                                    );
+                                } catch { /* ignore */ }
+                            }}
+                            className={`${uiIconTriggerButton} ${uiHeaderControlHitArea} -ml-2 flex-shrink-0`}
+                        >
+                            <IOSIcon icon={ChevronLeft} className="text-primary" strokeWidth={2} />
+                        </Link>
                     </div>
 
                     <div className="min-w-0 flex-1 px-2">
@@ -1430,7 +1830,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                                 {readerBookTitle}
                             </h1>
                             {readerBookAuthor && (
-                                <p className={`max-w-full text-[11px] leading-3 text-[var(--label-secondary)] truncate ${isBookMetaPending ? 'blur-[3px] opacity-40' : ''}`}>
+                                <p className={`max-w-full text-[11px] leading-3 text-muted-foreground truncate ${isBookMetaPending ? 'blur-[3px] opacity-40' : ''}`}>
                                     {readerBookAuthor}
                                 </p>
                             )}
@@ -1497,13 +1897,22 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                     <div
                         ref={measureContainerRef}
                         className="container max-w-2xl mx-auto px-4"
-                        style={{ position: 'fixed', top: '-9999px', left: 0, right: 0, visibility: 'hidden', pointerEvents: 'none', zIndex: -1 }}
+                        style={{
+                            position: 'fixed',
+                            top: '-9999px',
+                            left: 0,
+                            right: 0,
+                            visibility: 'hidden',
+                            pointerEvents: 'none',
+                            zIndex: -1,
+                        }}
                         aria-hidden="true"
                     >
                         {normalizedBlocks.map((block) => (
                             <div
                                 key={block.id}
                                 className="flow-root"
+                                data-block-type={block.type}
                                 data-measure-block-id={block.id}
                                 ref={(el) => {
                                     if (el) blockMeasureRefs.current.set(block.id, el);
@@ -1521,57 +1930,78 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                             </div>
                         ))}
                     </div>
+                    {/* Width probe — always mounted to avoid cold-start deadlocks */}
+                    <div
+                        aria-hidden="true"
+                        style={{
+                            position: 'fixed',
+                            top: '-9999px',
+                            left: 0,
+                            right: 0,
+                            visibility: 'hidden',
+                            pointerEvents: 'none',
+                            zIndex: -1,
+                        }}
+                    >
+                        {spreadModeEnabled ? (
+                            <div
+                                className="mx-auto flex w-full items-stretch justify-center"
+                                style={{
+                                    columnGap: `${SPREAD_GAP_PX}px`,
+                                    paddingInline: `${SPREAD_SIDE_PADDING_PX}px`,
+                                }}
+                            >
+                                <div className="w-full shrink-0 overflow-hidden" style={{ maxWidth: `${SPREAD_MAX_COLUMN_PX}px` }}>
+                                    <div ref={widthProbeShellRef} className={SPREAD_PAGE_SHELL_CLASS} />
+                                </div>
+                                <div className="w-full shrink-0 overflow-hidden" style={{ maxWidth: `${SPREAD_MAX_COLUMN_PX}px` }}>
+                                    <div className={SPREAD_PAGE_SHELL_CLASS} />
+                                </div>
+                            </div>
+                        ) : (
+                            <div ref={widthProbeShellRef} className={PAGE_SHELL_CLASS} />
+                        )}
+                    </div>
 
                     {/* Visible page */}
                     <TranslationGlow>
-                        <div className="container max-w-2xl mx-auto px-4 h-full select-none md:select-text" lang={activeLang}>
+                        <div className="h-full select-none md:select-text" lang={activeLang}>
                             {isLoading || !visiblePagesReady ? (
-                                <>
+                                <div className={PAGE_SHELL_CLASS}>
                                     <Skeleton className="h-7 w-64 mb-5" />
                                     <div className="space-y-5">
                                         {[100, 95, 88, 100, 72, 100, 90, 85, 100, 60, 100, 92].map((width, i) => (
                                             <Skeleton key={i} className="h-5" style={{ width: `${width}%` }} />
                                         ))}
                                     </div>
-                                </>
+                                </div>
                             ) : chaptersError ? (
                                 <p className="text-sm text-destructive py-8 text-center">{chaptersError}</p>
                             ) : contentError ? (
                                 <p className="text-sm text-destructive py-8 text-center">{contentError}</p>
+                            ) : spreadModeEnabled ? (
+                                <div
+                                    className="mx-auto flex h-full w-full items-stretch justify-center"
+                                    style={{
+                                        columnGap: `${SPREAD_GAP_PX}px`,
+                                        paddingInline: `${SPREAD_SIDE_PADDING_PX}px`,
+                                    }}
+                                >
+                                    <div className="h-full w-full shrink-0 overflow-hidden" style={{ maxWidth: `${SPREAD_MAX_COLUMN_PX}px` }}>
+                                        <div className={SPREAD_PAGE_SHELL_CLASS}>
+                                            {renderPageBlocks(currentPageBlocks)}
+                                        </div>
+                                    </div>
+                                    <div className="h-full w-full shrink-0 overflow-hidden" style={{ maxWidth: `${SPREAD_MAX_COLUMN_PX}px` }}>
+                                        <div className={SPREAD_PAGE_SHELL_CLASS}>
+                                            {spreadRightPageBlocks.length > 0 ? renderPageBlocks(spreadRightPageBlocks) : null}
+                                        </div>
+                                    </div>
+                                </div>
                             ) : (
-                                (() => {
-                                    // Find the first pending block to show "Translating..." label only on it
-                                    let firstPendingFound = false;
-                                    return currentPageBlocks.map((block) => {
-                                        const blockId = block.parentId ?? block.id;
-                                        const isCoverImage = block.id === firstImageBlockId;
-                                        // Skip image blocks that cannot be rendered to avoid empty divs in the DOM
-                                        if (block.type === 'image') {
-                                            const src = block.src;
-                                            const isAbsolute = src?.startsWith('http://') || src?.startsWith('https://') || src?.startsWith('data:');
-                                            if (!isAbsolute && !(isCoverImage && coverUrl)) return null;
-                                        }
-                                        const isPending = isBlockPendingForActiveLang(block, pendingBlockIds);
-                                        const showTranslatingLabel = isPending && !firstPendingFound;
-                                        const pendingLabel = isSourceLang ? 'Loading...' : 'Translating...';
-                                        if (isPending && !firstPendingFound) firstPendingFound = true;
-                                        return (
-                                            <div key={block.id} className="flow-root" ref={getRefCallback(blockId, block.type)}>
-                                                <ContentBlockRenderer
-                                                    block={block}
-                                                    fontSize={settings.fontSize}
-                                                    isPending={isPending}
-                                                    showTranslatingLabel={showTranslatingLabel}
-                                                    pendingLabel={pendingLabel}
-                                                    coverUrl={coverUrl}
-                                                    isCoverImage={isCoverImage}
-                                                    imageMaxHeight={pageHeight}
-                                                    lineHeightScale={settings.lineHeightScale}
-                                                />
-                                            </div>
-                                        );
-                                    });
-                                })()
+                                <div className={PAGE_SHELL_CLASS}>
+                                    {renderPageBlocks(currentPageBlocks)}
+                                </div>
                             )}
                         </div>
                     </TranslationGlow>
@@ -1591,10 +2021,11 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                     variant="ghost"
                     size="sm"
                     onClick={goToPrevPage}
-                    disabled={currentPageIdx === 0 && currentChapterIndex === 1}
-                    className="hidden md:flex items-center gap-0.5 text-xs text-[var(--system-blue)] disabled:opacity-30 px-1"
+                    disabled={activePageIdx === 0 && currentChapterIndex === 1}
+                    className="hidden md:flex items-center gap-1 text-xs text-primary disabled:opacity-30 px-1"
                 >
-                    <span className="truncate">← Previous page</span>
+                    <IOSIcon icon={ChevronLeft} className="size-4" strokeWidth={2} />
+                    <span className="truncate">Previous page</span>
                 </Button>
 
                 <div className="min-w-0 max-w-[70vw] md:max-w-[50vw] flex items-center gap-2 text-center">
@@ -1612,10 +2043,11 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                     variant="ghost"
                     size="sm"
                     onClick={goToNextPage}
-                    disabled={currentPageIdx >= pages.length - 1 && currentChapterIndex === chapters.length}
-                    className="hidden md:flex items-center gap-0.5 text-xs text-[var(--system-blue)] disabled:opacity-30 px-1"
+                    disabled={activePageIdx >= pages.length - 1 && currentChapterIndex === chapters.length}
+                    className="hidden md:flex items-center gap-1 text-xs text-primary disabled:opacity-30 px-1"
                 >
-                    <span className="truncate">Next page →</span>
+                    <span className="truncate">Next page</span>
+                    <IOSIcon icon={ChevronRight} className="size-4" strokeWidth={2} />
                 </Button>
             </div>
         </div>

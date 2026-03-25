@@ -1,7 +1,15 @@
 'use client';
 
 import { useId } from 'react';
+import {
+  IOSAction,
+  IOSActionDivider,
+  IOSActionRow,
+  IOSActionStack,
+  IOSActionVerticalDivider,
+} from '@/components/ui/ios-action-group';
 import IOSDialog from '@/components/ui/ios-dialog';
+import IOSDialogFooter from '@/components/ui/ios-dialog-footer';
 import { cn } from '@/lib/utils';
 
 interface IOSAlertDialogProps {
@@ -16,6 +24,7 @@ interface IOSAlertDialogProps {
   loading?: boolean;
   showCancel?: boolean;
   icon?: React.ReactNode;
+  actionsLayout?: 'horizontal' | 'vertical';
 }
 
 export default function IOSAlertDialog({
@@ -30,6 +39,7 @@ export default function IOSAlertDialog({
   loading = false,
   showCancel = false,
   icon,
+  actionsLayout = 'horizontal',
 }: IOSAlertDialogProps) {
   const id = useId();
   const titleId = `${id}-title`;
@@ -43,7 +53,7 @@ export default function IOSAlertDialog({
       labelledBy={titleId}
       describedBy={descriptionId}
       closeOnOverlay={!loading}
-      className="max-w-[270px] overflow-hidden rounded-[14px] border-0 bg-[rgba(242,242,247,0.82)] shadow-[0_20px_60px_rgba(0,0,0,0.24)] backdrop-blur-[24px] dark:bg-[rgba(28,28,30,0.88)]"
+      className="w-[min(320px,calc(100vw-32px))] max-w-none overflow-hidden rounded-[14px] border-0 bg-[var(--bg-grouped-secondary)] shadow-[0_20px_60px_rgba(0,0,0,0.24)] backdrop-blur-[24px] sm:max-w-none sm:rounded-[14px]"
     >
       <div className="px-[16px] pt-3 text-center" style={{ paddingBottom: '18px' }}>
         <div
@@ -57,53 +67,74 @@ export default function IOSAlertDialog({
         </div>
         <h2
           id={titleId}
-          className="text-[17px] font-semibold leading-[22px] tracking-[-0.01em] text-[var(--label-primary)]"
+          className="text-[17px] font-semibold leading-[22px] tracking-[-0.01em] text-foreground"
         >
           {title}
         </h2>
         <div
           id={descriptionId}
-          className="mt-3 text-[13px] leading-[18px] text-[var(--label-primary)]"
+          className="mt-3 text-[13px] leading-[18px] text-foreground"
         >
           {description}
         </div>
       </div>
 
-      <div
-        className={cn(
-          'border-t border-[rgba(60,60,67,0.18)] dark:border-[rgba(84,84,88,0.36)]',
-          showCancel ? 'grid grid-cols-2' : 'grid grid-cols-1',
+      <IOSDialogFooter>
+        {showCancel ? (
+          actionsLayout === 'vertical' ? (
+            <IOSActionStack>
+              <IOSAction onClick={() => onOpenChange(false)} disabled={loading}>
+                {cancelLabel}
+              </IOSAction>
+              <IOSActionDivider />
+              <IOSAction
+                onClick={onConfirm ?? (() => onOpenChange(false))}
+                disabled={loading}
+                destructive={destructive}
+              >
+                {loading
+                  ? destructive
+                    ? 'Deleting...'
+                    : 'Loading...'
+                  : confirmLabel}
+              </IOSAction>
+            </IOSActionStack>
+          ) : (
+            <IOSActionRow>
+              <IOSAction onClick={() => onOpenChange(false)} disabled={loading}>
+                {cancelLabel}
+              </IOSAction>
+              <IOSActionVerticalDivider />
+              <IOSAction
+                onClick={onConfirm ?? (() => onOpenChange(false))}
+                disabled={loading}
+                destructive={destructive}
+              >
+                {loading
+                  ? destructive
+                    ? 'Deleting...'
+                    : 'Loading...'
+                  : confirmLabel}
+              </IOSAction>
+            </IOSActionRow>
+          )
+        ) : (
+          <IOSActionStack>
+            <IOSAction
+              onClick={onConfirm ?? (() => onOpenChange(false))}
+              disabled={loading}
+              destructive={destructive}
+              emphasized
+            >
+              {loading
+                ? destructive
+                  ? 'Deleting...'
+                  : 'Loading...'
+                : confirmLabel}
+            </IOSAction>
+          </IOSActionStack>
         )}
-      >
-        {showCancel && (
-          <button
-            type="button"
-            className="flex h-[44px] items-center justify-center text-[17px] font-normal text-[var(--system-blue)] transition-colors active:bg-black/[0.04] dark:active:bg-white/[0.06]"
-            onClick={() => onOpenChange(false)}
-            disabled={loading}
-          >
-            {cancelLabel}
-          </button>
-        )}
-        <button
-          type="button"
-          className={cn(
-            'flex h-[44px] items-center justify-center text-[17px] transition-colors active:bg-black/[0.04] dark:active:bg-white/[0.06]',
-            showCancel && 'border-l border-[rgba(60,60,67,0.18)] dark:border-[rgba(84,84,88,0.36)]',
-            destructive
-              ? 'font-normal text-[var(--system-red)]'
-              : 'font-normal text-[var(--system-blue)]',
-          )}
-          onClick={onConfirm ?? (() => onOpenChange(false))}
-          disabled={loading}
-        >
-          {loading
-            ? destructive
-              ? 'Deleting...'
-              : 'Loading...'
-            : confirmLabel}
-        </button>
-      </div>
+      </IOSDialogFooter>
     </IOSDialog>
   );
 }

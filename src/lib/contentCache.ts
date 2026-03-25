@@ -7,7 +7,7 @@ import type { ReadingAnchor } from '@/lib/store'
 type CacheKey = string
 
 const DB_NAME = 'globoox-cache'
-const DB_VERSION = 8
+const DB_VERSION = 9
 const STORE_CHAPTER_CONTENT_V1 = 'chapter_content'
 const STORE_CHAPTER_SKELETON = 'chapter_skeleton'
 const STORE_BLOCK_TEXT = 'block_text'
@@ -162,7 +162,7 @@ function withStore<T>(storeName: string, mode: IDBTransactionMode, fn: (store: I
 
 type SkeletonBlock =
   | { id: string; position: number; type: 'paragraph' | 'quote'; fallbackText: string }
-  | { id: string; position: number; type: 'heading'; level: 1 | 2 | 3; fallbackText: string }
+  | { id: string; position: number; type: 'heading'; level: 1 | 2 | 3 | 4 | 5 | 6; fallbackText: string }
   | { id: string; position: number; type: 'list'; ordered: boolean; fallbackItems: string[] }
   | { id: string; position: number; type: 'image'; src: string; alt: string; caption?: string }
   | { id: string; position: number; type: 'hr' }
@@ -386,6 +386,36 @@ export async function setCachedReadingPosition(scope: string, bookId: string, en
     fetchedAt: Date.now(),
   }
   await withStore(STORE_READING_POSITIONS, 'readwrite', (store) => store.put(full))
+}
+
+export async function touchCachedLastRead(scope: string, bookId: string, iso: string): Promise<void> {
+  try {
+    const key = makeScopedKey(scope, bookId)
+    await withStore<void>(STORE_READING_POSITIONS, 'readwrite', (store) => {
+      const getReq = store.get(key)
+      getReq.onsuccess = () => {
+        const existing = getReq.result as CachedReadingPositionEntry | undefined
+        if (existing) {
+          existing.updatedAt = iso
+          store.put(existing)
+        } else {
+          // No position saved yet — create a minimal stub so lastRead survives reload
+          const stub: CachedReadingPositionEntry = {
+            key,
+            scope,
+            bookId,
+            position: { book_id: bookId, chapter_id: null, block_id: null, block_position: null, lang: null, updated_at: null },
+            updatedAt: iso,
+            fetchedAt: Date.now(),
+          }
+          store.put(stub)
+        }
+      }
+      return getReq
+    })
+  } catch {
+    // non-critical
+  }
 }
 
 export async function clearCachedReadingPositions(scope?: string): Promise<void> {

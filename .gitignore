@@ -45,3 +45,27 @@ next-env.d.ts
 .env.sentry-build-plugin
 
 .nuxt
+temp/hidden-flicker-events-1774032612022.json
+temp/hidden-flicker-summary-1774032612022.json
+temp/hidden-two-tabs-1774033740885.json
+temp/hidden-two-tabs-1774034202429.json
+temp/hidden-two-tabs-1774034275281.json
+temp/hidden-two-tabs-1774039215790.json
+temp/hidden-two-tabs-1774040553322.json
+temp/hidden-visual-1774033431204.json
+temp/hidden-visual-1774033511479.json
+temp/hidden-visual-1774033574615.json
+temp/hidden-visual-no-hidden-button.png
+temp/hide-unhide-two-origins-1774034942344.json
+temp/regression-flicker-1774039077906.json
+temp/regression-flicker-1774039182237.json
+temp/regression-flicker-check.mjs
+temp/theme-order-init-trace-1774038250968.json
+temp/theme-order-trace-1774038128945.json
+temp/trace-theme-order-init.mjs
+temp/trace-theme-order.mjs
+temp/verify-hidden-flicker.mjs
+temp/verify-hidden-two-tabs.mjs
+temp/verify-hidden-visual.mjs
+temp/verify-hide-unhide-two-origins.mjs
+temp/verify-login-ui.mjs

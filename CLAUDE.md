@@ -12,6 +12,7 @@ Next.js 16 frontend for Globooks. Modern React reader UI consuming the Nuxt back
 3. **Supabase SSR** - Use `@supabase/ssr` for server-side auth
 4. **shadcn/ui** - Components in `components/ui/`, don't modify directly
 5. **Backend API** - All data from parent Nuxt API, not direct DB access
+6. **Safari/Canvas** - Before writing any `canvas.drawImage()` code, read `docs/safari-bugs.md`. Always use `img.decode()` instead of `img.onload` before canvas operations.
 
 ## 🚀 Quick Start
 ```bash
@@ -47,6 +48,7 @@ public/            → Static assets, covers
 - **Parent API:** `../BACKEND_API.md`
 - **DB schema:** `../supabase/schema.sql`
 - **shadcn config:** `components.json`
+- **Safari bugs:** `docs/safari-bugs.md` (read before touching image/canvas code)
 
 ---
 

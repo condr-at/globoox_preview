@@ -23,6 +23,7 @@ npx tsc --noEmit         # TypeScript validation
 | Type errors | `npx tsc --noEmit` |
 | API CORS error | Verify backend allows origin |
 | Missing deps | `rm -rf node_modules && npm install` |
+| Library stuck after login | Check browser console for `[api] /api/books responded as unauthenticated` |
 
 ## Tech Stack
 
@@ -49,7 +50,6 @@ public/
   covers/                # Book covers
 docs/
   api-architecture.md    # Full API spec
-  faststart.md           # MVP roadmap (RU)
 ```
 
 ## Critical Rules
@@ -79,6 +79,24 @@ POST ${API}/api/translate
 POST ${API}/api/detect-language
 ```
 
+## My Books Auth-Race Checklist
+
+If user logs in and still sees no books:
+
+1. Open browser console and check for warning:
+   - `[api] /api/books responded as unauthenticated`
+2. Verify response header on `GET /api/books?status=all`:
+   - `x-authenticated: true` is expected for signed-in users.
+3. Confirm UI behavior:
+   - skeleton shows while first books fetch is unresolved;
+   - one automatic retry runs on first empty authenticated response.
+4. If still empty, force a full reload and re-check headers.
+
+## Known Limitations
+
+- Frontend mitigations do not fully replace a deterministic backend/proxy auth fix.
+- Occasional post-login guest responses are still possible while server session propagation is unstable.
+
 ## shadcn/ui Commands
 ```bash
 npx shadcn@latest add button
@@ -89,7 +107,6 @@ npx shadcn@latest add separator
 
 ## Links
 - **API Architecture:** `docs/api-architecture.md`
-- **Fast Start (RU):** `docs/faststart.md`
 - **Parent API:** `../BACKEND_API.md`
 - **Parent DB Schema:** `../supabase/schema.sql`
 - **shadcn config:** `components.json`

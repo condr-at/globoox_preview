@@ -1,5 +1,3 @@
-import { redirect } from 'next/navigation';
+import './landing/landing.css';
 
-export default function Home() {
-  redirect('/library');
-}
+export { default } from './landing/page';

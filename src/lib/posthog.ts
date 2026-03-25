@@ -28,8 +28,8 @@ export function captureFirstVisitUtm() {}
 
 // ─── User Acquisition & Auth ──────────────────────────────────────────────────
 
-export function trackUserSignedUp(method: 'email' | 'google') {
-  posthog.capture('user_signed_up', { method })
+export function trackUserSignedUp(method: 'email' | 'google', utmParams?: Record<string, string>) {
+  posthog.capture('user_signed_up', { method, ...utmParams })
 }
 
 export function trackUserLoggedIn(method: 'email' | 'google') {

@@ -6,6 +6,8 @@ import { Language } from '@/lib/store';
 import TableOfContents from './TableOfContents';
 import ReaderSettings from './ReaderSettings';
 import { useAdaptiveDropdown } from '@/components/ui/useAdaptiveDropdown';
+import { uiHeaderControlHitArea, uiIconTriggerButton, uiMenuItemButton } from '@/components/ui/button-styles';
+import IOSItemsStack from '@/components/ui/ios-items-stack';
 
 interface ReaderActionsMenuProps {
   book: {
@@ -58,7 +60,7 @@ export default function ReaderActionsMenu({
         ref={triggerRef}
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="relative inline-flex min-h-[44px] min-w-[44px] items-center justify-center text-[var(--system-blue)] active:opacity-70 disabled:opacity-50 after:absolute after:inset-y-[-10px] after:left-[-4px] after:right-[-10px]"
+        className={`${uiIconTriggerButton} ${uiHeaderControlHitArea} inline-flex`}
         disabled={disabled}
       >
         <MoreHorizontal className="w-6 h-6" />
@@ -67,32 +69,34 @@ export default function ReaderActionsMenu({
       {effectiveOpen && (
         <div
           ref={menuRef}
-          className="fixed py-1 w-56 bg-[var(--bg-grouped-secondary)] rounded-xl shadow-lg border border-[var(--separator)] overflow-hidden z-[100]"
+          className="fixed w-56 z-[100]"
           style={menuStyle}
         >
+        <IOSItemsStack className="py-1 bg-[var(--bg-grouped-secondary)] shadow-lg border border-[var(--separator)]">
           <button
             onClick={() => handleAction('toc')}
-            className="w-full flex items-center justify-between px-4 py-3 text-left transition-colors active:bg-[var(--fill-tertiary)]"
+            className={uiMenuItemButton}
           >
             <div className="flex items-center gap-3">
-              <List className="w-5 h-5 text-[var(--system-blue)]" />
+              <List className="w-5 h-5 text-primary" />
               <span className="text-[17px]">Chapters</span>
             </div>
-            <ChevronRight className="w-4 h-4 text-[var(--label-tertiary)]" />
+            <ChevronRight className="w-4 h-4 text-muted-foreground/50" />
           </button>
 
-          <div className="h-[0.5px] bg-[var(--separator)] mx-4" />
+          <div className="ml-12 mr-4 h-[0.5px] bg-[var(--separator)]" />
 
           <button
             onClick={() => handleAction('settings')}
-            className="w-full flex items-center justify-between px-4 py-3 text-left transition-colors active:bg-[var(--fill-tertiary)]"
+            className={uiMenuItemButton}
           >
             <div className="flex items-center gap-3">
-              <Type className="w-5 h-5 text-[var(--system-blue)]" />
+              <Type className="w-5 h-5 text-primary" />
               <span className="text-[17px]">Appearance</span>
             </div>
-            <ChevronRight className="w-4 h-4 text-[var(--label-tertiary)]" />
+            <ChevronRight className="w-4 h-4 text-muted-foreground/50" />
           </button>
+        </IOSItemsStack>
         </div>
       )}
 

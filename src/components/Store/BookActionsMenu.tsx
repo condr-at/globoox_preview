@@ -3,6 +3,8 @@
 import { useRef, useState } from 'react';
 import { Eye, EyeOff, MoreHorizontal, Trash2 } from 'lucide-react';
 import { useAdaptiveDropdown } from '@/components/ui/useAdaptiveDropdown';
+import { uiIconCircleButton, uiMenuItemButton } from '@/components/ui/button-styles';
+import IOSItemsStack from '@/components/ui/ios-items-stack';
 
 interface BookActionsMenuProps {
   onHide: () => void;
@@ -60,7 +62,7 @@ export default function BookActionsMenu({ onHide, onDelete, hideLabel = 'Hide', 
       <button
         ref={triggerRef}
         type="button"
-        className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-background/80 backdrop-blur text-[var(--system-blue)] active:opacity-70"
+        className={`${uiIconCircleButton} h-8 w-8 bg-background/80 backdrop-blur text-primary`}
         onPointerDown={(e) => {
           e.stopPropagation();
         }}
@@ -76,13 +78,14 @@ export default function BookActionsMenu({ onHide, onDelete, hideLabel = 'Hide', 
       {isOpen && (
         <div
           ref={menuRef}
-          className="fixed py-1 w-44 bg-[var(--bg-grouped-secondary)] rounded-xl shadow-lg border border-[var(--separator)] overflow-hidden z-[100]"
+          className="fixed w-44 z-[100]"
           style={{
             ...menuStyle,
             visibility: menuVisible && isPositioned ? 'visible' : 'hidden',
             opacity: menuVisible && isPositioned ? 1 : 0
           }}
         >
+        <IOSItemsStack className="py-1 bg-[var(--bg-grouped-secondary)] shadow-lg border border-[var(--separator)]">
           <button
             type="button"
             onPointerDown={(e) => {
@@ -92,17 +95,17 @@ export default function BookActionsMenu({ onHide, onDelete, hideLabel = 'Hide', 
               e.stopPropagation();
               handleHide();
             }}
-            className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors active:bg-[var(--fill-tertiary)]"
+            className={`${uiMenuItemButton} justify-start gap-3 text-[15px]`}
           >
             {hideLabel === 'Unhide' ? (
-              <Eye className="w-4 h-4 text-[var(--system-blue)]" />
+              <Eye className="w-4 h-4 text-primary" />
             ) : (
-              <EyeOff className="w-4 h-4 text-[var(--system-blue)]" />
+              <EyeOff className="w-4 h-4 text-primary" />
             )}
             <span className="text-[15px]">{hideLabel}</span>
           </button>
 
-          <div className="h-[0.5px] bg-[var(--separator)] mx-4" />
+          <div className="ml-[44px] mr-4 h-[0.5px] bg-[var(--separator)]" />
 
           <button
             type="button"
@@ -113,11 +116,12 @@ export default function BookActionsMenu({ onHide, onDelete, hideLabel = 'Hide', 
               e.stopPropagation();
               handleDelete();
             }}
-            className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors active:bg-[var(--fill-tertiary)]"
+            className={`${uiMenuItemButton} justify-start gap-3 text-[15px]`}
           >
-            <Trash2 className="w-4 h-4 text-[var(--system-red)]" />
-            <span className="text-[15px] text-[var(--system-red)]">Delete</span>
+            <Trash2 className="w-4 h-4 text-destructive" />
+            <span className="text-[15px] text-destructive">Delete</span>
           </button>
+        </IOSItemsStack>
         </div>
       )}
     </div>

@@ -1,0 +1,43 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - main [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e7]:
+          - heading "My Books" [level=1] [ref=e8]
+          - button "Add" [ref=e10]
+        - generic [ref=e11]:
+          - generic [ref=e12]:
+            - button "Visible" [ref=e13]
+            - button "Hidden" [ref=e14]
+            - button "All" [ref=e15]
+            - button "Sort" [ref=e16]:
+              - generic [ref=e17]: Recently Read
+              - img [ref=e18]
+          - paragraph [ref=e21]: No books yet.
+        - generic [ref=e22]:
+          - text: Need help?
+          - link "support@globoox.co" [ref=e23] [cursor=pointer]:
+            - /url: mailto:support@globoox.co
+    - navigation [ref=e24]:
+      - generic [ref=e25]:
+        - button "soon Store" [disabled] [ref=e26]:
+          - generic [ref=e27]:
+            - generic [ref=e28]:
+              - img
+            - generic [ref=e29]: soon
+          - generic [ref=e30]: Store
+        - link "My Books" [ref=e31] [cursor=pointer]:
+          - /url: /my-books
+          - img
+          - generic [ref=e32]: My Books
+        - link "Settings" [ref=e33] [cursor=pointer]:
+          - /url: /settings
+          - img
+          - generic [ref=e34]: Settings
+  - button "Open Next.js Dev Tools" [ref=e40] [cursor=pointer]:
+    - img [ref=e41]
+  - alert [ref=e44]
+```

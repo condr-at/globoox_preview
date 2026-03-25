@@ -4,6 +4,8 @@ import { useRef, useState } from 'react';
 import { ChevronDown, Check } from 'lucide-react';
 import { useAppStore, Language, languageNames } from '@/lib/store';
 import { useAdaptiveDropdown } from '@/components/ui/useAdaptiveDropdown';
+import { uiDropdownItemButton, uiHeaderControlHitArea, uiTextActionButton } from '@/components/ui/button-styles';
+import IOSItemsStack from '@/components/ui/ios-items-stack';
 
 interface LanguageSwitchProps {
   availableLanguages: Language[];
@@ -60,7 +62,7 @@ export default function LanguageSwitch({
           ref={triggerRef}
           onClick={() => setIsOpen(!effectiveOpen)}
           disabled={disabled}
-          className="relative flex items-center gap-[4px] px-[8px] min-w-[44px] min-h-[44px] text-[var(--system-blue)] active:opacity-70 disabled:opacity-50 transition-opacity after:absolute after:inset-y-[-10px] after:left-[-4px] after:right-[-4px]"
+          className={`${uiTextActionButton} ${uiHeaderControlHitArea} flex items-center gap-[4px] px-[8px] min-w-[44px] min-h-[44px]`}
         >
           <span className="text-[15px] font-medium">{activeLanguage.toUpperCase()}</span>
           <ChevronDown className={`w-[16px] h-[16px] transition-transform ${effectiveOpen ? 'rotate-180' : ''}`} />
@@ -70,21 +72,27 @@ export default function LanguageSwitch({
       {effectiveOpen && (
         <div
           ref={menuRef}
-          className="fixed py-[8px] w-[192px] bg-[var(--bg-grouped-secondary)] rounded-[12px] shadow-lg border border-[var(--separator)] overflow-hidden z-[100]"
+          className="fixed w-[192px] z-[100]"
           style={externalOpen === undefined ? menuStyle : { top: 'calc(env(safe-area-inset-top) + 60px)', right: '16px' }}
         >
-          {availableLanguages.map((lang) => (
-            <button
-              key={lang}
-              onClick={() => handleSelect(lang)}
-              className="w-full flex items-center justify-between px-[16px] py-[12px] text-left transition-colors active:bg-[var(--fill-tertiary)]"
-            >
-              <span className="text-[17px]">{languageNames[lang]}</span>
-              {activeLanguage === lang && (
-                <Check className="w-[20px] h-[20px] text-[var(--system-blue)]" />
-              )}
-            </button>
+        <IOSItemsStack className="py-[8px] bg-[var(--bg-grouped-secondary)] shadow-lg border border-[var(--separator)]">
+          {availableLanguages.map((lang, index) => (
+            <div key={lang}>
+              <button
+                onClick={() => handleSelect(lang)}
+                className={uiDropdownItemButton}
+              >
+                <span className="text-[17px]">{languageNames[lang]}</span>
+                {activeLanguage === lang && (
+                  <Check className="w-[20px] h-[20px] text-primary" />
+                )}
+              </button>
+              {index < availableLanguages.length - 1 ? (
+                <div className="mx-4 h-[0.5px] bg-[var(--separator)]" />
+              ) : null}
+            </div>
           ))}
+        </IOSItemsStack>
         </div>
       )}
     </div>

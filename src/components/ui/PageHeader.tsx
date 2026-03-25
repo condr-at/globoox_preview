@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { uiTextActionButton } from '@/components/ui/button-styles';
 
 type PageHeaderAction = {
   label: string;
@@ -74,7 +75,7 @@ export default function PageHeader({
   const paddingBottom = isCollapsed ? 8 : 16;
 
   return (
-    <header className="pt-[env(safe-area-inset-top)] fixed top-0 left-0 right-0 z-40 bg-background/80 backdrop-blur-xl border-b">
+    <header className="mobile-ui-no-select pt-[env(safe-area-inset-top)] fixed top-0 left-0 right-0 z-40 bg-background/80 backdrop-blur-xl border-b">
       <div
         className="container max-w-2xl mx-auto px-4 sm:px-6 flex items-center justify-between gap-3 transition-[padding] duration-300 ease-in-out"
         style={{ paddingTop, paddingBottom }}
@@ -93,7 +94,7 @@ export default function PageHeader({
           {action ? (
             <button
               onClick={action.onClick}
-              className="h-9 text-[15px] font-medium text-[var(--system-blue)] active:opacity-50 transition-[opacity,transform] duration-300 ease-in-out px-2"
+              className={`${uiTextActionButton} h-9 text-[15px] font-medium transition-[opacity,transform] duration-300 ease-in-out px-2`}
               style={{
                 opacity: isCollapsed ? 0 : 1,
                 transform: isCollapsed ? 'scale(0)' : 'scale(1)',

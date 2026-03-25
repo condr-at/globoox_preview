@@ -11,19 +11,25 @@
   display: none;
 }
 
-/* Apple Intelligence Glow - Canvas-based, styles in component */
-
 /* ============================================
-   Apple HIG iOS Design System
+   Design Tokens — Single Source of Truth
+
+   iOS semantic tokens are the primary system.
+   shadcn/Tailwind tokens alias into them.
+   To add a new theme, override these in a
+   new CSS class (e.g. .forest-light).
    ============================================ */
 
 :root {
-  /* iOS System Colors - Light Mode */
+  /* ---- Tint / Accent ---- */
   --system-blue: #007AFF;
   --system-green: #34C759;
   --system-orange: #FF9500;
   --system-red: #FF3B30;
   --system-yellow: #FFCC00;
+  --danger-fg: #FF3B30;
+
+  /* ---- Neutral Scale ---- */
   --system-gray: #8E8E93;
   --system-gray2: #AEAEB2;
   --system-gray3: #C7C7CC;
@@ -31,73 +37,78 @@
   --system-gray5: #E5E5EA;
   --system-gray6: #F2F2F7;
 
-  /* Labels */
+  /* ---- Labels ---- */
   --label-primary: #000000;
   --label-secondary: rgba(60, 60, 67, 0.6);
   --label-tertiary: rgba(60, 60, 67, 0.3);
   --label-quaternary: rgba(60, 60, 67, 0.18);
 
-  /* Backgrounds */
-  --bg-primary: #FFFFFF;
-  --bg-secondary: #F2F2F7;
+  /* ---- Backgrounds ---- */
+  --bg-primary: #F6F6FA;
+  --bg-secondary: #EEEFF5;
   --bg-tertiary: #FFFFFF;
-  --bg-grouped: #F2F2F7;
+  --bg-grouped: #F6F6FA;
   --bg-grouped-secondary: #FFFFFF;
 
-  /* Separators */
+  /* ---- Separators ---- */
   --separator: rgba(60, 60, 67, 0.29);
   --separator-opaque: #C6C6C8;
 
-  /* Fill */
+  /* ---- Fills ---- */
   --fill-primary: rgba(120, 120, 128, 0.2);
   --fill-secondary: rgba(120, 120, 128, 0.16);
   --fill-tertiary: rgba(118, 118, 128, 0.12);
+  --book-reflex-opacity: 0.42;
+  --book-card-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.10),
+    0 10px 22px rgba(0, 0, 0, 0.12);
 
-  /* Tint */
-  --tint-color: var(--system-blue);
+  /* ---- shadcn/Tailwind tokens (aliased) ---- */
   --radius: 0.625rem;
-  --radius-pill: 9999px;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: #007AFF;
+  --primary: var(--system-blue);
   --primary-foreground: #FFFFFF;
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --destructive: var(--danger-fg);
+  --background: var(--bg-primary);
+  --foreground: var(--label-primary);
+  --card: var(--bg-grouped-secondary);
+  --card-foreground: var(--label-primary);
+  --popover: var(--bg-grouped-secondary);
+  --popover-foreground: var(--label-primary);
+  --secondary: var(--system-gray6);
+  --secondary-foreground: var(--label-primary);
+  --muted: var(--system-gray6);
+  --muted-foreground: var(--label-secondary);
+  --accent: var(--system-gray6);
+  --accent-foreground: var(--label-primary);
+  --border: var(--separator);
+  --input: var(--separator);
+  --ring: var(--system-gray);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar: var(--bg-secondary);
+  --sidebar-foreground: var(--label-primary);
+  --sidebar-primary: var(--label-primary);
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: var(--system-gray6);
+  --sidebar-accent-foreground: var(--label-primary);
+  --sidebar-border: var(--separator);
+  --sidebar-ring: var(--system-gray);
 }
 
 /* Dark Mode */
 .dark {
-  /* iOS System Colors - Dark Mode */
+  /* ---- Tint / Accent ---- */
   --system-blue: #0A84FF;
   --system-green: #30D158;
   --system-orange: #FF9F0A;
   --system-red: #FF453A;
   --system-yellow: #FFD60A;
+  --danger-fg: #FF453A;
+
+  /* ---- Neutral Scale ---- */
   --system-gray: #8E8E93;
   --system-gray2: #636366;
   --system-gray3: #48484A;
@@ -105,59 +116,134 @@
   --system-gray5: #2C2C2E;
   --system-gray6: #1C1C1E;
 
-  /* Labels */
+  /* ---- Labels ---- */
   --label-primary: #FFFFFF;
   --label-secondary: rgba(235, 235, 245, 0.6);
   --label-tertiary: rgba(235, 235, 245, 0.3);
   --label-quaternary: rgba(235, 235, 245, 0.18);
 
-  /* Backgrounds */
-  --bg-primary: #000000;
-  --bg-secondary: #1C1C1E;
-  --bg-tertiary: #2C2C2E;
-  --bg-grouped: #000000;
+  /* ---- Backgrounds ---- */
+  --bg-primary: #09090B;
+  --bg-secondary: #151518;
+  --bg-tertiary: #1F1F23;
+  --bg-grouped: #09090B;
   --bg-grouped-secondary: #1C1C1E;
 
-  /* Separators */
+  /* ---- Separators ---- */
   --separator: rgba(84, 84, 88, 0.65);
   --separator-opaque: #38383A;
 
-  /* Fill */
+  /* ---- Fills ---- */
   --fill-primary: rgba(120, 120, 128, 0.36);
   --fill-secondary: rgba(120, 120, 128, 0.32);
   --fill-tertiary: rgba(118, 118, 128, 0.24);
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: #0A84FF;
+  --book-reflex-opacity: 0.30;
+  --book-card-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.45),
+    0 12px 28px rgba(0, 0, 0, 0.55);
+
+  /* ---- shadcn/Tailwind tokens (auto-follow via aliases) ---- */
   --primary-foreground: #FFFFFF;
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar-primary-foreground: #FFFFFF;
 }
+
+/* Neutral — Light (explicit override for subtle skeleton contrast) */
+.light {
+  --muted: #E8E8EE;
+  --accent: #E8E8EE;
+}
+
+/* Forest & Terracotta — Light */
+.forest-light {
+  --system-blue: #C05A3A;
+  --system-green: #7A8C7B;
+  --system-orange: #E8B89A;
+  --system-red: #C05A3A;
+  --system-yellow: #E8B89A;
+  --danger-fg: #c8241b;
+  --system-gray: #7A8C7B;
+  --system-gray2: #B8C4B9;
+  --system-gray3: #B8C4B9;
+  --system-gray4: #E6E0D6;
+  --system-gray5: #EDE8DF;
+  --system-gray6: #F4F0E8;
+
+  --label-primary: #2C3B2D;
+  --label-secondary: rgba(44, 59, 45, 0.6);
+  --label-tertiary: rgba(44, 59, 45, 0.3);
+  --label-quaternary: rgba(44, 59, 45, 0.18);
+
+  --bg-primary: #F4F0E8;
+  --bg-secondary: #EDE8DF;
+  --bg-tertiary: #FFFFFF;
+  --bg-grouped: #F4F0E8;
+  --bg-grouped-secondary: #FFFFFF;
+
+  --separator: rgba(44, 59, 45, 0.18);
+  --separator-opaque: #D4CFC6;
+
+  --fill-primary: rgba(44, 59, 45, 0.12);
+  --fill-secondary: rgba(44, 59, 45, 0.08);
+  --fill-tertiary: rgba(44, 59, 45, 0.06);
+  --book-reflex-opacity: 0.40;
+  --book-card-shadow:
+    0 1px 2px rgba(22, 31, 23, 0.12),
+    0 10px 24px rgba(22, 31, 23, 0.18);
+
+  --primary-foreground: #FFFFFF;
+  /* Keep skeleton surfaces distinct from page background in forest light. */
+  --muted: #E8E1D6;
+  --accent: #E8E1D6;
+}
+
+/* Forest & Terracotta — Dark */
+.forest-dark {
+  --system-blue: #E8B89A;
+  --system-green: #7A8C7B;
+  --system-orange: #E8B89A;
+  --system-red: #E8B89A;
+  --system-yellow: #E8B89A;
+  --danger-fg: #FF6B5E;
+  --system-gray: #7A8C7B;
+  --system-gray2: #4D5E4E;
+  --system-gray3: #3D5040;
+  --system-gray4: #2C3B2D;
+  --system-gray5: #1E2B1F;
+  --system-gray6: #141E14;
+
+  --label-primary: #F4F0E8;
+  --label-secondary: rgba(244, 240, 232, 0.7);
+  --label-tertiary: rgba(244, 240, 232, 0.35);
+  --label-quaternary: rgba(244, 240, 232, 0.18);
+
+  --bg-primary: #1A2419;
+  --bg-secondary: #1E2B1F;
+  --bg-tertiary: #253328;
+  --bg-grouped: #1A2419;
+  --bg-grouped-secondary: #253328;
+
+  --separator: rgba(244, 240, 232, 0.12);
+  --separator-opaque: #3D5040;
+
+  --fill-primary: rgba(244, 240, 232, 0.14);
+  --fill-secondary: rgba(244, 240, 232, 0.10);
+  --fill-tertiary: rgba(244, 240, 232, 0.07);
+  --book-reflex-opacity: 0.28;
+  --book-card-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.48),
+    0 14px 34px rgba(0, 0, 0, 0.62);
+
+  --primary-foreground: #1A2419;
+}
+
+/* ============================================
+   Base Styles
+   ============================================ */
 
 *,
 *::before,
@@ -172,7 +258,6 @@ body {
   max-width: 100vw;
   background: var(--bg-primary);
   color: var(--label-primary);
-  /* SF Pro system font stack */
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -180,47 +265,45 @@ body {
   line-height: 1.41;
 }
 
+/* Reader pagination polish:
+   when a page starts with a heading, remove top margin only for the first rendered block */
+.reader-page > .flow-root:first-child :is(h1, h2, h3, h4, h5, h6),
+.reader-page > .flow-root.page-first-block :is(h1, h2, h3, h4, h5, h6),
+.reader-page > .flow-root[data-block-type="heading"] + .flow-root[data-block-type="heading"] :is(h1, h2, h3, h4, h5, h6) {
+  margin-top: 0 !important;
+}
+
+/* Browser hyphenation policy: keep automatic line hyphenation, but with stricter limits. */
+.reader-page p,
+.reader-page li {
+  hyphens: auto;
+  -webkit-hyphens: auto;
+  word-break: normal;
+  overflow-wrap: normal;
+  hyphenate-limit-chars: 8 4 4;
+}
+
+/* Dedicated chapter-title page: keep lone h1 vertically centered */
+.reader-page > .flow-root.page-single-h1 {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  border-radius: 8px;
+}
+
+.reader-page > .flow-root.page-single-h1 :is(h1, h2, h3, h4, h5, h6) {
+  width: 100%;
+  text-align: center;
+}
 
 /* ============================================
-   iOS Typography - Dynamic Type
+   iOS-like spinner
    ============================================ */
 
-.text-large-title {
-  font-size: 34px;
-  font-weight: 700;
-  line-height: 1.2;
-  letter-spacing: 0.37px;
-}
-
-.text-title1 {
-  font-size: 28px;
-  font-weight: 700;
-  line-height: 1.21;
-  letter-spacing: 0.36px;
-}
-
-.text-title2 {
-  font-size: 22px;
-  font-weight: 700;
-  line-height: 1.27;
-  letter-spacing: 0.35px;
-}
-
-.text-title3 {
-  font-size: 20px;
-  font-weight: 600;
-  line-height: 1.25;
-  letter-spacing: 0.38px;
-}
-
-.text-headline {
-  font-size: 17px;
-  font-weight: 600;
-  line-height: 1.29;
-  letter-spacing: -0.41px;
-}
-
-/* iOS-like spinner */
 .ios-spinner {
   width: 24px;
   height: 24px;
@@ -236,50 +319,8 @@ body {
   }
 }
 
-.text-body {
-  font-size: 17px;
-  font-weight: 400;
-  line-height: 1.41;
-  letter-spacing: -0.41px;
-}
-
-.text-callout {
-  font-size: 16px;
-  font-weight: 400;
-  line-height: 1.31;
-  letter-spacing: -0.32px;
-}
-
-.text-subheadline {
-  font-size: 15px;
-  font-weight: 400;
-  line-height: 1.33;
-  letter-spacing: -0.24px;
-}
-
-.text-footnote {
-  font-size: 13px;
-  font-weight: 400;
-  line-height: 1.38;
-  letter-spacing: -0.08px;
-}
-
-.text-caption1 {
-  font-size: 12px;
-  font-weight: 400;
-  line-height: 1.33;
-  letter-spacing: 0;
-}
-
-.text-caption2 {
-  font-size: 11px;
-  font-weight: 400;
-  line-height: 1.18;
-  letter-spacing: 0.07px;
-}
-
 /* ============================================
-   iOS Buttons
+   iOS Buttons (used in store page)
    ============================================ */
 
 .btn-primary {
@@ -315,32 +356,6 @@ body {
   cursor: not-allowed;
 }
 
-.btn-secondary {
-  background: transparent;
-  color: var(--system-blue);
-  padding: 14px 20px;
-  border-radius: 12px;
-  font-weight: 600;
-  font-size: 17px;
-  border: none;
-  cursor: pointer;
-  transition: opacity 0.15s ease, background-color 0.15s ease;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-height: 50px;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.btn-secondary:hover {
-  background: var(--fill-tertiary);
-}
-
-.btn-secondary:active {
-  opacity: 0.7;
-}
-
 .btn-gray {
   background: var(--fill-secondary);
   color: var(--label-primary);
@@ -369,49 +384,7 @@ body {
 }
 
 /* ============================================
-   iOS Cards
-   ============================================ */
-
-.card {
-  background: var(--bg-grouped-secondary);
-  border-radius: 12px;
-  overflow: hidden;
-  transition: transform 0.2s ease;
-}
-
-.card:active {
-  transform: scale(0.98);
-}
-
-/* ============================================
-   iOS Lists / Grouped Content
-   ============================================ */
-
-.list-inset {
-  background: var(--bg-grouped-secondary);
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-.list-item {
-  display: flex;
-  align-items: center;
-  padding: 12px 16px;
-  min-height: 44px;
-  background: var(--bg-grouped-secondary);
-  transition: background-color 0.15s ease;
-}
-
-.list-item:active {
-  background: var(--fill-tertiary);
-}
-
-.list-item + .list-item {
-  border-top: 0.5px solid var(--separator);
-}
-
-/* ============================================
-   iOS Navigation Bar
+   iOS Navigation Bar (used in store detail)
    ============================================ */
 
 .nav-bar {
@@ -424,119 +397,11 @@ body {
 }
 
 /* ============================================
-   iOS Tab Bar
-   ============================================ */
-
-.tab-bar {
-  background: var(--bg-secondary);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-top: 0.5px solid var(--separator);
-  padding: 0 0 env(safe-area-inset-bottom);
-}
-
-.tab-bar-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 6px 0;
-  min-width: 64px;
-  color: var(--label-secondary);
-  transition: color 0.15s ease;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.tab-bar-item.active {
-  color: var(--system-blue);
-}
-
-.tab-bar-item span {
-  font-size: 10px;
-  font-weight: 500;
-  margin-top: 2px;
-}
-
-/* ============================================
-   iOS Search Bar
-   ============================================ */
-
-.search-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  background: var(--fill-tertiary);
-  border-radius: 10px;
-  min-height: 36px;
-}
-
-.search-bar input {
-  flex: 1;
-  background: transparent;
-  border: none;
-  outline: none;
-  font-size: 17px;
-  color: var(--label-primary);
-}
-
-.search-bar input::placeholder {
-  color: var(--label-tertiary);
-}
-
-/* ============================================
-   iOS Segmented Control
-   ============================================ */
-
-.segmented-control {
-  display: inline-flex;
-  background: var(--fill-tertiary);
-  border-radius: 8px;
-  padding: 2px;
-}
-
-.segmented-control-item {
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--label-primary);
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  min-height: 28px;
-}
-
-.segmented-control-item.active {
-  background: var(--bg-grouped-secondary);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-}
-
-/* ============================================
-   Progress Bar
-   ============================================ */
-
-.progress-bar {
-  background: var(--fill-tertiary);
-  border-radius: 2px;
-  height: 4px;
-  overflow: hidden;
-}
-
-.progress-fill {
-  background: var(--system-blue);
-  height: 100%;
-  border-radius: 2px;
-  transition: width 0.3s ease;
-}
-
-/* ============================================
    Star Rating
    ============================================ */
 
 .star-filled {
-  color: #FF9500;
+  color: var(--system-orange);
 }
 
 .star-empty {
@@ -570,7 +435,6 @@ body {
    Loading States
    ============================================ */
 
-/* Animated blur for pending translation blocks */
 @keyframes pulse-text {
   0%, 100% {
     opacity: 1;
@@ -605,7 +469,6 @@ body {
   }
 }
 
-/* Activity Indicator */
 @keyframes spin {
   from {
     transform: rotate(0deg);
@@ -633,7 +496,7 @@ body {
 }
 
 /* ============================================
-   Safe Areas
+   Safe Areas & Layout
    ============================================ */
 
 .safe-area-inset-top {
@@ -666,13 +529,14 @@ input:focus-visible {
 
 @media (hover: none) {
   .btn-primary:active,
-  .btn-secondary:active,
-  .btn-gray:active,
-  .card:active,
-  .list-item:active {
+  .btn-gray:active {
     transform: scale(0.98);
   }
 }
+
+/* ============================================
+   Tailwind / shadcn Theme Bridge
+   ============================================ */
 
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
@@ -721,5 +585,16 @@ input:focus-visible {
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* Mobile-only UI chrome selection guard.
+   Apply only to navigational/chrome containers, never modal/content text blocks. */
+@media (max-width: 768px) {
+  .mobile-ui-no-select,
+  .mobile-ui-no-select * {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
   }
 }

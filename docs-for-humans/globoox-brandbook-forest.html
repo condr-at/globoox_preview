@@ -1,0 +1,1323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Globoox — Brand Guidelines · Forest & Terracotta</title>
+
+<!--
+  FONT STRATEGY
+  ─────────────
+  Display / Headings : Lora — serif with wide Unicode coverage (Latin, Cyrillic, Greek, Vietnamese)
+  Body / UI          : Inter — primary UI font; excellent Latin/Cyrillic/Greek coverage, sharp at small sizes
+                       Noto Sans — fallback for scripts Inter doesn't cover (Arabic, CJK, Devanagari, etc.)
+  Mono               : JetBrains Mono — code & technical contexts
+  Stack: 'Inter', 'Noto Sans', 'Noto Sans Arabic', 'Noto Sans JP', system-ui, sans-serif
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600&family=Noto+Sans:wght@400;500&family=Noto+Sans+Arabic:wght@400;500&family=Noto+Sans+JP:wght@400;500&family=Noto+Sans+SC:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+/* ═══════════════════════════════════════════
+   TOKENS & RESET
+═══════════════════════════════════════════ */
+:root {
+  /* Primary palette */
+  --ink:        #2C3B2D;
+  --primary:    #C05A3A;
+  --parchment:  #F4F0E8;
+  --ash:        #7A8C7B;
+  --dusk:       #E8B89A;
+  --mist:       #B8C4B9;
+
+  /* Extended palette */
+  --ink-80:     #3D5040;
+  --ink-50:     rgba(44,59,45,.50);
+  --ink-10:     rgba(44,59,45,.07);
+  --primary-10: rgba(192,90,58,.08);
+  --primary-20: rgba(192,90,58,.15);
+  --primary-30: rgba(192,90,58,.25);
+  --white:      #FFFFFF;
+  --parchment-dark: #E6E0D6;
+  --surface:    #FFFFFF;
+  --border:     rgba(44,59,45,.08);
+
+  /* Type */
+  --font-display: 'Lora', 'Noto Serif', Georgia, serif;
+  --font-body:    'Inter', 'Noto Sans', 'Noto Sans Arabic', 'Noto Sans JP', system-ui, sans-serif;
+  --font-mono:    'JetBrains Mono', 'Fira Code', monospace;
+
+  /* Spacing scale */
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px;
+  --s6: 32px; --s7: 48px; --s8: 64px; --s9: 96px; --s10: 128px;
+
+  /* Radius */
+  --r-sm: 6px; --r-md: 10px; --r-lg: 16px; --r-pill: 999px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; font-size: 16px; }
+body {
+  font-family: var(--font-body);
+  background: var(--parchment);
+  color: var(--ink);
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+img { max-width: 100%; display: block; }
+a { color: var(--primary); text-decoration: none; }
+
+/* ═══════════════════════════════════════════
+   LAYOUT
+═══════════════════════════════════════════ */
+.page { max-width: 1080px; margin: 0 auto; padding: 0 var(--s6); }
+.section { padding: var(--s10) 0; border-bottom: 1px solid var(--border); }
+.section:last-of-type { border-bottom: none; }
+
+/* ═══════════════════════════════════════════
+   NAV / COVER
+═══════════════════════════════════════════ */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(247,245,242,.92); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+.nav-inner {
+  max-width: 1080px; margin: 0 auto; padding: var(--s3) var(--s6);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo { font-family: var(--font-display); font-weight: 600; font-size: 20px; color: var(--ink); letter-spacing: -.02em; }
+.nav-logo span { color: var(--primary); }
+.nav-links { display: flex; gap: var(--s5); list-style: none; }
+.nav-links a { font-size: 13px; font-weight: 500; color: var(--ash); letter-spacing: .02em; transition: color .2s; }
+.nav-links a:hover { color: var(--primary); }
+
+/* COVER */
+.cover {
+  min-height: 60vh;
+  background: var(--ink);
+  display: flex; flex-direction: column;
+  justify-content: flex-end;
+  padding: var(--s10) 0 var(--s9);
+  position: relative; overflow: hidden;
+}
+.cover-bg-text {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-size: clamp(80px, 18vw, 200px);
+  font-weight: 700; color: rgba(255,255,255,.03);
+  pointer-events: none; user-select: none; letter-spacing: -.04em;
+  white-space: nowrap; overflow: hidden;
+}
+.cover-tag {
+  display: inline-block; font-size: 11px; font-weight: 600; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--dusk); margin-bottom: var(--s5);
+}
+.cover h1 {
+  font-family: var(--font-display); font-size: clamp(40px, 6vw, 72px);
+  font-weight: 400; line-height: 1.1; color: var(--white); letter-spacing: -.02em;
+  margin-bottom: var(--s5);
+}
+.cover-sub {
+  font-size: 16px; color: var(--mist); max-width: 560px; line-height: 1.7;
+}
+.cover-meta {
+  margin-top: var(--s8); display: flex; gap: var(--s7); flex-wrap: wrap;
+}
+.cover-meta-item { }
+.cover-meta-item dt { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .12em; color: var(--ash); margin-bottom: var(--s1); }
+.cover-meta-item dd { font-size: 15px; color: var(--mist); }
+
+/* ═══════════════════════════════════════════
+   SECTION HEADINGS
+═══════════════════════════════════════════ */
+.section-header { margin-bottom: var(--s8); }
+.section-label {
+  display: inline-block; font-size: 11px; font-weight: 600; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--primary); margin-bottom: var(--s3);
+}
+.section-title {
+  font-family: var(--font-display); font-size: clamp(28px, 4vw, 44px);
+  font-weight: 400; line-height: 1.15; letter-spacing: -.02em; color: var(--ink);
+}
+.section-desc { font-size: 17px; color: var(--ash); max-width: 600px; margin-top: var(--s3); line-height: 1.7; }
+
+/* ═══════════════════════════════════════════
+   DIVIDER
+═══════════════════════════════════════════ */
+.rule { height: 1px; background: var(--border); margin: var(--s8) 0; }
+.rule-label {
+  display: flex; align-items: center; gap: var(--s4); margin: var(--s8) 0;
+  font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--mist);
+}
+.rule-label::before, .rule-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ═══════════════════════════════════════════
+   1. BRAND ESSENCE
+═══════════════════════════════════════════ */
+.essence-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: var(--s5);
+}
+.essence-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg);
+  padding: var(--s7) var(--s6); transition: box-shadow .3s;
+}
+.essence-card:hover { box-shadow: 0 8px 32px rgba(0,0,0,.06); }
+.essence-card.accent { background: var(--primary); border-color: var(--primary); }
+.essence-card.dark { background: var(--ink); border-color: var(--ink); }
+.essence-card h3 {
+  font-family: var(--font-display); font-size: 22px; font-weight: 500;
+  margin-bottom: var(--s3); color: var(--ink);
+}
+.essence-card.accent h3, .essence-card.dark h3 { color: var(--white); }
+.essence-card p { font-size: 15px; color: var(--ash); line-height: 1.7; }
+.essence-card.accent p { color: rgba(255,255,255,.8); }
+.essence-card.dark p { color: var(--mist); }
+.essence-num {
+  display: block; font-family: var(--font-display); font-size: 11px; font-weight: 700;
+  letter-spacing: .2em; color: var(--primary); margin-bottom: var(--s4); text-transform: uppercase;
+}
+.essence-card.accent .essence-num { color: rgba(255,255,255,.6); }
+.essence-card.dark .essence-num { color: var(--dusk); }
+
+.adjectives { display: flex; flex-wrap: wrap; gap: var(--s3); margin-top: var(--s5); }
+.adj-tag {
+  display: inline-block; padding: var(--s2) var(--s4); border-radius: var(--r-pill);
+  border: 1.5px solid var(--border); font-size: 14px; font-weight: 500; color: var(--ink);
+  background: var(--white);
+}
+
+/* ═══════════════════════════════════════════
+   2. LOGO
+═══════════════════════════════════════════ */
+.logo-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: var(--s5); }
+.logo-cell {
+  border-radius: var(--r-lg); padding: var(--s7) var(--s5);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: var(--s4); border: 1px solid var(--border); min-height: 180px;
+}
+.logo-cell.bg-light { background: var(--parchment); }
+.logo-cell.bg-white { background: var(--white); }
+.logo-cell.bg-dark  { background: var(--ink); }
+.logo-cell.bg-ember { background: var(--primary); }
+.logo-cell label { font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--ash); }
+.logo-cell.bg-dark label, .logo-cell.bg-ember label { color: rgba(255,255,255,.5); }
+
+.logo-wordmark {
+  font-family: var(--font-display); font-weight: 600; font-size: 32px;
+  letter-spacing: -.03em; line-height: 1;
+}
+.logo-wordmark .lw-g { color: inherit; }
+.logo-wordmark .lw-rest { color: var(--ink); }
+.logo-cell.bg-dark .lw-rest { color: var(--white); }
+.logo-cell.bg-dark .lw-g { color: var(--white); }
+.logo-cell.bg-ember .lw-g  { color: var(--white); }
+.logo-cell.bg-ember .lw-rest { color: rgba(255,255,255,.85); }
+
+.logo-icon {
+  width: 52px; height: 52px; border-radius: var(--r-md); background: var(--primary);
+  display: flex; align-items: center; justify-content: center;
+}
+.logo-icon-light { background: var(--parchment); }
+.logo-icon svg { width: 28px; height: 28px; }
+
+.logo-lockup { display: flex; flex-direction: column; align-items: center; gap: var(--s2); }
+.logo-tagline { font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: var(--ash); font-weight: 600; }
+.logo-cell.bg-dark .logo-tagline { color: var(--mist); }
+
+.clearspace-demo {
+  background: var(--white); border: 1px dashed rgba(192,90,58,.4); border-radius: var(--r-lg);
+  padding: var(--s9) var(--s8); display: flex; align-items: center; justify-content: center;
+  position: relative; margin-top: var(--s5);
+}
+.clearspace-demo::after {
+  content: 'Minimum clearspace = cap-height of "G"';
+  position: absolute; bottom: var(--s3); right: var(--s4);
+  font-size: 11px; color: rgba(192,90,58,.6); letter-spacing: .04em;
+}
+
+.dont-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: var(--s4); margin-top: var(--s5); }
+.dont-item {
+  background: var(--white); border: 1px solid var(--border); border-radius: var(--r-md);
+  padding: var(--s5); display: flex; flex-direction: column; gap: var(--s3); align-items: center;
+}
+.dont-preview {
+  height: 70px; width: 100%; display: flex; align-items: center; justify-content: center;
+  border-radius: var(--r-sm); background: var(--parchment);
+}
+.dont-label { font-size: 12px; color: #C0392B; font-weight: 600; text-align: center; }
+
+/* ═══════════════════════════════════════════
+   3. COLOUR
+═══════════════════════════════════════════ */
+.colour-primary { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: var(--s4); margin-bottom: var(--s5); }
+.colour-secondary { display: grid; grid-template-columns: repeat(4,1fr); gap: var(--s4); margin-bottom: var(--s5); }
+.colour-swatch {
+  border-radius: var(--r-lg); overflow: hidden; border: 1px solid var(--border);
+}
+.swatch-body { height: 120px; }
+.swatch-info { padding: var(--s4); background: var(--white); }
+.swatch-name { font-weight: 600; font-size: 14px; color: var(--ink); }
+.swatch-hex  { font-family: var(--font-mono); font-size: 12px; color: var(--ash); margin-top: 2px; }
+.swatch-role { font-size: 11px; color: var(--mist); margin-top: 2px; letter-spacing: .03em; }
+
+.combo-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: var(--s4); margin-top: var(--s5); }
+.combo {
+  border-radius: var(--r-lg); padding: var(--s5); border: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: var(--s3);
+}
+.combo-sample { font-family: var(--font-display); font-size: 22px; font-weight: 500; }
+.combo-meta { font-size: 12px; font-weight: 600; letter-spacing: .05em; }
+.combo-ratio { font-size: 11px; }
+.aa-badge {
+  display: inline-block; padding: 2px 8px; border-radius: var(--r-pill);
+  font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  background: #1DB954; color: white;
+}
+
+/* ═══════════════════════════════════════════
+   4. TYPOGRAPHY
+═══════════════════════════════════════════ */
+.type-specimen-hero {
+  background: var(--ink); border-radius: var(--r-lg); padding: var(--s8) var(--s7);
+  margin-bottom: var(--s5); overflow: hidden; position: relative;
+}
+.type-specimen-hero .big {
+  font-family: var(--font-display); font-size: clamp(56px, 8vw, 96px);
+  font-weight: 400; line-height: 1; color: var(--white); letter-spacing: -.03em;
+}
+.type-specimen-hero .big em { font-style: italic; color: var(--dusk); }
+.type-specimen-hero .scripts {
+  position: absolute; right: var(--s7); top: 50%; transform: translateY(-50%);
+  display: flex; flex-direction: column; gap: var(--s3); opacity: .3; pointer-events: none;
+}
+.type-specimen-hero .scripts span { font-size: 28px; color: var(--white); }
+
+.type-table { width: 100%; border-collapse: collapse; }
+.type-table th {
+  text-align: left; font-size: 11px; font-weight: 700; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--ash); padding: var(--s3) var(--s4);
+  border-bottom: 2px solid var(--border);
+}
+.type-table td { padding: var(--s5) var(--s4); border-bottom: 1px solid var(--border); vertical-align: top; }
+.type-table tr:last-child td { border-bottom: none; }
+.t-role { font-size: 12px; font-weight: 600; color: var(--ash); letter-spacing: .04em; }
+.t-spec { font-family: var(--font-mono); font-size: 12px; color: var(--primary); margin-top: 3px; }
+.t-note { font-size: 12px; color: var(--mist); margin-top: 3px; }
+
+.multilang-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: var(--s4); margin-top: var(--s5); }
+.lang-card {
+  background: var(--white); border: 1px solid var(--border); border-radius: var(--r-lg);
+  padding: var(--s5); display: flex; flex-direction: column; gap: var(--s3);
+}
+.lang-card .script { font-size: 22px; color: var(--ink); line-height: 1.4; }
+.lang-card .lang-name { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--primary); }
+.lang-card .font-used { font-size: 11px; color: var(--mist); font-family: var(--font-mono); }
+
+/* ═══════════════════════════════════════════
+   5. TONE & VOICE
+═══════════════════════════════════════════ */
+.voice-table { width: 100%; border-collapse: collapse; }
+.voice-table thead tr { background: var(--ink); }
+.voice-table thead th {
+  padding: var(--s4) var(--s5); text-align: left; font-size: 12px; font-weight: 600;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--mist);
+}
+.voice-table thead th:first-child { border-radius: var(--r-md) 0 0 0; }
+.voice-table thead th:last-child  { border-radius: 0 var(--r-md) 0 0; }
+.voice-table tbody tr:nth-child(odd)  { background: var(--white); }
+.voice-table tbody tr:nth-child(even) { background: var(--parchment); }
+.voice-table td { padding: var(--s4) var(--s5); font-size: 15px; line-height: 1.6; vertical-align: top; }
+.voice-table td:first-child { color: var(--ash); font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; border-right: 1px solid var(--border); }
+.voice-bad  { color: #C0392B; }
+.voice-good { color: #1B7A3E; }
+
+.attr-row { display: flex; flex-wrap: wrap; gap: var(--s4); margin-top: var(--s5); }
+.attr-pill {
+  display: flex; align-items: center; gap: var(--s3);
+  background: var(--white); border: 1px solid var(--border); border-radius: var(--r-pill);
+  padding: var(--s2) var(--s4) var(--s2) var(--s3);
+}
+.attr-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--primary); flex-shrink: 0; }
+.attr-pill span { font-size: 14px; font-weight: 500; color: var(--ink); }
+
+/* ═══════════════════════════════════════════
+   6. IMAGERY
+═══════════════════════════════════════════ */
+.imagery-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: var(--s4); }
+.imagery-card {
+  border-radius: var(--r-lg); overflow: hidden; border: 1px solid var(--border);
+}
+.imagery-visual {
+  height: 180px; display: flex; align-items: center; justify-content: center;
+  font-size: 48px; position: relative; overflow: hidden;
+}
+.imagery-info { padding: var(--s4); background: var(--white); }
+.imagery-info strong { font-size: 14px; font-weight: 600; display: block; margin-bottom: 3px; }
+.imagery-info p { font-size: 13px; color: var(--ash); line-height: 1.5; }
+
+.do-dont { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s5); margin-top: var(--s5); }
+.do-dont-col { border-radius: var(--r-lg); overflow: hidden; border: 1px solid var(--border); }
+.do-dont-header {
+  padding: var(--s4) var(--s5); display: flex; align-items: center; gap: var(--s3);
+  font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em;
+}
+.do-header  { background: rgba(27,122,62,.08); color: #1B7A3E; }
+.dont-header { background: rgba(192,57,43,.08); color: #C0392B; }
+.do-dont-body { padding: var(--s4) var(--s5); background: var(--white); }
+.do-dont-body ul { list-style: none; display: flex; flex-direction: column; gap: var(--s3); }
+.do-dont-body li { font-size: 14px; color: var(--ink); line-height: 1.5; padding-left: var(--s5); position: relative; }
+.do-dont-body li::before { position: absolute; left: 0; font-weight: 700; }
+.do-col   li::before { content: '✓'; color: #1B7A3E; }
+.dont-col li::before { content: '✗'; color: #C0392B; }
+
+/* ═══════════════════════════════════════════
+   7. MOTION
+═══════════════════════════════════════════ */
+.motion-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: var(--s4); }
+.motion-card {
+  background: var(--white); border: 1px solid var(--border); border-radius: var(--r-lg);
+  padding: var(--s6) var(--s5); display: flex; flex-direction: column; gap: var(--s4);
+  align-items: flex-start;
+}
+.motion-demo {
+  width: 60px; height: 60px; border-radius: var(--r-md);
+  background: var(--primary-10); border: 1.5px solid var(--primary-20);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--primary); font-size: 24px; cursor: pointer;
+  transition: transform .6s cubic-bezier(.22,1,.36,1),
+              box-shadow .6s cubic-bezier(.22,1,.36,1);
+}
+.motion-demo:hover { transform: translateY(-8px); box-shadow: 0 16px 32px var(--primary-20); }
+.motion-demo.fade-demo { transition: none; }
+.motion-demo.fade-demo:hover { transform: none; box-shadow: none; }
+.motion-demo.fade-demo i,
+.motion-demo.fade-demo svg { transition: opacity .25s ease; }
+.motion-demo.fade-demo:hover i,
+.motion-demo.fade-demo:hover svg { opacity: 0; }
+.motion-demo.scale-demo { transition: transform .3s cubic-bezier(.34,1.56,.64,1); }
+.motion-demo.scale-demo:hover { transform: scale(1.15); }
+.motion-card h4 { font-size: 15px; font-weight: 600; color: var(--ink); }
+.motion-card p  { font-size: 13px; color: var(--ash); line-height: 1.6; }
+.motion-spec { font-family: var(--font-mono); font-size: 12px; color: var(--primary); margin-top: auto; }
+
+/* ═══════════════════════════════════════════
+   8. SPACING & GRID
+═══════════════════════════════════════════ */
+.spacing-row { display: flex; flex-wrap: wrap; gap: var(--s4); align-items: flex-end; }
+.spacing-item { display: flex; flex-direction: column; align-items: center; gap: var(--s2); }
+.spacing-block { background: var(--primary); border-radius: 3px; }
+.spacing-label { font-size: 11px; font-family: var(--font-mono); color: var(--ash); }
+.spacing-val   { font-size: 12px; font-weight: 600; color: var(--ink); }
+
+.grid-demo {
+  background: var(--white); border: 1px solid var(--border); border-radius: var(--r-lg);
+  padding: var(--s6); margin-top: var(--s5);
+}
+.grid-12 { display: grid; grid-template-columns: repeat(12,1fr); gap: 12px; }
+.grid-col { height: 40px; background: var(--primary-10); border: 1px solid var(--primary-20); border-radius: 4px; }
+.grid-col.active { background: var(--primary-20); border-color: var(--primary); }
+
+/* ═══════════════════════════════════════════
+   9. UI COMPONENTS (PLACEHOLDER)
+═══════════════════════════════════════════ */
+.coming-soon {
+  background: var(--parchment-dark); border: 2px dashed var(--border);
+  border-radius: var(--r-lg); padding: var(--s9) var(--s6);
+  text-align: center; color: var(--ash);
+}
+.coming-soon h3 { font-family: var(--font-display); font-size: 28px; font-weight: 400; margin-bottom: var(--s3); color: var(--ink); }
+.coming-soon p  { font-size: 16px; max-width: 480px; margin: 0 auto; }
+
+/* ═══════════════════════════════════════════
+   FOOTER
+═══════════════════════════════════════════ */
+footer {
+  background: var(--ink); color: var(--mist); padding: var(--s8) 0;
+  text-align: center;
+}
+footer .f-logo { font-family: var(--font-display); font-size: 22px; font-weight: 600; letter-spacing: -.02em; color: var(--white); margin-bottom: var(--s3); }
+footer .f-logo span { color: var(--dusk); }
+footer p { font-size: 13px; color: var(--ash); }
+
+/* ═══════════════════════════════════════════
+   UTILITIES
+═══════════════════════════════════════════ */
+.mt-4 { margin-top: var(--s4); }
+.mt-5 { margin-top: var(--s5); }
+.mt-6 { margin-top: var(--s6); }
+.mt-7 { margin-top: var(--s7); }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s6); }
+.three-col { display: grid; grid-template-columns: repeat(3,1fr); gap: var(--s5); }
+code {
+  font-family: var(--font-mono); font-size: .9em;
+  background: var(--primary-10); color: var(--primary);
+  padding: 2px 6px; border-radius: 4px;
+}
+
+@media (max-width: 768px) {
+  .colour-primary, .colour-secondary, .logo-grid, .dont-grid,
+  .combo-grid, .multilang-grid, .imagery-grid, .motion-grid,
+  .do-dont, .two-col, .three-col, .essence-grid { grid-template-columns: 1fr; }
+  .nav-links { display: none; }
+  .type-specimen-hero .scripts { display: none; }
+}
+
+/* Scroll-fade-in animation */
+.fade-up { opacity: 0; transform: translateY(24px); transition: opacity .6s ease, transform .6s ease; }
+.fade-up.visible { opacity: 1; transform: translateY(0); }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <span class="nav-logo">Globoox</span>
+    <ul class="nav-links">
+      <li><a href="#essence">Essence</a></li>
+      <li><a href="#logo">Logo</a></li>
+      <li><a href="#colour">Colour</a></li>
+      <li><a href="#typography">Typography</a></li>
+      <li><a href="#voice">Voice</a></li>
+      <li><a href="#imagery">Imagery</a></li>
+      <li><a href="#motion">Motion</a></li>
+      <li><a href="#spacing">Spacing</a></li>
+      <li><a href="#ui">UI</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="cover-bg-text">Globoox</div>
+  <div class="page">
+    <span class="cover-tag">Brand Guidelines</span>
+    <h1>The world's library,<br><em>in your native language.</em></h1>
+    <p class="cover-sub">This document defines how the Globoox brand looks, speaks, and moves — across every platform, language, and medium.</p>
+    <dl class="cover-meta">
+      <div class="cover-meta-item"><dt>Brand</dt><dd>Globoox</dd></div>
+      <div class="cover-meta-item"><dt>Category</dt><dd>AI · Publishing</dd></div>
+      <div class="cover-meta-item"><dt>Markets</dt><dd>Global</dd></div>
+    </dl>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SECTION 01: BRAND ESSENCE
+══════════════════════════════════ -->
+<section id="essence" class="section">
+  <div class="page">
+    <div class="section-header fade-up">
+      <span class="section-label">01 — Brand Essence</span>
+      <h2 class="section-title">Who we are. What we believe.</h2>
+      <p class="section-desc">Globoox exists to dismantle language as a barrier to human knowledge and literature. These principles are the foundation of every brand decision.</p>
+    </div>
+
+    <div class="essence-grid fade-up">
+      <div class="essence-card accent">
+        <span class="essence-num">Mission</span>
+        <h3>Make every story accessible to every reader.</h3>
+        <p>We believe profound literature should not be locked behind a language. We translate thought, not merely words.</p>
+      </div>
+      <div class="essence-card">
+        <span class="essence-num">Vision</span>
+        <h3>A world where no book remains unread.</h3>
+        <p>7,000 spoken languages. Millions of untranslated works. Globoox closes that gap — one book at a time, one reader at a time.</p>
+      </div>
+      <div class="essence-card">
+        <span class="essence-num">Promise</span>
+        <h3>Nuance preserved. Voice intact.</h3>
+        <p>We never flatten a text. Our engine is trained on literary corpora so it understands register, rhythm, and cultural idiom.</p>
+      </div>
+      <div class="essence-card dark">
+        <span class="essence-num">Positioning</span>
+        <h3>Literary translation, reimagined by AI.</h3>
+        <p>Not a dictionary tool. Not a utility. A reading companion that respects both the author and the reader.</p>
+      </div>
+    </div>
+
+    <div class="rule-label mt-7">Brand Character</div>
+
+    <div class="adjectives fade-up">
+      <span class="adj-tag">Intellectually warm</span>
+      <span class="adj-tag">Quietly confident</span>
+      <span class="adj-tag">Globally minded</span>
+      <span class="adj-tag">Precise yet human</span>
+      <span class="adj-tag">Editorially refined</span>
+      <span class="adj-tag">Culturally sensitive</span>
+      <span class="adj-tag">Unhurried</span>
+      <span class="adj-tag">Trustworthy</span>
+    </div>
+
+    <div class="rule-label mt-7">What we are — and what we are not</div>
+
+    <div class="two-col mt-5 fade-up">
+      <div>
+        <table class="voice-table" style="border-radius: var(--r-lg); overflow: hidden;">
+          <thead><tr><th colspan="2" style="text-align:center;">We are</th></tr></thead>
+          <tbody>
+            <tr><td>Literary</td><td>We speak with care and depth</td></tr>
+            <tr><td>Precise</td><td>Every word earns its place</td></tr>
+            <tr><td>Warm</td><td>Technology that feels human</td></tr>
+            <tr><td>Global</td><td>No script is foreign to us</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <table class="voice-table" style="border-radius: var(--r-lg); overflow: hidden;">
+          <thead><tr><th colspan="2" style="text-align:center; background:#7A8C7B">We are not</th></tr></thead>
+          <tbody>
+            <tr><td>Technical</td><td>We don't speak in jargon</td></tr>
+            <tr><td>Loud</td><td>We don't shout for attention</td></tr>
+            <tr><td>Generic</td><td>No template-feel content</td></tr>
+            <tr><td>Cold</td><td>AI is the engine, not the face</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════
+     SECTION 02: LOGO
+══════════════════════════════════ -->
+<section id="logo" class="section">
+  <div class="page">
+    <div class="section-header fade-up">
+      <span class="section-label">02 — Logo</span>
+      <h2 class="section-title">A name built to cross borders.</h2>
+      <p class="section-desc">The Globoox wordmark is typeset in Lora — a serif that carries literary authority while remaining warm. The leading "G" in Forest Terracotta signals cultural plurality.</p>
+    </div>
+
+    <div class="logo-grid fade-up">
+      <div class="logo-cell bg-parchment" style="background:var(--parchment);">
+        <div class="logo-wordmark">
+          <span class="lw-g">G</span><span class="lw-rest">loboox</span>
+        </div>
+        <label>Light background</label>
+      </div>
+      <div class="logo-cell bg-white">
+        <div class="logo-wordmark">
+          <span class="lw-g">G</span><span class="lw-rest">loboox</span>
+        </div>
+        <label>White background</label>
+      </div>
+      <div class="logo-cell bg-dark">
+        <div class="logo-wordmark">
+          <span class="lw-g">G</span><span class="lw-rest">loboox</span>
+        </div>
+        <label>Dark background</label>
+      </div>
+      <div class="logo-cell bg-dark">
+        <div class="logo-wordmark" style="font-size:26px;">
+          <span style="color:var(--white);">G</span>
+        </div>
+        <label>Icon mark</label>
+      </div>
+      <div class="logo-cell" style="background:var(--primary);">
+        <div class="logo-wordmark" style="color:white;">
+          Globoox
+        </div>
+        <label style="color:rgba(255,255,255,.5);">Ember background</label>
+      </div>
+      <div class="logo-cell bg-white">
+        <div class="logo-lockup">
+          <div class="logo-wordmark" style="font-size:26px;">
+            <span class="lw-g">G</span><span class="lw-rest">loboox</span>
+          </div>
+          <span class="logo-tagline">Curating the world's wisdom</span>
+        </div>
+        <label>With tagline</label>
+      </div>
+    </div>
+
+    <div class="rule-label mt-7">Clearspace</div>
+    <div class="clearspace-demo fade-up">
+      <div style="padding: 40px; border: 1px dashed rgba(192,90,58,.3); display:inline-block; border-radius: 4px;">
+        <div class="logo-wordmark" style="font-size:36px;">
+          <span class="lw-g">G</span><span class="lw-rest">loboox</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="rule-label mt-7">What not to do</div>
+    <div class="dont-grid fade-up">
+      <div class="dont-item">
+        <div class="dont-preview">
+          <span style="font-family:var(--font-display);font-size:22px;transform:scaleX(1.4);display:inline-block;color:var(--ash);">Globoox</span>
+        </div>
+        <span class="dont-label">Don't stretch or distort</span>
+      </div>
+      <div class="dont-item">
+        <div class="dont-preview" style="background:#2C3B2D;">
+          <span style="font-family:var(--font-display);font-size:22px;color:#2C3B2D;">Globoox</span>
+        </div>
+        <span class="dont-label">Don't use without contrast</span>
+      </div>
+      <div class="dont-item">
+        <div class="dont-preview">
+          <span style="font-family:'Arial',sans-serif;font-size:22px;font-weight:700;color:var(--ink);">Globoox</span>
+        </div>
+        <span class="dont-label">Don't retype in another font</span>
+      </div>
+      <div class="dont-item">
+        <div class="dont-preview" style="background: linear-gradient(135deg,#FF6B6B,#A855F7);">
+          <span style="font-family:var(--font-display);font-size:22px;font-weight:600;color:white;">Globoox</span>
+        </div>
+        <span class="dont-label">Don't place on off-brand backgrounds</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════
+     SECTION 03: COLOUR
+══════════════════════════════════ -->
+<section id="colour" class="section">
+  <div class="page">
+    <div class="section-header fade-up">
+      <span class="section-label">03 — Colour</span>
+      <h2 class="section-title">A palette drawn from forest floor, clay, and aged paper.</h2>
+      <p class="section-desc">Deep forest greens anchor the palette with quiet authority. Terracotta brings warmth and cultural plurality — earthy, sun-baked, unmistakably human.</p>
+    </div>
+
+    <div class="rule-label">Primary Palette</div>
+    <div class="colour-primary fade-up">
+      <div class="colour-swatch">
+        <div class="swatch-body" style="background:#C05A3A;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Forest Terracotta</div>
+          <div class="swatch-hex">#C05A3A · rgb(192,90,58)</div>
+          <div class="swatch-role">Primary action, accents, links, CTA</div>
+        </div>
+      </div>
+      <div class="colour-swatch">
+        <div class="swatch-body" style="background:#2C3B2D;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Deep Forest</div>
+          <div class="swatch-hex">#2C3B2D · rgb(44,59,45)</div>
+          <div class="swatch-role">Headings, dark surfaces</div>
+        </div>
+      </div>
+      <div class="colour-swatch">
+        <div class="swatch-body" style="background:#F4F0E8; border-bottom:1px solid var(--border);"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Aged Paper</div>
+          <div class="swatch-hex">#F4F0E8 · rgb(244,240,232)</div>
+          <div class="swatch-role">Page background, light surfaces</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="rule-label mt-5">Secondary Palette</div>
+    <div class="colour-secondary fade-up">
+      <div class="colour-swatch">
+        <div class="swatch-body" style="background:#7A8C7B;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Sage</div>
+          <div class="swatch-hex">#7A8C7B</div>
+          <div class="swatch-role">Secondary text, captions</div>
+        </div>
+      </div>
+      <div class="colour-swatch">
+        <div class="swatch-body" style="background:#E8B89A;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Pale Terra</div>
+          <div class="swatch-hex">#E8B89A</div>
+          <div class="swatch-role">Accents on dark surfaces</div>
+        </div>
+      </div>
+      <div class="colour-swatch">
+        <div class="swatch-body" style="background:#B8C4B9;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Sage Mist</div>
+          <div class="swatch-hex">#B8C4B9</div>
+          <div class="swatch-role">Disabled, placeholder, metadata</div>
+        </div>
+      </div>
+      <div class="colour-swatch">
+        <div class="swatch-body" style="background:#E6E0D6;"></div>
+        <div class="swatch-info">
+          <div class="swatch-name">Aged Paper Dark</div>
+          <div class="swatch-hex">#E6E0D6</div>
+          <div class="swatch-role">Cards, dividers, hover states</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="rule-label mt-6">Colour Combinations & Accessibility</div>
+    <div class="combo-grid fade-up">
+      <div class="combo" style="background:#2C3B2D;">
+        <div class="combo-sample" style="color:#FFFFFF;">Aa — Globoox</div>
+        <div class="combo-meta" style="color:#B8C4B9;">Deep Forest / White</div>
+        <div class="combo-ratio" style="color:#B8C4B9;">Contrast 13.5:1 <span class="aa-badge">AAA</span></div>
+      </div>
+      <div class="combo" style="background:#FFFFFF; border:1px solid var(--border);">
+        <div class="combo-sample" style="color:#C05A3A;">Aa — Globoox</div>
+        <div class="combo-meta" style="color:#7A8C7B;">Ember / White</div>
+        <div class="combo-ratio" style="color:#7A8C7B;">Contrast 4.6:1 <span class="aa-badge">AA</span></div>
+      </div>
+      <div class="combo" style="background:#C05A3A;">
+        <div class="combo-sample" style="color:#FFFFFF;">Aa — Globoox</div>
+        <div class="combo-meta" style="color:rgba(255,255,255,.85);">White / Ember</div>
+        <div class="combo-ratio" style="color:#FFFFFF;">Contrast 4.6:1 <span class="aa-badge">AA</span></div>
+      </div>
+    </div>
+
+    <div class="rule-label mt-6">CSS Variables</div>
+    <div class="mt-4 fade-up" style="background:var(--ink);border-radius:var(--r-lg);padding:var(--s6);overflow-x:auto;">
+      <pre style="font-family:var(--font-mono);font-size:13px;color:var(--mist);line-height:1.8;"><span style="color:var(--dusk);">/* Globoox design tokens — Forest & Terracotta */</span>
+<span style="color:var(--mist);">--color-primary:   </span><span style="color:#C05A3A;">#C05A3A</span><span style="color:var(--mist);">;</span>
+<span style="color:var(--mist);">--color-ink:       </span><span style="color:#B8C4B9;">#2C3B2D</span><span style="color:var(--mist);">;</span>
+<span style="color:var(--mist);">--color-parchment: </span><span style="color:#F4F0E8;">#F4F0E8</span><span style="color:var(--mist);">;</span>
+<span style="color:var(--mist);">--color-ash:       </span><span style="color:#7A8C7B;">#7A8C7B</span><span style="color:var(--mist);">;</span>
+<span style="color:var(--mist);">--color-dusk:      </span><span style="color:#E8B89A;">#E8B89A</span><span style="color:var(--mist);">;</span>
+<span style="color:var(--mist);">--color-mist:      </span><span style="color:#B8C4B9;">#B8C4B9</span><span style="color:var(--mist);">;</span></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════
+     SECTION 04: TYPOGRAPHY
+══════════════════════════════════ -->
+<section id="typography" class="section">
+  <div class="page">
+    <div class="section-header fade-up">
+      <span class="section-label">04 — Typography</span>
+      <h2 class="section-title">Fonts built for every script on Earth.</h2>
+      <p class="section-desc">Our type stack is chosen for maximum multilingual coverage without compromising aesthetic authority. Every font selected supports the scripts our users read in.</p>
+    </div>
+
+    <div class="type-specimen-hero fade-up">
+      <div class="big">Words <em>travel</em><br>without borders.</div>
+      <div class="scripts">
+        <span style="font-family:var(--font-body);">哲学する</span>
+        <span style="font-family:var(--font-body);">Философия</span>
+        <span style="font-family:'Noto Sans Arabic',var(--font-body);direction:rtl;">قصة</span>
+        <span style="font-family:var(--font-body);">Poésie</span>
+        <span style="font-family:var(--font-body);">कहानी</span>
+      </div>
+    </div>
+
+    <div class="rule-label">Type Scale</div>
+    <table class="type-table fade-up">
+      <thead>
+        <tr>
+          <th>Role</th>
+          <th>Example</th>
+          <th>Spec</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <div class="t-role">Display</div>
+            <div class="t-spec">Lora · 400–600</div>
+            <div class="t-note">Hero headlines, feature titles</div>
+          </td>
+          <td><span style="font-family:var(--font-display);font-size:52px;font-weight:400;line-height:1.05;letter-spacing:-.02em;color:var(--ink);">The world's library</span></td>
+          <td><code>56–72px · lh 1.05 · ls -0.02em</code></td>
+        </tr>
+        <tr>
+          <td>
+            <div class="t-role">Heading 1</div>
+            <div class="t-spec">Lora · 400</div>
+            <div class="t-note">Section headings</div>
+          </td>
+          <td><span style="font-family:var(--font-display);font-size:36px;font-weight:400;">Thought-for-thought translation</span></td>
+          <td><code>40–48px · lh 1.15</code></td>
+        </tr>
+        <tr>
+          <td>
+            <div class="t-role">Heading 2</div>
+            <div class="t-spec">Lora · 400–500</div>
+            <div class="t-note">Sub-sections, card titles</div>
+          </td>
+          <td><span style="font-family:var(--font-display);font-size:24px;font-weight:400;">Seamless by design.</span></td>
+          <td><code>24–32px · lh 1.3</code></td>
+        </tr>
+        <tr>
+          <td>
+            <div class="t-role">Body</div>
+            <div class="t-spec">Inter · 400</div>
+            <div class="t-note">Paragraphs, descriptions</div>
+          </td>
+          <td><span style="font-size:17px;line-height:1.7;">We move beyond literal substitution. Our engine preserves the author's voice and the emotional resonance of every passage.</span></td>
+          <td><code>16–17px · lh 1.65–1.7</code></td>
+        </tr>
+        <tr>
+          <td>
+            <div class="t-role">Label / Eyebrow</div>
+            <div class="t-spec">Inter · 600</div>
+            <div class="t-note">Section tags, metadata</div>
+          </td>
+          <td><span style="font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--primary);">How it Works</span></td>
+          <td><code>11–12px · 600 · ls 0.12–0.16em · caps</code></td>
+        </tr>
+        <tr>
+          <td>
+            <div class="t-role">Caption</div>
+            <div class="t-spec">Inter · 400</div>
+            <div class="t-note">Image captions, footnotes, small UI</div>
+          </td>
+          <td><span style="font-size:13px;color:var(--ash);">Translated from Haruki Murakami's <em>Norwegian Wood</em> (1987)</span></td>
+          <td><code>12–13px · lh 1.5</code></td>
+        </tr>
+        <tr>
+          <td>
+            <div class="t-role">Mono / Code</div>
+            <div class="t-spec">JetBrains Mono · 400</div>
+            <div class="t-note">Technical values, design tokens, code</div>
+          </td>
+          <td><code style="font-size:14px;">--color-ember: #C05A3A;</code></td>
+          <td><code>13–14px · lh 1.5</code></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="rule-label mt-7">Multilingual Coverage</div>
+    <p class="section-desc mt-4 fade-up" style="margin-bottom: var(--s5);">Inter is the primary UI font; Noto Sans is the fallback for non-Latin scripts — it was designed specifically to eliminate tofu (□) across all writing systems. Lora covers Latin, Cyrillic, Greek, and Vietnamese for headings.</p>
+
+    <div class="multilang-grid fade-up">
+      <div class="lang-card">
+        <div class="script" style="font-family:var(--font-display);">The world's library</div>
+        <div class="lang-name">Latin (EN)</div>
+        <div class="font-used">Lora</div>
+      </div>
+      <div class="lang-card">
+        <div class="script" style="font-family:var(--font-display);">Библиотека мира</div>
+        <div class="lang-name">Cyrillic (RU)</div>
+        <div class="font-used">Lora (Cyrillic subset)</div>
+      </div>
+      <div class="lang-card">
+        <div class="script" style="font-family:var(--font-display);">Βιβλιοθήκη κόσμου</div>
+        <div class="lang-name">Greek (EL)</div>
+        <div class="font-used">Lora (Greek subset)</div>
+      </div>
+      <div class="lang-card">
+        <div class="script" style="font-family:'Noto Sans Arabic',var(--font-body);direction:rtl;text-align:right;font-size:26px;">مكتبة العالم</div>
+        <div class="lang-name">Arabic (AR)</div>
+        <div class="font-used">Noto Sans Arabic</div>
+      </div>
+      <div class="lang-card">
+        <div class="script" style="font-family:'Noto Sans JP',var(--font-body);">世界の図書館</div>
+        <div class="lang-name">Japanese (JA)</div>
+        <div class="font-used">Noto Sans JP</div>
+      </div>
+      <div class="lang-card">
+        <div class="script" style="font-family:'Noto Sans SC',var(--font-body);">世界的图书馆</div>
+        <div class="lang-name">Chinese Simplified (ZH)</div>
+        <div class="font-used">Noto Sans SC</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════
+     SECTION 05: VOICE & TONE
+══════════════════════════════════ -->
+<section id="voice" class="section">
+  <div class="page">
+    <div class="section-header fade-up">
+      <span class="section-label">05 — Voice &amp; Tone</span>
+      <h2 class="section-title">We write like a knowledgeable friend.</h2>
+      <p class="section-desc">Globoox speaks with the assurance of a well-read editor, not a tech manual. Every word is chosen with the same care we bring to translation.</p>
+    </div>
+
+    <div class="attr-row fade-up">
+      <div class="attr-pill"><div class="attr-dot"></div><span>Intellectually warm</span></div>
+      <div class="attr-pill"><div class="attr-dot"></div><span>Precise, not pedantic</span></div>
+      <div class="attr-pill"><div class="attr-dot"></div><span>Curious &amp; open</span></div>
+      <div class="attr-pill"><div class="attr-dot"></div><span>Confident, not boastful</span></div>
+      <div class="attr-pill"><div class="attr-dot"></div><span>Inclusive by nature</span></div>
+    </div>
+
+    <div class="rule-label mt-7">Do / Don't — Side by Side</div>
+    <div class="mt-5 fade-up" style="overflow:hidden;border-radius:var(--r-lg);border:1px solid var(--border);">
+      <table class="voice-table" style="width:100%;">
+        <thead>
+          <tr>
+            <th style="width:120px;">Context</th>
+            <th>✗ Don't write like this</th>
+            <th>✓ Write like this</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Hero headline</td>
+            <td class="voice-bad">AI-Powered Book Translation Software</td>
+            <td class="voice-good">The world's library, in your native language.</td>
+          </tr>
+          <tr>
+            <td>Feature description</td>
+            <td class="voice-bad">Our NLP engine utilises transformer-based models to achieve high-accuracy outputs.</td>
+            <td class="voice-good">We move beyond literal substitution. Our engine preserves the author's voice, cultural idioms, and the emotional resonance of every passage.</td>
+          </tr>
+          <tr>
+            <td>Onboarding</td>
+            <td class="voice-bad">Upload file. Select language. Download output.</td>
+            <td class="voice-good">Your first chapter begins with a single upload.</td>
+          </tr>
+          <tr>
+            <td>Error message</td>
+            <td class="voice-bad">Error 422: Unsupported file format detected.</td>
+            <td class="voice-good">We couldn't open that file. Try a .epub or .pdf and we'll take it from there.</td>
+          </tr>
+          <tr>
+            <td>CTA</td>
+            <td class="voice-bad">Sign Up Now — Get 50% Off!</td>
+            <td class="voice-good">Begin your first chapter free.</td>
+          </tr>
+          <tr>
+            <td>Empty state</td>
+            <td class="voice-bad">No books found in your library.</td>
+            <td class="voice-good">Your library is waiting. Upload a book to begin.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="rule-label mt-7">Taglines &amp; Positioning Phrases</div>
+    <div class="three-col mt-5 fade-up">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:var(--s5);">
+        <div style="font-family:var(--font-display);font-size:19px;margin-bottom:var(--s3);">"Curating the world's wisdom."</div>
+        <div style="font-size:12px;color:var(--ash);">Footer & brand tagline</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:var(--s5);">
+        <div style="font-family:var(--font-display);font-size:19px;font-style:italic;margin-bottom:var(--s3);">"Read the world."</div>
+        <div style="font-size:12px;color:var(--ash);">Short-form, social, ads</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:var(--s5);">
+        <div style="font-family:var(--font-display);font-size:19px;margin-bottom:var(--s3);">"Begin your first chapter free."</div>
+        <div style="font-size:12px;color:var(--ash);">Primary CTA phrase</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════
+     SECTION 06: IMAGERY
+══════════════════════════════════ -->
+<section id="imagery" class="section">
+  <div class="page">
+    <div class="section-header fade-up">
+      <span class="section-label">06 — Imagery &amp; Illustration Style</span>
+      <h2 class="section-title">Warm, literary, unhurried.</h2>
+      <p class="section-desc">Globoox imagery evokes the intimacy of reading — warm light, analogue textures, the human act of encountering a story. Avoid sterile tech stock photography.</p>
+    </div>
+
+    <div class="imagery-grid fade-up">
+      <div class="imagery-card">
+        <div class="imagery-visual" style="padding:0;position:relative;overflow:hidden;height:180px;">
+          <img
+            src="https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=600&auto=format&fit=crop&q=70"
+            alt="People reading together"
+            style="width:100%;height:100%;object-fit:cover;display:block;filter:sepia(18%) saturate(90%) brightness(0.96);"
+          >
+        </div>
+        <div class="imagery-info">
+          <strong>People reading</strong>
+          <p>Natural light. Real environments. Non-posed. Evoke absorption in a story.</p>
+        </div>
+      </div>
+      <div class="imagery-card">
+        <div class="imagery-visual" style="background: linear-gradient(135deg, #2C3B2D, #343A49);">
+          <span style="font-family:var(--font-display);font-size:28px;color:rgba(212,139,119,.6);text-align:center;padding:var(--s4);">哲学<br>Poésie<br>قصة</span>
+        </div>
+        <div class="imagery-info">
+          <strong>Script overlays</strong>
+          <p>Multiple writing systems layered — represents our core mission. Used in hero &amp; decorative contexts.</p>
+        </div>
+      </div>
+      <div class="imagery-card">
+        <div class="imagery-visual" style="background: #F4F0E8;">
+          <div style="display:flex;gap:8px;transform:rotate(-5deg);">
+            <div style="width:30px;height:160px;background:#E6E0D6;border-radius:3px;box-shadow:4px 4px 12px rgba(0,0,0,.08);"></div>
+            <div style="width:30px;height:130px;background:#DED9D2;border-radius:3px;box-shadow:4px 4px 12px rgba(0,0,0,.08);"></div>
+            <div style="width:30px;height:170px;background:#2C3B2D;border-radius:3px;box-shadow:4px 4px 12px rgba(0,0,0,.08);"></div>
+            <div style="width:30px;height:140px;background:#E8B89A;border-radius:3px;box-shadow:4px 4px 12px rgba(0,0,0,.08);"></div>
+          </div>
+        </div>
+        <div class="imagery-info">
+          <strong>Book spine motif</strong>
+          <p>Signature visual element. Use in product illustrations, empty states &amp; hero sections.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="do-dont mt-5 fade-up">
+      <div class="do-dont-col">
+        <div class="do-dont-header do-header">✓ Use</div>
+        <div class="do-dont-body do-col">
+          <ul>
+            <li>Warm, slightly desaturated photography (film-like tones)</li>
+            <li>Analogue textures: paper grain, linen, aged parchment</li>
+            <li>Multiple scripts together as visual motifs</li>
+            <li>Illustrations with book spine / page / light references</li>
+            <li>People of varied backgrounds engaged in reading</li>
+            <li>Natural settings: libraries, cafés, reading chairs, trains</li>
+          </ul>
+        </div>
+      </div>
+      <div class="do-dont-col">
+        <div class="do-dont-header dont-header">✗ Avoid</div>
+        <div class="do-dont-body dont-col">
+          <ul>
+            <li>Over-saturated or cold-filtered stock photography</li>
+            <li>Purple/blue "AI aesthetic" gradients</li>
+            <li>Generic tech imagery (servers, circuits, robots)</li>
+            <li>Posed, corporate-feeling photography</li>
+            <li>Neon glow effects or futuristic cyber styles</li>
+            <li>Clipart, flat generic icons without character</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════
+     SECTION 07: MOTION
+══════════════════════════════════ -->
+<section id="motion" class="section">
+  <div class="page">
+    <div class="section-header fade-up">
+      <span class="section-label">07 — Motion &amp; Animation</span>
+      <h2 class="section-title">Motion that reads like prose — unhurried.</h2>
+      <p class="section-desc">Animation should feel literary: deliberate, not frenetic. We favour smooth eases over snappy springs, and restrained choreography over constant movement.</p>
+    </div>
+
+    <div class="motion-grid fade-up">
+      <div class="motion-card">
+        <div class="motion-demo" title="Hover me"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></div>
+        <h4>Lift</h4>
+        <p>Used on cards, book spines, and interactive tiles. Creates depth without drama.</p>
+        <div class="motion-spec">cubic-bezier(.22,1,.36,1) · 600ms<br>translateY(-8px) + shadow</div>
+      </div>
+      <div class="motion-card">
+        <div class="motion-demo fade-demo" title="Hover me"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="2" fill="var(--primary)"/></svg></div>
+        <h4>Fade</h4>
+        <p>Page transitions, modal overlays, content reveals. Opacity only — no layout shift.</p>
+        <div class="motion-spec">ease · 200–300ms<br>opacity 1 → 0.4</div>
+      </div>
+      <div class="motion-card">
+        <div class="motion-demo scale-demo" title="Hover me"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg></div>
+        <h4>Grow</h4>
+        <p>Buttons, icon affordances, CTAs. Subtle — never exceeds scale(1.15).</p>
+        <div class="motion-spec">cubic-bezier(.34,1.56,.64,1) · 300ms<br>scale(1) → scale(1.12)</div>
+      </div>
+    </div>
+
+    <div class="rule-label mt-7">Easing Reference</div>
+    <div class="mt-5 fade-up" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;">
+      <table style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr style="background:var(--parchment-dark);">
+            <th style="padding:var(--s4);text-align:left;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ash);">Name</th>
+            <th style="padding:var(--s4);text-align:left;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ash);">Value</th>
+            <th style="padding:var(--s4);text-align:left;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ash);">Use for</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-top:1px solid var(--border);">
+            <td style="padding:var(--s4);font-weight:600;">Entrance</td>
+            <td style="padding:var(--s4);font-family:var(--font-mono);font-size:13px;color:var(--primary);">cubic-bezier(.22,1,.36,1)</td>
+            <td style="padding:var(--s4);font-size:14px;color:var(--ash);">Elements arriving on screen</td>
+          </tr>
+          <tr style="border-top:1px solid var(--border);background:var(--parchment);">
+            <td style="padding:var(--s4);font-weight:600;">Exit</td>
+            <td style="padding:var(--s4);font-family:var(--font-mono);font-size:13px;color:var(--primary);">cubic-bezier(.36,.07,.19,.97)</td>
+            <td style="padding:var(--s4);font-size:14px;color:var(--ash);">Elements leaving screen</td>
+          </tr>
+          <tr style="border-top:1px solid var(--border);">
+            <td style="padding:var(--s4);font-weight:600;">Bounce</td>
+            <td style="padding:var(--s4);font-family:var(--font-mono);font-size:13px;color:var(--primary);">cubic-bezier(.34,1.56,.64,1)</td>
+            <td style="padding:var(--s4);font-size:14px;color:var(--ash);">CTA, grow interactions</td>
+          </tr>
+          <tr style="border-top:1px solid var(--border);background:var(--parchment);">
+            <td style="padding:var(--s4);font-weight:600;">Standard</td>
+            <td style="padding:var(--s4);font-family:var(--font-mono);font-size:13px;color:var(--primary);">ease</td>
+            <td style="padding:var(--s4);font-size:14px;color:var(--ash);">Opacity, colour, subtle transitions</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="rule-label mt-7">Principles</div>
+    <div class="three-col mt-5 fade-up">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:var(--s5);">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/><line x1="16" y1="8" x2="2" y2="22"/><line x1="17.5" y1="15" x2="9" y2="15"/></svg>
+        <h4 style="font-size:15px;margin-bottom:var(--s2);">Restrained</h4>
+        <p style="font-size:13px;color:var(--ash);">Not every element should move. Animate to aid comprehension, not to impress.</p>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:var(--s5);">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg>
+        <h4 style="font-size:15px;margin-bottom:var(--s2);">Purposeful</h4>
+        <p style="font-size:13px;color:var(--ash);">Motion should direct attention or confirm action, never distract from content.</p>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:var(--s5);">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2"/><path d="M8 22l2-8"/><path d="M16 22l-2-8"/><path d="M4 11l8-2 8 2"/><path d="M10 14l-2 8"/><path d="M14 14l2 8"/></svg>
+        <h4 style="font-size:15px;margin-bottom:var(--s2);">Accessible</h4>
+        <p style="font-size:13px;color:var(--ash);">Always respect <code>prefers-reduced-motion</code>. Remove decorative animations entirely.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════
+     SECTION 08: SPACING & GRID
+══════════════════════════════════ -->
+<section id="spacing" class="section">
+  <div class="page">
+    <div class="section-header fade-up">
+      <span class="section-label">08 — Spacing &amp; Grid</span>
+      <h2 class="section-title">Generous space. Unhurried rhythm.</h2>
+      <p class="section-desc">We use a 4px base unit. All spacing values are multiples of 4. Generous padding echoes the white space of a well-set printed page.</p>
+    </div>
+
+    <div class="spacing-row fade-up">
+      <div class="spacing-item">
+        <div class="spacing-block" style="width:4px;height:16px;"></div>
+        <div class="spacing-val">s1</div>
+        <div class="spacing-label">4px</div>
+      </div>
+      <div class="spacing-item">
+        <div class="spacing-block" style="width:8px;height:24px;"></div>
+        <div class="spacing-val">s2</div>
+        <div class="spacing-label">8px</div>
+      </div>
+      <div class="spacing-item">
+        <div class="spacing-block" style="width:12px;height:32px;"></div>
+        <div class="spacing-val">s3</div>
+        <div class="spacing-label">12px</div>
+      </div>
+      <div class="spacing-item">
+        <div class="spacing-block" style="width:16px;height:40px;"></div>
+        <div class="spacing-val">s4</div>
+        <div class="spacing-label">16px</div>
+      </div>
+      <div class="spacing-item">
+        <div class="spacing-block" style="width:24px;height:52px;"></div>
+        <div class="spacing-val">s5</div>
+        <div class="spacing-label">24px</div>
+      </div>
+      <div class="spacing-item">
+        <div class="spacing-block" style="width:32px;height:64px;"></div>
+        <div class="spacing-val">s6</div>
+        <div class="spacing-label">32px</div>
+      </div>
+      <div class="spacing-item">
+        <div class="spacing-block" style="width:48px;height:80px;"></div>
+        <div class="spacing-val">s7</div>
+        <div class="spacing-label">48px</div>
+      </div>
+      <div class="spacing-item">
+        <div class="spacing-block" style="width:64px;height:96px;"></div>
+        <div class="spacing-val">s8</div>
+        <div class="spacing-label">64px</div>
+      </div>
+      <div class="spacing-item">
+        <div class="spacing-block" style="width:80px;height:112px;"></div>
+        <div class="spacing-val">s9</div>
+        <div class="spacing-label">96px</div>
+      </div>
+      <div class="spacing-item">
+        <div class="spacing-block" style="width:96px;height:128px;"></div>
+        <div class="spacing-val">s10</div>
+        <div class="spacing-label">128px</div>
+      </div>
+    </div>
+
+    <div class="rule-label mt-7">12-Column Grid</div>
+    <div class="grid-demo fade-up">
+      <div style="font-size:11px;color:var(--ash);margin-bottom:var(--s3);font-weight:600;letter-spacing:.08em;text-transform:uppercase;">Desktop · 1080px max · 24px gutters · 40px side padding</div>
+      <div class="grid-12">
+        <div class="grid-col active"></div>
+        <div class="grid-col active"></div>
+        <div class="grid-col active"></div>
+        <div class="grid-col active"></div>
+        <div class="grid-col active"></div>
+        <div class="grid-col active"></div>
+        <div class="grid-col active"></div>
+        <div class="grid-col active"></div>
+        <div class="grid-col active"></div>
+        <div class="grid-col active"></div>
+        <div class="grid-col active"></div>
+        <div class="grid-col active"></div>
+      </div>
+    </div>
+
+    <div class="three-col mt-5 fade-up">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:var(--s5);">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--primary);margin-bottom:var(--s3);">Mobile</div>
+        <div style="font-size:15px;font-weight:600;margin-bottom:var(--s2);">4 columns</div>
+        <div style="font-size:13px;color:var(--ash);">16px gutters · 16px side padding · ≤ 768px</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:var(--s5);">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--primary);margin-bottom:var(--s3);">Tablet</div>
+        <div style="font-size:15px;font-weight:600;margin-bottom:var(--s2);">8 columns</div>
+        <div style="font-size:13px;color:var(--ash);">20px gutters · 24px side padding · 768–1080px</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:var(--s5);">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--primary);margin-bottom:var(--s3);">Desktop</div>
+        <div style="font-size:15px;font-weight:600;margin-bottom:var(--s2);">12 columns</div>
+        <div style="font-size:13px;color:var(--ash);">24px gutters · 40px side padding · > 1080px</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════
+     SECTION 09: UI COMPONENTS
+══════════════════════════════════ -->
+<section id="ui" class="section">
+  <div class="page">
+    <div class="section-header fade-up">
+      <span class="section-label">09 — UI Components</span>
+      <h2 class="section-title">Product design system.</h2>
+      <p class="section-desc">Buttons, inputs, cards, navigation patterns and interaction states. To be expanded as the product matures.</p>
+    </div>
+    <div class="coming-soon fade-up">
+      <h3>Coming in v1.1</h3>
+      <p>The product UI component library is currently being documented. This section will include buttons, form elements, cards, navigation, modals, and toast notifications.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="page" style="text-align:center;">
+    <div class="f-logo">Globoox</div>
+    <p style="font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--dusk);margin-bottom:var(--s5);">Curating the world's wisdom</p>
+    <p>Brand Guidelines · 2025<br>Confidential — for internal &amp; approved partner use only.</p>
+  </div>
+</footer>
+
+<script>
+// Scroll-triggered fade-in
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(el => {
+    if (el.isIntersecting) {
+      el.target.classList.add('visible');
+      observer.unobserve(el.target);
+    }
+  });
+}, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+
+document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+// Prefers-reduced-motion
+if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  document.querySelectorAll('.fade-up').forEach(el => el.classList.add('visible'));
+}
+</script>
+
+
+<script>if(window.lucide) lucide.createIcons();</script>
+</body>
+</html>

@@ -13,6 +13,26 @@ interface ContentBlockRendererProps {
   lineHeightScale?: number
 }
 
+function getHeadingTypography(level: number): {
+  className: string
+  sizeScale: number
+  italic: boolean
+} {
+  if (level === 1) {
+    return { className: 'font-medium mb-3 mt-6', sizeScale: 1.6, italic: false }
+  }
+  if (level === 2) {
+    return { className: 'font-medium mb-2 mt-5', sizeScale: 1.35, italic: false }
+  }
+  if (level === 3) {
+    return { className: 'font-medium mb-2 mt-4', sizeScale: 1.18, italic: false }
+  }
+  if (level === 4 || level === 5) {
+    return { className: 'font-normal mb-2 mt-4', sizeScale: 1.06, italic: true }
+  }
+  return { className: 'font-normal mb-2 mt-4', sizeScale: 1.06, italic: false }
+}
+
 // Wrapper component for pending translation overlay
 function PendingWrapper({
   children,
@@ -68,7 +88,7 @@ export default function ContentBlockRenderer({
     // For relative EPUB paths, only substitute coverUrl for the first image (the actual cover).
     // Other in-chapter images with relative paths cannot be resolved and are skipped.
     let imageSrc = block.src
-    if (imageSrc && !imageSrc.startsWith('http://') && !imageSrc.startsWith('https://') && !imageSrc.startsWith('data:')) {
+    if (imageSrc && !imageSrc.startsWith('http://') && !imageSrc.startsWith('https://') && !imageSrc.startsWith('data:') && !imageSrc.startsWith('/')) {
       if (isCoverImage && coverUrl) {
         imageSrc = coverUrl
       } else {
@@ -95,16 +115,15 @@ export default function ContentBlockRenderer({
   }
 
   if (block.type === 'heading') {
-    const Tag = `h${block.level}` as 'h1' | 'h2' | 'h3'
-    const baseClassName =
-      block.level === 1
-        ? 'text-xxl font-bold mb-3 mt-6'
-        : block.level === 2
-          ? 'text-xl font-semibold mb-2 mt-5'
-          : 'text-lg font-semibold mb-2 mt-4'
+    const normalizedLevel = Math.max(1, Math.min(6, Number(block.level) || 1))
+    const Tag = `h${normalizedLevel}` as 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'
+    const headingTypography = getHeadingTypography(normalizedLevel)
+    const headingStyle = fontSize
+      ? { fontSize: `${fontSize * headingTypography.sizeScale}px`, fontStyle: headingTypography.italic ? 'italic' : 'normal' as const }
+      : { fontStyle: headingTypography.italic ? 'italic' : 'normal' as const }
     return (
       <PendingWrapper isPending={isPending} showLabel={showTranslatingLabel} pendingLabel={pendingLabel}>
-        <Tag className={baseClassName} style={style}>{block.text}</Tag>
+        <Tag className={headingTypography.className} style={headingStyle}>{block.text}</Tag>
       </PendingWrapper>
     )
   }

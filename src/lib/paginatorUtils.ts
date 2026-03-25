@@ -1,5 +1,5 @@
 import { ContentBlock, ParagraphBlock } from './api'
-import { getLineHeightStyle } from './readerTypography'
+import { getLineHeightMultiplier, getLineHeightStyle } from './readerTypography'
 import { hyphenateSync as hyphenRu } from 'hyphen/ru'
 import { hyphenateSync as hyphenEn } from 'hyphen/en-us'
 import { hyphenateSync as hyphenFr } from 'hyphen/fr'
@@ -17,10 +17,58 @@ const hyphenators: Record<string, (text: string) => string> = {
 const PAGE_HEIGHT_BUFFER_PX = 6
 const PARAGRAPH_FRAGMENT_LAST_CLASS = 'mb-2'
 const PARAGRAPH_FRAGMENT_MIDDLE_CLASS = 'mb-0'
+const MIN_PARAGRAPH_LINES_AT_PAGE_BOTTOM = 2
+const MIN_PARAGRAPH_LINES_AT_PAGE_TOP = 3
+const MIN_LIST_ITEMS_AT_PAGE_BOTTOM = 2
+const PAGINATION_TRACE_LIMIT = 200
+const PARAGRAPH_KEEP_WITH_NEXT_TYPES = new Set<ContentBlock['type']>(['hr', 'list', 'quote'])
+
+type PaginationHeadingTraceEvent = {
+  ts: number
+  pageSize: number
+  headingId: string
+  headingLevel?: number
+  nextType?: string
+  nextLevel?: number
+  action: string
+  note?: string
+}
+
+function pushHeadingTrace(event: PaginationHeadingTraceEvent): void {
+  if (process.env.NODE_ENV !== 'development') return
+  if (typeof window === 'undefined') return
+  const w = window as Window & { __PAGINATION_HEADING_TRACE__?: PaginationHeadingTraceEvent[] }
+  const arr = w.__PAGINATION_HEADING_TRACE__ ?? []
+  arr.push(event)
+  if (arr.length > PAGINATION_TRACE_LIMIT) {
+    arr.splice(0, arr.length - PAGINATION_TRACE_LIMIT)
+  }
+  w.__PAGINATION_HEADING_TRACE__ = arr
+}
 
 interface SplitResult {
   firstPart: string
   restPart: string
+}
+
+type HyphenPolicy = {
+  minLeft: number
+  minRight: number
+  minWordLen: number
+}
+
+const DEFAULT_HYPHEN_POLICY: HyphenPolicy = {
+  minLeft: 3,
+  minRight: 3,
+  minWordLen: 6,
+}
+
+const HYPHEN_POLICY_BY_LANG: Record<string, HyphenPolicy> = {
+  ru: { minLeft: 3, minRight: 3, minWordLen: 6 },
+  en: { minLeft: 3, minRight: 3, minWordLen: 6 },
+  de: { minLeft: 4, minRight: 3, minWordLen: 7 },
+  fr: { minLeft: 3, minRight: 3, minWordLen: 6 },
+  es: { minLeft: 3, minRight: 3, minWordLen: 6 },
 }
 
 export interface ComputedPagesResult {
@@ -34,6 +82,33 @@ type MeasuredBlockRoots = Map<string, HTMLElement>
 function hyphenateWord(word: string, lang: string): string[] {
   const hyphenator = hyphenators[lang] ?? hyphenators.en
   return hyphenator(word).split('\u00AD')
+}
+
+function resolveLangBase(lang: string): string {
+  return (lang || '').toLowerCase().split('-')[0] || 'en'
+}
+
+function getHyphenPolicy(lang: string): HyphenPolicy {
+  return HYPHEN_POLICY_BY_LANG[resolveLangBase(lang)] ?? DEFAULT_HYPHEN_POLICY
+}
+
+function isProtectedNoBreakToken(word: string): boolean {
+  if (!word) return true
+  const lower = word.toLowerCase()
+  if (/https?:\/\//.test(lower) || lower.includes('www.') || lower.includes('@')) return true
+  if (/^\d+([.,:/-]\d+)*$/.test(word)) return true
+  if (/^(doi|isbn)[:\s]/i.test(word)) return true
+  if (/^[A-Z]{2,6}$/.test(word)) return true
+  if (/[’']/.test(word)) return true
+  return false
+}
+
+function canHyphenateWordByPolicy(word: string, lang: string): boolean {
+  const policy = getHyphenPolicy(lang)
+  if (word.length < policy.minWordLen) return false
+  if (isProtectedNoBreakToken(word)) return false
+  if (!/\p{L}/u.test(word)) return false
+  return true
 }
 
 export function normalizeBlocks(blocks: ContentBlock[]): ContentBlock[] {
@@ -83,6 +158,26 @@ function applyParagraphStyles(el: HTMLElement, fontSize: number, lang: string, i
   el.style.setProperty('-webkit-hyphens', 'auto')
 }
 
+function getHeadingTypography(level: number): {
+  className: string
+  sizeScale: number
+  italic: boolean
+} {
+  if (level === 1) {
+    return { className: 'font-medium mb-3 mt-6', sizeScale: 1.6, italic: false }
+  }
+  if (level === 2) {
+    return { className: 'font-medium mb-2 mt-5', sizeScale: 1.35, italic: false }
+  }
+  if (level === 3) {
+    return { className: 'font-medium mb-2 mt-4', sizeScale: 1.18, italic: false }
+  }
+  if (level === 4 || level === 5) {
+    return { className: 'font-normal mb-2 mt-4', sizeScale: 1.06, italic: true }
+  }
+  return { className: 'font-normal mb-2 mt-4', sizeScale: 1.06, italic: false }
+}
+
 function createBlockElement(block: ContentBlock, fontSize: number, lang: string, lineHeightScale: number): HTMLElement {
   switch (block.type) {
     case 'paragraph': {
@@ -92,15 +187,13 @@ function createBlockElement(block: ContentBlock, fontSize: number, lang: string,
       return el
     }
     case 'heading': {
-      const tag = `h${block.level}` as 'h1' | 'h2' | 'h3'
+      const normalizedLevel = Math.max(1, Math.min(6, Number(block.level) || 1))
+      const tag = `h${normalizedLevel}` as 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'
+      const headingTypography = getHeadingTypography(normalizedLevel)
       const el = document.createElement(tag)
-      el.className =
-        block.level === 1
-          ? 'text-xxl font-bold mb-3 mt-6'
-          : block.level === 2
-            ? 'text-xl font-semibold mb-2 mt-5'
-            : 'text-lg font-semibold mb-2 mt-4'
-      if (fontSize) el.style.fontSize = `${fontSize}px`
+      el.className = headingTypography.className
+      if (fontSize) el.style.fontSize = `${fontSize * headingTypography.sizeScale}px`
+      if (headingTypography.italic) el.style.fontStyle = 'italic'
       el.textContent = block.text
       return el
     }
@@ -198,7 +291,13 @@ interface ProbeHandle {
   page: HTMLDivElement
 }
 
-function createProbe(containerRef: HTMLElement, effectiveHeight: number, lang: string): ProbeHandle {
+function createProbe(
+  containerRef: HTMLElement,
+  effectiveHeight: number,
+  lang: string,
+  pageWidthPx?: number,
+  pageShellClassName = 'reader-page container max-w-2xl mx-auto px-4 h-full',
+): ProbeHandle {
   const doc = containerRef.ownerDocument
   const host = doc.createElement('div')
   host.style.position = 'fixed'
@@ -211,9 +310,12 @@ function createProbe(containerRef: HTMLElement, effectiveHeight: number, lang: s
   host.style.overflow = 'hidden'
 
   const page = doc.createElement('div')
-  page.className = 'container max-w-2xl mx-auto px-4 h-full'
+  page.className = pageShellClassName
   page.setAttribute('lang', lang)
   page.style.height = `${effectiveHeight}px`
+  if (pageWidthPx && pageWidthPx > 0) {
+    page.style.width = `${pageWidthPx}px`
+  }
   page.style.overflowY = 'hidden'
   page.style.overflowX = 'hidden'
 
@@ -264,6 +366,74 @@ function isTinyParagraphFragment(text: string): boolean {
   if (!trimmed) return true
   const words = trimmed.split(/\s+/).filter(Boolean)
   return words.length <= 2 || trimmed.length < 24
+}
+
+function countRenderedLines(el: HTMLElement): number {
+  const computed = getComputedStyle(el)
+  const lineHeight = Number.parseFloat(computed.lineHeight || '')
+  const height = el.getBoundingClientRect().height
+  if (!Number.isFinite(lineHeight) || lineHeight <= 0) return 1
+  return Math.max(1, Math.round(height / lineHeight))
+}
+
+function measureParagraphLinesInProbe(
+  probe: HTMLElement,
+  sourceBlockId: string,
+  text: string,
+  fontSize: number,
+  lang: string,
+  isLastPart: boolean,
+  lineHeightScale: number,
+  measuredBlockRoots?: MeasuredBlockRoots,
+): number {
+  const wrapper = createParagraphMeasuredWrapper(
+    sourceBlockId,
+    text,
+    fontSize,
+    lang,
+    isLastPart,
+    lineHeightScale,
+    measuredBlockRoots,
+  )
+  probe.appendChild(wrapper)
+  const paragraph = wrapper.querySelector('p') as HTMLParagraphElement | null
+  const lines = paragraph ? countRenderedLines(paragraph) : 1
+  probe.removeChild(wrapper)
+  return lines
+}
+
+function violatesParagraphWidowOrphan(
+  probe: HTMLElement,
+  sourceBlockId: string,
+  firstText: string,
+  restText: string,
+  fontSize: number,
+  lang: string,
+  lineHeightScale: number,
+  measuredBlockRoots?: MeasuredBlockRoots,
+): boolean {
+  if (!restText.trim()) return false
+  const firstLines = measureParagraphLinesInProbe(
+    probe,
+    sourceBlockId,
+    firstText,
+    fontSize,
+    lang,
+    false,
+    lineHeightScale,
+    measuredBlockRoots,
+  )
+  const restLines = measureParagraphLinesInProbe(
+    probe,
+    sourceBlockId,
+    restText,
+    fontSize,
+    lang,
+    false,
+    lineHeightScale,
+    measuredBlockRoots,
+  )
+  return firstLines < MIN_PARAGRAPH_LINES_AT_PAGE_BOTTOM || restLines < MIN_PARAGRAPH_LINES_AT_PAGE_TOP
 }
 
 function fitParagraphByDom(
@@ -332,41 +502,8 @@ function fitParagraphByDom(
     return bestResult
   }
 
-  const consumedChars = bestResult.firstPart.length
-  let wordStart = consumedChars
-  while (wordStart > 0 && !isWhitespace(normalizedText[wordStart - 1]!)) {
-    wordStart--
-  }
-  let wordEnd = consumedChars
-  while (wordEnd < normalizedText.length && !isWhitespace(normalizedText[wordEnd]!)) {
-    wordEnd++
-  }
-
-  if (wordStart < consumedChars && wordEnd > consumedChars) {
-    const prefix = normalizedText.slice(0, wordStart).trimEnd()
-    const word = normalizedText.slice(wordStart, wordEnd)
-    const suffix = normalizedText.slice(wordEnd).trimStart()
-    const parts = hyphenateWord(word, lang)
-    if (parts.length > 1) {
-      let chunk = ''
-      let bestHyphenated: SplitResult | null = null
-      for (let i = 0; i < parts.length - 1; i++) {
-        chunk += parts[i]
-        const hyphenatedPrefix = prefix ? `${prefix} ${chunk}-` : `${chunk}-`
-        if (fitsText(hyphenatedPrefix, false)) {
-          bestHyphenated = {
-            firstPart: hyphenatedPrefix,
-            restPart: [parts.slice(i + 1).join(''), suffix].filter(Boolean).join(' ').trim(),
-          }
-        } else {
-          break
-        }
-      }
-      if (bestHyphenated) {
-        bestResult = bestHyphenated
-      }
-    }
-  }
+  // Manual intra-word hyphen split between pages is disabled.
+  // Line-level hyphenation remains browser-driven via CSS (`hyphens: auto`).
 
   probe.removeChild(wrapper)
   return bestResult
@@ -381,12 +518,14 @@ function computePagesDom(
   lineHeightScale: number,
   minBlocksPerPage: number,
   measuredBlockRoots?: MeasuredBlockRoots,
+  pageWidthPx?: number,
+  pageShellClassName?: string,
 ): ComputedPagesResult {
   const effectiveHeight = Math.max(1, pageHeight - PAGE_HEIGHT_BUFFER_PX)
   const pages: string[][] = []
   const finalBlocks: ContentBlock[] = []
   const fragmentMap = new Map<string, string>()
-  const probeHandle = createProbe(containerRef, effectiveHeight, lang)
+  const probeHandle = createProbe(containerRef, effectiveHeight, lang, pageWidthPx, pageShellClassName)
   const probe = probeHandle.page
 
   let currentPage: string[] = []
@@ -404,17 +543,194 @@ function computePagesDom(
   }
 
   try {
-    for (const block of blocks) {
+    for (let i = 0; i < blocks.length; i++) {
+      const block = blocks[i]
+      const prevBlock = i > 0 ? blocks[i - 1] : undefined
+      const isHeadingRunStart = block.type === 'heading' && (!prevBlock || prevBlock.type !== 'heading')
+      const nextBlock = i + 1 < blocks.length ? blocks[i + 1] : undefined
+
+      // Rule: each heading run starts on a new page.
+      // Apply only before the first heading in consecutive heading chains.
+      if (isHeadingRunStart && currentPage.length > 0) {
+        pushHeadingTrace({
+          ts: Date.now(),
+          pageSize: currentPage.length,
+          headingId: block.id,
+          headingLevel: block.type === 'heading' ? block.level : undefined,
+          nextType: nextBlock?.type,
+          nextLevel: nextBlock?.type === 'heading' ? nextBlock.level : undefined,
+          action: 'forced_page_break_before_heading_run',
+        })
+        pushCurrentPage()
+      }
+
+      // Special case: h1 followed by h2 starts a chapter section.
+      // Keep h1 on its own centered page by forcing a break right after h1.
+      if (
+        isHeadingRunStart &&
+        block.type === 'heading' &&
+        block.level === 1 &&
+        nextBlock &&
+        nextBlock.type === 'heading' &&
+        nextBlock.level === 2
+      ) {
+        const h1Node = createMeasuredWrapper(block, fontSize, lang, lineHeightScale, measuredBlockRoots)
+        probe.appendChild(h1Node)
+        if (!fitsProbe(probe, effectiveHeight)) {
+          probe.removeChild(h1Node)
+          pushCurrentPage()
+          probe.appendChild(h1Node)
+        }
+        currentPage.push(block.id)
+        finalBlocks.push(block)
+        pushCurrentPage()
+        continue
+      }
+
+      // Atomic heading-run placement: if 2+ consecutive headings fit, place them as a package.
+      if (isHeadingRunStart) {
+        let runEnd = i
+        while (runEnd + 1 < blocks.length && blocks[runEnd + 1].type === 'heading') {
+          runEnd++
+        }
+        if (runEnd > i) {
+          const runNodes: HTMLDivElement[] = []
+          let runFits = true
+          for (let j = i; j <= runEnd; j++) {
+            const headingNode = createMeasuredWrapper(blocks[j], fontSize, lang, lineHeightScale, measuredBlockRoots)
+            probe.appendChild(headingNode)
+            runNodes.push(headingNode)
+            if (!fitsProbe(probe, effectiveHeight)) {
+              runFits = false
+              break
+            }
+          }
+
+          if (runFits) {
+            pushHeadingTrace({
+              ts: Date.now(),
+              pageSize: currentPage.length,
+              headingId: block.id,
+              headingLevel: block.type === 'heading' ? block.level : undefined,
+              nextType: nextBlock?.type,
+              nextLevel: nextBlock?.type === 'heading' ? nextBlock.level : undefined,
+              action: 'heading_run_atomic_fit',
+              note: `run=${runEnd - i + 1}`,
+            })
+            for (let j = i; j <= runEnd; j++) {
+              currentPage.push(blocks[j].id)
+              finalBlocks.push(blocks[j])
+            }
+            i = runEnd
+            continue
+          }
+
+          // Cleanup and fallback to regular single-block logic below.
+          pushHeadingTrace({
+            ts: Date.now(),
+            pageSize: currentPage.length,
+            headingId: block.id,
+            headingLevel: block.type === 'heading' ? block.level : undefined,
+            nextType: nextBlock?.type,
+            nextLevel: nextBlock?.type === 'heading' ? nextBlock.level : undefined,
+            action: 'heading_run_atomic_not_fit',
+            note: `run=${runEnd - i + 1}`,
+          })
+          for (const node of runNodes) {
+            if (node.parentElement === probe) probe.removeChild(node)
+          }
+        }
+      }
+
       if (block.type !== 'paragraph') {
         const node = createMeasuredWrapper(block, fontSize, lang, lineHeightScale, measuredBlockRoots)
         probe.appendChild(node)
         if (fitsProbe(probe, effectiveHeight) || currentPage.length < minBlocksPerPage) {
+          // List lookahead: avoid starting list at page bottom with a single list item.
+          if (block.type === 'list' && currentPage.length >= minBlocksPerPage) {
+            const blockParentId = block.parentId ?? block.id
+            const prevId = currentPage[currentPage.length - 1]
+            const prevBlock = finalBlocks.length > 0 ? finalBlocks[finalBlocks.length - 1] : undefined
+            const startsNewListOnPage = !prevId || !prevBlock || prevBlock.type !== 'list' || (prevBlock.parentId ?? prevBlock.id) !== blockParentId
+            const nextBlock = blocks[i + 1]
+            const nextSameList = !!nextBlock && nextBlock.type === 'list' && (nextBlock.parentId ?? nextBlock.id) === blockParentId
+            if (startsNewListOnPage && nextSameList && MIN_LIST_ITEMS_AT_PAGE_BOTTOM > 1) {
+              const nextNode = createMeasuredWrapper(nextBlock!, fontSize, lang, lineHeightScale, measuredBlockRoots)
+              probe.appendChild(nextNode)
+              const nextFits = fitsProbe(probe, effectiveHeight)
+              probe.removeChild(nextNode)
+              if (!nextFits) {
+                probe.removeChild(node)
+                pushCurrentPage()
+                probe.appendChild(node)
+              }
+            }
+          }
+
+          // Keep consecutive headings together.
+          if (block.type === 'heading') {
+            // 1) Keep consecutive headings on the same page.
+            let lookaheadIndex = i + 1
+            while (lookaheadIndex < blocks.length && blocks[lookaheadIndex].type === 'heading') {
+              const nextHeadingNode = createMeasuredWrapper(
+                blocks[lookaheadIndex],
+                fontSize,
+                lang,
+                lineHeightScale,
+                measuredBlockRoots,
+              )
+              probe.appendChild(nextHeadingNode)
+              const headingFits = fitsProbe(probe, effectiveHeight)
+              probe.removeChild(nextHeadingNode)
+              if (!headingFits) {
+                const lookaheadBlock = blocks[lookaheadIndex]
+                const lookaheadHeadingLevel = lookaheadBlock && lookaheadBlock.type === 'heading' ? lookaheadBlock.level : undefined
+                pushHeadingTrace({
+                  ts: Date.now(),
+                  pageSize: currentPage.length,
+                  headingId: block.id,
+                  headingLevel: block.type === 'heading' ? block.level : undefined,
+                  nextType: lookaheadBlock?.type,
+                  nextLevel: lookaheadHeadingLevel,
+                  action: 'heading_lookahead_not_fit',
+                })
+                probe.removeChild(node)
+                pushCurrentPage()
+                probe.appendChild(node)
+                break
+              }
+              lookaheadIndex++
+            }
+          }
+          if (block.type === 'heading') {
+            const nextHeadingLevel = nextBlock && nextBlock.type === 'heading' ? nextBlock.level : undefined
+            pushHeadingTrace({
+              ts: Date.now(),
+              pageSize: currentPage.length,
+              headingId: block.id,
+              headingLevel: block.level,
+              nextType: nextBlock?.type,
+              nextLevel: nextHeadingLevel,
+              action: 'heading_added_to_page',
+            })
+          }
           currentPage.push(block.id)
           finalBlocks.push(block)
           continue
         }
 
         probe.removeChild(node)
+        if (block.type === 'heading') {
+          pushHeadingTrace({
+            ts: Date.now(),
+            pageSize: currentPage.length,
+            headingId: block.id,
+            headingLevel: block.level,
+            nextType: nextBlock?.type,
+            nextLevel: nextBlock?.type === 'heading' ? nextBlock.level : undefined,
+            action: 'heading_overflow_new_page',
+          })
+        }
         pushCurrentPage()
         probe.appendChild(node)
         currentPage.push(block.id)
@@ -438,6 +754,25 @@ function computePagesDom(
         )
         probe.appendChild(wholeNode)
         if (fitsProbe(probe, effectiveHeight)) {
+          // Keep paragraph with the immediately following structural block
+          // (hr/list/quote) to avoid awkward page starts.
+          const nextBlock = blocks[i + 1]
+          const shouldKeepWithNext =
+            !!nextBlock &&
+            PARAGRAPH_KEEP_WITH_NEXT_TYPES.has(nextBlock.type) &&
+            currentPage.length >= minBlocksPerPage
+          if (shouldKeepWithNext) {
+            const nextNode = createMeasuredWrapper(nextBlock!, fontSize, lang, lineHeightScale, measuredBlockRoots)
+            probe.appendChild(nextNode)
+            const nextFits = fitsProbe(probe, effectiveHeight)
+            probe.removeChild(nextNode)
+            if (!nextFits) {
+              probe.removeChild(wholeNode)
+              pushCurrentPage()
+              continue
+            }
+          }
+
           const finalId = partIndex === (block.partIndex ?? 0) ? block.id : `${block.id}-part-${partIndex}`
           const isFirstPart = (block.isFirstPart ?? true) && partIndex === (block.partIndex ?? 0)
           const finalBlock: ParagraphBlock & { sentenceIndex: number } = {
@@ -484,6 +819,24 @@ function computePagesDom(
         }
 
         if (currentPage.length > 0 && restText && isTinyParagraphFragment(firstText)) {
+          pushCurrentPage()
+          continue
+        }
+
+        if (
+          currentPage.length > 0 &&
+          restText &&
+          violatesParagraphWidowOrphan(
+            probe,
+            block.id,
+            firstText,
+            restText,
+            fontSize,
+            lang,
+            lineHeightScale,
+            measuredBlockRoots,
+          )
+        ) {
           pushCurrentPage()
           continue
         }
@@ -614,31 +967,7 @@ function splitParagraphByHeight(
   let firstPart = words.slice(0, best).join(' ')
   const restWords = words.slice(best)
 
-  if (best < words.length && best > 0 && best < words.length - 1) {
-    const nextWord = words[best]
-    const parts = hyphenateWord(nextWord, lang)
-    if (parts.length > 1) {
-      let maxFittingSyllables = 0
-      let currentSyllableStr = ''
-      for (let i = 0; i < parts.length - 1; i++) {
-        currentSyllableStr += parts[i]
-        const testStr = `${firstPart} ${currentSyllableStr}-`
-        const h = measureTextHeight(testStr, temp)
-        if (h <= availableHeight) {
-          maxFittingSyllables = i + 1
-        } else {
-          break
-        }
-      }
-
-      if (maxFittingSyllables > 0) {
-        const fittingSyllables = parts.slice(0, maxFittingSyllables).join('')
-        const remainingSyllables = parts.slice(maxFittingSyllables).join('')
-        firstPart += ` ${fittingSyllables}-`
-        restWords[0] = remainingSyllables
-      }
-    }
-  }
+  // Manual intra-word hyphen split is disabled in fallback mode too.
 
   containerRef.removeChild(temp)
   return { firstPart, restPart: restWords.join(' ') }
@@ -660,12 +989,79 @@ function computePagesFallback(
   let currentHeight = 0
   const finalBlocks: ContentBlock[] = []
   const fragmentMap = new Map<string, string>()
+  const lineHeightPx = fontSize * getLineHeightMultiplier(fontSize, lineHeightScale)
+  const estimateLinesByHeight = (height: number) => Math.max(1, Math.round(height / lineHeightPx))
 
   for (let i = 0; i < blocks.length; i++) {
     const block = blocks[i]
+    const prevBlock = i > 0 ? blocks[i - 1] : undefined
+    const isHeadingRunStart = block.type === 'heading' && (!prevBlock || prevBlock.type !== 'heading')
+    const nextBlock = i + 1 < blocks.length ? blocks[i + 1] : undefined
+
+    // Rule: each heading run starts on a new page.
+    if (isHeadingRunStart && currentPage.length > 0) {
+      pages.push(currentPage)
+      currentPage = []
+      currentHeight = 0
+    }
+
+    if (
+      isHeadingRunStart &&
+      block.type === 'heading' &&
+      block.level === 1 &&
+      nextBlock &&
+      nextBlock.type === 'heading' &&
+      nextBlock.level === 2
+    ) {
+      const h = blockHeights.get(block.id) ?? 48
+      currentPage.push(block.id)
+      finalBlocks.push(block)
+      currentHeight = h
+      pages.push(currentPage)
+      currentPage = []
+      currentHeight = 0
+      continue
+    }
+
+    if (isHeadingRunStart) {
+      let runEnd = i
+      while (runEnd + 1 < blocks.length && blocks[runEnd + 1].type === 'heading') {
+        runEnd++
+      }
+      if (runEnd > i && currentHeight === 0) {
+        let runHeight = 0
+        for (let j = i; j <= runEnd; j++) {
+          runHeight += blockHeights.get(blocks[j].id) ?? 48
+        }
+        if (runHeight <= effectiveHeight) {
+          for (let j = i; j <= runEnd; j++) {
+            const hb = blocks[j]
+            currentPage.push(hb.id)
+            finalBlocks.push(hb)
+            currentHeight += blockHeights.get(hb.id) ?? 48
+          }
+          i = runEnd
+          continue
+        }
+      }
+    }
+
     const h = blockHeights.get(block.id) ?? 48
 
     if (block.type === 'heading' && i < blocks.length - 1) {
+      // Keep consecutive headings together in fallback mode too.
+      let headingRunHeight = h
+      let j = i + 1
+      while (j < blocks.length && blocks[j].type === 'heading') {
+        headingRunHeight += blockHeights.get(blocks[j].id) ?? 48
+        j++
+      }
+      if (headingRunHeight > h && currentHeight + headingRunHeight > effectiveHeight && currentPage.length > 0) {
+        pages.push(currentPage)
+        currentPage = []
+        currentHeight = 0
+      }
+
       const nextBlock = blocks[i + 1]
       let nextH = blockHeights.get(nextBlock.id) ?? 48
       if (nextBlock.type === 'paragraph' && containerRef) {
@@ -682,6 +1078,36 @@ function computePagesFallback(
     const canStartNewPage = currentPage.length >= minBlocksPerPage
 
     if (!wouldOverflow || !canStartNewPage) {
+      if (
+        block.type === 'paragraph' &&
+        currentPage.length >= minBlocksPerPage
+      ) {
+        const nextBlock = blocks[i + 1]
+        if (nextBlock && PARAGRAPH_KEEP_WITH_NEXT_TYPES.has(nextBlock.type)) {
+          const nextH = blockHeights.get(nextBlock.id) ?? 48
+          if (currentHeight + h + nextH > effectiveHeight) {
+            pages.push(currentPage)
+            currentPage = []
+            currentHeight = 0
+          }
+        }
+      }
+
+      if (block.type === 'list' && currentPage.length > 0) {
+        const blockParentId = block.parentId ?? block.id
+        const prevId = currentPage[currentPage.length - 1]
+        const prevBlock = finalBlocks.length > 0 ? finalBlocks[finalBlocks.length - 1] : undefined
+        const startsNewListOnPage = !prevId || !prevBlock || prevBlock.type !== 'list' || (prevBlock.parentId ?? prevBlock.id) !== blockParentId
+        const nextBlock = blocks[i + 1]
+        const nextSameList = !!nextBlock && nextBlock.type === 'list' && (nextBlock.parentId ?? nextBlock.id) === blockParentId
+        const nextH = nextBlock ? (blockHeights.get(nextBlock.id) ?? 48) : 0
+        const secondItemWouldOverflow = nextSameList && (currentHeight + h + nextH > effectiveHeight)
+        if (startsNewListOnPage && secondItemWouldOverflow) {
+          pages.push(currentPage)
+          currentPage = []
+          currentHeight = 0
+        }
+      }
       currentPage.push(block.id)
       finalBlocks.push(block)
       currentHeight += h
@@ -725,6 +1151,22 @@ function computePagesFallback(
           currentPage = []
           currentHeight = 0
           continue
+        }
+
+        if (currentPage.length > 0 && restText) {
+          const firstHeight = measureParagraphFragmentHeight(firstText, fontSize, lang, lineHeightScale, containerRef, false)
+          const restHeight = measureParagraphFragmentHeight(restText, fontSize, lang, lineHeightScale, containerRef, false)
+          const firstLines = estimateLinesByHeight(firstHeight)
+          const restLines = estimateLinesByHeight(restHeight)
+          if (
+            firstLines < MIN_PARAGRAPH_LINES_AT_PAGE_BOTTOM ||
+            restLines < MIN_PARAGRAPH_LINES_AT_PAGE_TOP
+          ) {
+            pages.push(currentPage)
+            currentPage = []
+            currentHeight = 0
+            continue
+          }
         }
 
         const fragmentId = `${block.id}-part-${partIndex}`
@@ -795,13 +1237,26 @@ export function computePages(
   lineHeightScale = 1,
   minBlocksPerPage = 1,
   measuredBlockRoots?: MeasuredBlockRoots,
+  pageWidthPx?: number,
+  pageShellClassName?: string,
 ): ComputedPagesResult {
   if (blocks.length === 0 || pageHeight <= 0) {
     return { pages: [], finalBlocks: [], fragmentMap: new Map() }
   }
 
   if (containerRef) {
-    return computePagesDom(blocks, pageHeight, containerRef, fontSize, lang, lineHeightScale, minBlocksPerPage, measuredBlockRoots)
+    return computePagesDom(
+      blocks,
+      pageHeight,
+      containerRef,
+      fontSize,
+      lang,
+      lineHeightScale,
+      minBlocksPerPage,
+      measuredBlockRoots,
+      pageWidthPx,
+      pageShellClassName,
+    )
   }
 
   return computePagesFallback(blocks, blockHeights, pageHeight, containerRef, fontSize, lang, lineHeightScale, minBlocksPerPage)
