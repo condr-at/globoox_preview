@@ -5,6 +5,16 @@ import { createClient } from '@/lib/supabase/client';
 import { identifyUser, resetUser, trackUserSignedUp } from '@/lib/posthog';
 
 const SIGNUP_TRACKED_KEY = 'posthog_signup_tracked';
+const UTM_STORAGE_KEY = 'globooks_utm';
+
+function getSavedUtmParams(): Record<string, string> | undefined {
+  try {
+    const raw = sessionStorage.getItem(UTM_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 /** Detect new sign-up: created_at within last 60 seconds */
 function isNewUser(user: { created_at?: string }): boolean {
@@ -42,7 +52,7 @@ export default function PostHogProvider() {
         trackedRef.current = true;
         markSignUpTracked(user.id);
         const method = user.app_metadata?.provider === 'google' ? 'google' : 'email';
-        trackUserSignedUp(method);
+        trackUserSignedUp(method, getSavedUtmParams());
       }
     }
 

@@ -1,5 +1,6 @@
 import { ReactNode } from 'react';
 import type { Metadata } from 'next';
+import UtmCapture from '@/components/UtmCapture';
 import './globals.css';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://globoox.co';
@@ -52,7 +53,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
         />
       </head>
-      <body>{children}</body>
+      <body>
+        <UtmCapture />
+        {children}
+      </body>
     </html>
   );
 }
