@@ -54,7 +54,7 @@ const SPREAD_SIDE_PADDING_PX = 40;
 const SPREAD_MAX_COLUMN_PX = 560;
 const LAYOUT_SIGNIFICANT_DELTA_PX = 2;
 const REPAGINATE_DEBOUNCE_MS = 160;
-const PAGINATION_ALGO_VERSION = 'v2026-03-21-browser-hyphen-only';
+const PAGINATION_ALGO_VERSION = 'v2026-03-25-probe-visible-css-parity';
 const PAGINATION_ALGO_VERSION_STORAGE_KEY = 'reader.pagination_algo_version';
 const PAGE_SHELL_CLASS = 'reader-page container max-w-2xl mx-auto px-4 h-full';
 const SPREAD_PAGE_SHELL_CLASS = 'reader-page container max-w-2xl mx-auto h-full';
@@ -770,6 +770,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                 1,
                 blockMeasureRefs.current,
                 resolvedColumnWidthPx,
+                spreadModeEnabled ? SPREAD_PAGE_SHELL_CLASS : PAGE_SHELL_CLASS,
             );
 
             setPages(computed.pages);
@@ -812,7 +813,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                 repaginateTimerRef.current = null;
             }
         };
-    }, [layoutCacheReadyKey, paginationCacheKey, blockStructureKey, pageHeight, pageWidth, resolvedColumnWidthPx, normalizedBlocks, settings.fontSize, settings.lineHeightScale, displayBlocksLang, activeLang, currentChapter?.id, bookId]);
+    }, [layoutCacheReadyKey, paginationCacheKey, blockStructureKey, pageHeight, pageWidth, resolvedColumnWidthPx, normalizedBlocks, settings.fontSize, settings.lineHeightScale, displayBlocksLang, activeLang, currentChapter?.id, bookId, spreadModeEnabled]);
 
     // ─── Anchor restore ──────────────────────────────────────────────────────
     // Set by language-switch handler: blockId + sentenceIndex to jump to on next page recompute
@@ -1725,6 +1726,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                 <div
                     key={block.id}
                     className={`flow-root${isFirstRenderable ? ' page-first-block' : ''}${isSingleH1Page ? ' page-single-h1' : ''}`}
+                    data-block-type={block.type}
                     ref={getRefCallback(blockId, block.type)}
                 >
                     <ContentBlockRenderer
@@ -1910,6 +1912,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                             <div
                                 key={block.id}
                                 className="flow-root"
+                                data-block-type={block.type}
                                 data-measure-block-id={block.id}
                                 ref={(el) => {
                                     if (el) blockMeasureRefs.current.set(block.id, el);

@@ -296,6 +296,7 @@ function createProbe(
   effectiveHeight: number,
   lang: string,
   pageWidthPx?: number,
+  pageShellClassName = 'reader-page container max-w-2xl mx-auto px-4 h-full',
 ): ProbeHandle {
   const doc = containerRef.ownerDocument
   const host = doc.createElement('div')
@@ -309,7 +310,7 @@ function createProbe(
   host.style.overflow = 'hidden'
 
   const page = doc.createElement('div')
-  page.className = 'container max-w-2xl mx-auto px-4 h-full'
+  page.className = pageShellClassName
   page.setAttribute('lang', lang)
   page.style.height = `${effectiveHeight}px`
   if (pageWidthPx && pageWidthPx > 0) {
@@ -518,12 +519,13 @@ function computePagesDom(
   minBlocksPerPage: number,
   measuredBlockRoots?: MeasuredBlockRoots,
   pageWidthPx?: number,
+  pageShellClassName?: string,
 ): ComputedPagesResult {
   const effectiveHeight = Math.max(1, pageHeight - PAGE_HEIGHT_BUFFER_PX)
   const pages: string[][] = []
   const finalBlocks: ContentBlock[] = []
   const fragmentMap = new Map<string, string>()
-  const probeHandle = createProbe(containerRef, effectiveHeight, lang, pageWidthPx)
+  const probeHandle = createProbe(containerRef, effectiveHeight, lang, pageWidthPx, pageShellClassName)
   const probe = probeHandle.page
 
   let currentPage: string[] = []
@@ -1236,6 +1238,7 @@ export function computePages(
   minBlocksPerPage = 1,
   measuredBlockRoots?: MeasuredBlockRoots,
   pageWidthPx?: number,
+  pageShellClassName?: string,
 ): ComputedPagesResult {
   if (blocks.length === 0 || pageHeight <= 0) {
     return { pages: [], finalBlocks: [], fragmentMap: new Map() }
@@ -1252,6 +1255,7 @@ export function computePages(
       minBlocksPerPage,
       measuredBlockRoots,
       pageWidthPx,
+      pageShellClassName,
     )
   }
 
