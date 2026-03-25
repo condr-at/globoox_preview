@@ -31,6 +31,7 @@ import { getCachedReadingPosition, setCachedReadingPosition } from '@/lib/conten
 
 const FALLBACK_COVER = '/covers/great-gatsby.jpg';
 const FALLBACK_AUTHOR = 'Unknown author';
+const BOOKS_BATCH_SIZE = 6;
 
 type ProgressRow = BookReadingProgress & {
   server_updated_at?: string | null;
@@ -118,8 +119,11 @@ export default function MyBooksPage() {
   const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
   const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
   const [sortDrawerOpen, setSortDrawerOpen] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(BOOKS_BATCH_SIZE);
   const progressRef = useRef(progress);
   const readingPositionControllersRef = useRef<Set<AbortController>>(new Set());
+  const revalidatedBookIdsRef = useRef<Set<string>>(new Set());
+  const loadMoreSentinelRef = useRef<HTMLDivElement | null>(null);
   const sortTriggerRef = useRef<HTMLButtonElement>(null);
   const sortMenuRef = useRef<HTMLDivElement>(null);
   const { menuStyle, isPositioned } = useAdaptiveDropdown({
@@ -261,6 +265,12 @@ export default function MyBooksPage() {
   useEffect(() => {
     if (!isAuthenticated || books.length === 0) return;
 
+    const targetIds = books
+      .slice(0, Math.min(books.length, visibleCount + BOOKS_BATCH_SIZE))
+      .map((book) => book.id)
+      .filter((bookId) => !revalidatedBookIdsRef.current.has(bookId));
+    if (targetIds.length === 0) return;
+
     const controllers = readingPositionControllersRef.current;
     let cancelled = false;
     const controller = new AbortController();
@@ -268,14 +278,14 @@ export default function MyBooksPage() {
     void (async () => {
       const updates: Array<{ bookId: string; remote: Awaited<ReturnType<typeof fetchReadingPosition>> } | null> = [];
       const CONCURRENCY = 4;
-      for (let i = 0; i < books.length && !cancelled; i += CONCURRENCY) {
-        const batch = books.slice(i, i + CONCURRENCY);
+      for (let i = 0; i < targetIds.length && !cancelled; i += CONCURRENCY) {
+        const batchIds = targetIds.slice(i, i + CONCURRENCY);
         const batchUpdates = await Promise.all(
-          batch.map(async (book) => {
+          batchIds.map(async (bookId) => {
             try {
-              const remote = await fetchReadingPosition(book.id, controller.signal);
-              void setCachedReadingPosition(scopeKey, book.id, { position: remote, updatedAt: remote.updated_at ?? null });
-              return { bookId: book.id, remote };
+              const remote = await fetchReadingPosition(bookId, controller.signal);
+              void setCachedReadingPosition(scopeKey, bookId, { position: remote, updatedAt: remote.updated_at ?? null });
+              return { bookId, remote };
             } catch {
               return null;
             }
@@ -332,6 +342,9 @@ export default function MyBooksPage() {
           serverUpdatedAt: update.serverUpdatedAt,
         });
       }
+      if (!cancelled) {
+        targetIds.forEach((bookId) => revalidatedBookIdsRef.current.add(bookId));
+      }
     })();
 
     return () => {
@@ -339,7 +352,11 @@ export default function MyBooksPage() {
       controller.abort();
       controllers.delete(controller);
     };
-  }, [books, isAuthenticated, scopeKey, syncVersions.progress, updateServerProgress]);
+  }, [books, isAuthenticated, scopeKey, syncVersions.progress, updateServerProgress, visibleCount]);
+
+  useEffect(() => {
+    revalidatedBookIdsRef.current.clear();
+  }, [scopeKey, syncVersions.progress]);
 
   // Get block-based progress for a book
   const getBookProgress = useCallback((book: ApiBook) => {
@@ -394,6 +411,38 @@ export default function MyBooksPage() {
 
     return sorted;
   }, [books, statusFilter, sortOrder, getEffectiveLastRead]);
+
+  const visibleBooks = useMemo(
+    () => filteredBooks.slice(0, Math.min(visibleCount, filteredBooks.length)),
+    [filteredBooks, visibleCount]
+  );
+  const hasMoreBooks = visibleCount < filteredBooks.length;
+  const loadingBatchCount = hasMoreBooks
+    ? Math.min(BOOKS_BATCH_SIZE, Math.max(0, filteredBooks.length - visibleBooks.length))
+    : 0;
+
+  useEffect(() => {
+    setVisibleCount(BOOKS_BATCH_SIZE);
+  }, [statusFilter, sortOrder, scopeKey]);
+
+  useEffect(() => {
+    if (!hasMoreBooks) return;
+    const sentinel = loadMoreSentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          setVisibleCount((prev) => Math.min(filteredBooks.length, prev + BOOKS_BATCH_SIZE));
+          break;
+        }
+      },
+      { rootMargin: '240px 0px' }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [filteredBooks.length, hasMoreBooks]);
 
   return (
     <div className="min-h-screen bg-background pb-[calc(60px+env(safe-area-inset-bottom))]">
@@ -525,25 +574,35 @@ export default function MyBooksPage() {
           ) : filteredBooks.length === 0 ? (
             <p className="text-sm text-muted-foreground">No books yet.</p>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
-              {filteredBooks.map((book) => (
-                <BookCard
-                  key={book.id}
-                  id={book.id}
-                  title={book.title}
-                  author={book.author ?? FALLBACK_AUTHOR}
-                  cover={book.cover_url ?? FALLBACK_COVER}
-                  progress={getBookProgress(book)}
-                  onHide={book.status === 'hidden' ? unhideBook : hideBook}
-                  onDelete={handleRequestDelete}
-                  hideLabel={book.status === 'hidden' ? 'Unhide' : 'Hide'}
-                  onOpen={() => {
-                    touchLastRead(book.id);
-                    trackBookOpened({ book_id: book.id, title: book.title, source: 'library' });
-                  }}
-                />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
+                {visibleBooks.map((book) => (
+                  <BookCard
+                    key={book.id}
+                    id={book.id}
+                    title={book.title}
+                    author={book.author ?? FALLBACK_AUTHOR}
+                    cover={book.cover_url ?? FALLBACK_COVER}
+                    progress={getBookProgress(book)}
+                    onHide={book.status === 'hidden' ? unhideBook : hideBook}
+                    onDelete={handleRequestDelete}
+                    hideLabel={book.status === 'hidden' ? 'Unhide' : 'Hide'}
+                    onOpen={() => {
+                      touchLastRead(book.id);
+                      trackBookOpened({ book_id: book.id, title: book.title, source: 'library' });
+                    }}
+                  />
+                ))}
+              </div>
+              {loadingBatchCount > 0 && (
+                <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 gap-6">
+                  {Array.from({ length: loadingBatchCount }, (_, index) => (
+                    <div key={`batch-skeleton-${index}`} className="aspect-[2/3] rounded-md bg-muted animate-pulse" />
+                  ))}
+                </div>
+              )}
+              {hasMoreBooks && <div ref={loadMoreSentinelRef} className="h-1" aria-hidden="true" />}
+            </>
           )}
         </section>
       </div>

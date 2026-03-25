@@ -289,6 +289,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 24px;
   text-align: center;
   border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
   border-radius: 8px;
