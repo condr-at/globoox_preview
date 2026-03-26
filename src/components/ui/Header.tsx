@@ -46,7 +46,7 @@ export default function Header() {
                         <div className="opacity-40">
                             <IOSIcon icon={ShoppingBag} strokeWidth={1.5} />
                         </div>
-                        <span className="absolute -top-0.5 -right-3 text-[8px] font-semibold text-white dark:text-black leading-none px-1 py-0.5 rounded-full bg-primary">
+                        <span className="absolute -top-0.5 -right-3 text-[8px] font-semibold text-[var(--primary-foreground)] leading-none px-1 py-0.5 rounded-full bg-primary">
                             soon
                         </span>
                     </div>
