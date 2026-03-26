@@ -38,7 +38,7 @@ export function Pricing() {
         <div style={{ textAlign: 'center', marginBottom: '60px' }}>
           <SectionLabel>Investment in Wisdom</SectionLabel>
           <h2 className="pricing-heading">
-            A plan for every reader.
+            A plan for every reader
           </h2>
           <p
             style={{

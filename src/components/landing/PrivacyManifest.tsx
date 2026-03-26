@@ -43,7 +43,7 @@ export function PrivacyManifest() {
             letterSpacing: '-0.01em',
           }}
         >
-          Your files stay yours.
+          Your files stay yours
         </h2>
         <p
           style={{

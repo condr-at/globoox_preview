@@ -43,7 +43,7 @@ export function SupportedLanguages() {
               fontWeight: 400,
             }}
           >
-            EPUB. More to come.
+            EPUB. More to come
           </h2>
           <p
             style={{

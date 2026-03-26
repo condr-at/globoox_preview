@@ -14,7 +14,7 @@ const steps = [
   { step: 'Step 3', description: 'Enjoy your book!' },
 ];
 
-export function UsageAnimation({ label = 'How it works', heading = 'Three simple steps.' }: UsageAnimationProps) {
+export function UsageAnimation({ label = 'How it works', heading = 'Three simple steps' }: UsageAnimationProps) {
   const [active, setActive] = useState(0);
   const [jumpTo, setJumpTo] = useState<0 | 1 | 2 | null>(null);
   const jumpKeyRef = useRef(0); // increment to re-trigger same-tab jumps

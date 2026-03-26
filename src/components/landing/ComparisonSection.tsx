@@ -69,7 +69,7 @@ export function ComparisonSection() {
           <div className="comparison-section__header">
             <SectionLabel>Detailed Comparison</SectionLabel>
             <h2 className="comparison-section__title">
-              Every nuance compared.
+              Every nuance compared
             </h2>
             <p className="comparison-section__subtitle">
               See exactly what each plan includes, from the essentials to the advanced features that power serious readers.
