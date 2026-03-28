@@ -719,6 +719,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
     }, [bookId, currentChapter?.id, blockStructureKey]);
     const localAnchorChapterAppliedRef = useRef<string | null>(null);
     const restoredFromPaginationCacheRef = useRef(false);
+    const prevResetChapterIdRef = useRef<string>('');
 
     useEffect(() => {
         if (chaptersLoading || chapters.length === 0) return;
@@ -823,9 +824,21 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
     const pendingAnchorSentenceIndex = useRef<number>(0);
 
     // Reset pagination state when chapter changes — but first try to restore from cache to avoid flashing skeletons.
+    // When only blockStructureKey changes within the same chapter (e.g. translations arriving),
+    // skip the full reset to avoid a skeleton flash — the repagination effect handles the update.
     useEffect(() => {
         const chapterId = currentChapter?.id ?? '';
         if (!chapterId) return;
+
+        const isChapterChange = chapterId !== prevResetChapterIdRef.current;
+        prevResetChapterIdRef.current = chapterId;
+
+        // If the chapter hasn't changed, only the block structure changed (translations arrived).
+        // Keep current pages visible and just let the repagination effect recompute in place.
+        if (!isChapterChange) {
+            setLayoutCacheReadyKey(paginationCacheKey);
+            return;
+        }
 
         let cancelled = false;
         setLayoutCacheReadyKey('');
