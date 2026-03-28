@@ -26,7 +26,13 @@ import GoogleOneTap from '@/components/GoogleOneTap';
 import PageHeader from '@/components/ui/PageHeader';
 import { trackBookOpened } from '@/lib/posthog';
 import { BookReadingProgress, ApiBook, fetchReadingPosition } from '@/lib/api';
-import { getCachedReadingPosition, setCachedReadingPosition } from '@/lib/contentCache';
+import {
+  getCachedLibraryViewSnapshotSync,
+  getCachedLibraryViewSnapshot,
+  getCachedReadingPosition,
+  setCachedLibraryViewSnapshot,
+  setCachedReadingPosition,
+} from '@/lib/contentCache';
 
 const FALLBACK_COVER = '/covers/great-gatsby.jpg';
 const FALLBACK_AUTHOR = 'Unknown author';
@@ -64,6 +70,16 @@ function chooseByPriority(...candidates: Array<string | null | undefined>): stri
   return null;
 }
 
+function sameOrder(a: string[] | null | undefined, b: string[] | null | undefined): boolean {
+  if (!a && !b) return true;
+  if (!a || !b) return false;
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i += 1) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
 function mergeProgressMonotonic(existing: ProgressRow | undefined, incoming: ProgressRow): ProgressRow {
   if (!existing) {
     const normalizedUpdated = chooseNewestTs(
@@ -98,11 +114,7 @@ export default function MyBooksPage() {
   const { progress, touchLastRead, updateServerProgress, syncVersions } = useAppStore();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const scopeKey = isAuthenticated && user?.id ? user.id : 'guest';
-  const { books, loading, stabilizing, error, hideBook, unhideBook, removeBook, refresh } = useBooks({
-    scopeKey,
-    stabilizeOnMount: true,
-  });
-  const authRefreshDoneRef = useRef<string | null>(null);
+  const { books, loading, error, hideBook, unhideBook, removeBook, refresh } = useBooks({ scopeKey });
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [progressData, setProgressData] = useState<Record<string, ProgressRow>>({});
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
@@ -118,6 +130,12 @@ export default function MyBooksPage() {
   const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
   const [sortDrawerOpen, setSortDrawerOpen] = useState(false);
   const [visibleCount, setVisibleCount] = useState(BOOKS_BATCH_SIZE);
+  const [progressHydrated, setProgressHydrated] = useState(false);
+  const [recentlyOpenedSnapshotOrder, setRecentlyOpenedSnapshotOrder] = useState<string[] | null>(() => {
+    const cached = getCachedLibraryViewSnapshotSync(scopeKey, 'recently_opened');
+    return cached?.order ?? null;
+  });
+  const savedSnapshotOrderRef = useRef<string[] | null>(recentlyOpenedSnapshotOrder);
   const progressRef = useRef(progress);
   const readingPositionControllersRef = useRef<Set<AbortController>>(new Set());
   const revalidatedBookIdsRef = useRef<Set<string>>(new Set());
@@ -142,6 +160,32 @@ export default function MyBooksPage() {
     };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    if (sortOrder !== 'recently_opened') {
+      setRecentlyOpenedSnapshotOrder(null);
+      return;
+    }
+
+    const syncSnapshot = getCachedLibraryViewSnapshotSync(scopeKey, 'recently_opened');
+    if (syncSnapshot?.order?.length) {
+      setRecentlyOpenedSnapshotOrder((prev) => (sameOrder(prev, syncSnapshot.order) ? prev : syncSnapshot.order));
+    }
+
+    void getCachedLibraryViewSnapshot(scopeKey, 'recently_opened').then((snapshot) => {
+      if (cancelled) return;
+      const nextOrder = snapshot?.order ?? null;
+      setRecentlyOpenedSnapshotOrder((prev) => (sameOrder(prev, nextOrder) ? prev : nextOrder));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [scopeKey, sortOrder]);
+
+  useEffect(() => {
+    savedSnapshotOrderRef.current = recentlyOpenedSnapshotOrder;
+  }, [recentlyOpenedSnapshotOrder]);
+
   // After OAuth redirect back with ?upload=1, auto-open upload modal
   useEffect(() => {
     if (authLoading || !isAuthenticated) return;
@@ -151,14 +195,6 @@ export default function MyBooksPage() {
       window.history.replaceState({}, '', '/my-books');
     }
   }, [authLoading, isAuthenticated]);
-
-  // When auth scope becomes ready, force one canonical refresh for /api/books?status=all.
-  useEffect(() => {
-    if (authLoading || !isAuthenticated || !user?.id) return;
-    if (authRefreshDoneRef.current === user.id) return;
-    authRefreshDoneRef.current = user.id;
-    void refresh(true);
-  }, [authLoading, isAuthenticated, refresh, user?.id]);
 
   const handleUploadClick = () => {
     if (isAuthenticated) {
@@ -198,10 +234,12 @@ export default function MyBooksPage() {
   useEffect(() => {
     if (books.length === 0) {
       setProgressData({});
+      setProgressHydrated(false);
       return;
     }
 
     let cancelled = false;
+    setProgressHydrated(false);
     void (async () => {
       const entries = await Promise.all(
         books.map(async (b) => {
@@ -236,6 +274,7 @@ export default function MyBooksPage() {
         }
         return next;
       });
+      setProgressHydrated(true);
     })();
 
     return () => { cancelled = true; };
@@ -385,6 +424,11 @@ export default function MyBooksPage() {
     );
   }, [progressData, progress]);
 
+  const snapshotRank = useMemo(() => {
+    if (!recentlyOpenedSnapshotOrder) return new Map<string, number>();
+    return new Map(recentlyOpenedSnapshotOrder.map((id, index) => [id, index]));
+  }, [recentlyOpenedSnapshotOrder]);
+
   const filteredBooks = useMemo(() => {
     const filtered = statusFilter === 'hidden'
       ? books.filter((b) => b.status === 'hidden')
@@ -396,6 +440,17 @@ export default function MyBooksPage() {
       if (sortOrder === 'title_asc') return a.title.localeCompare(b.title);
       if (sortOrder === 'title_desc') return b.title.localeCompare(a.title);
       if (sortOrder === 'recently_opened') {
+        if (!progressHydrated && snapshotRank.size > 0) {
+          const aRank = snapshotRank.get(a.id);
+          const bRank = snapshotRank.get(b.id);
+          const aKnown = aRank != null;
+          const bKnown = bRank != null;
+          if (aKnown && bKnown && aRank !== bRank) return aRank - bRank;
+          if (aKnown !== bKnown) return aKnown ? -1 : 1;
+          const createdDiff = new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+          if (createdDiff !== 0) return createdDiff;
+          return a.id.localeCompare(b.id);
+        }
         const aMs = toMs(getEffectiveLastRead(a.id));
         const bMs = toMs(getEffectiveLastRead(b.id));
         if (bMs !== aMs) return bMs - aMs;
@@ -408,7 +463,26 @@ export default function MyBooksPage() {
     });
 
     return sorted;
-  }, [books, statusFilter, sortOrder, getEffectiveLastRead]);
+  }, [books, statusFilter, sortOrder, getEffectiveLastRead, progressHydrated, snapshotRank]);
+
+  useEffect(() => {
+    if (sortOrder !== 'recently_opened') return;
+    if (!progressHydrated) return;
+    if (filteredBooks.length === 0) return;
+
+    const order = filteredBooks.map((book) => book.id);
+    if (sameOrder(savedSnapshotOrderRef.current, order)) return;
+    const effectiveLastReadByBookId: Record<string, string | null> = {};
+    for (const book of filteredBooks) {
+      effectiveLastReadByBookId[book.id] = getEffectiveLastRead(book.id);
+    }
+    savedSnapshotOrderRef.current = order;
+    void setCachedLibraryViewSnapshot(scopeKey, 'recently_opened', {
+      order,
+      effectiveLastReadByBookId,
+      computedAt: Date.now(),
+    });
+  }, [filteredBooks, getEffectiveLastRead, progressHydrated, scopeKey, sortOrder]);
 
   const visibleBooks = useMemo(
     () => filteredBooks.slice(0, Math.min(visibleCount, filteredBooks.length)),
@@ -569,7 +643,7 @@ export default function MyBooksPage() {
 
 
         <section>
-          {(loading || stabilizing) ? (
+          {loading ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
               {[1, 2, 3, 4, 5, 6].map((i) => (
                 <div key={i} className="aspect-[2/3] rounded-md bg-muted animate-pulse" />
@@ -593,6 +667,23 @@ export default function MyBooksPage() {
                     hideLabel={book.status === 'hidden' ? 'Unhide' : 'Hide'}
                     onOpen={() => {
                       touchLastRead(book.id);
+                      const nowIso = new Date().toISOString();
+                      setRecentlyOpenedSnapshotOrder((prev) => {
+                        const base = prev?.length ? prev : filteredBooks.map((b) => b.id);
+                        const next = [book.id, ...base.filter((id) => id !== book.id)];
+                        if (sameOrder(prev, next)) return prev;
+                        const effectiveLastReadByBookId: Record<string, string | null> = {};
+                        next.forEach((id) => {
+                          effectiveLastReadByBookId[id] = id === book.id ? nowIso : getEffectiveLastRead(id);
+                        });
+                        savedSnapshotOrderRef.current = next;
+                        void setCachedLibraryViewSnapshot(scopeKey, 'recently_opened', {
+                          order: next,
+                          effectiveLastReadByBookId,
+                          computedAt: Date.now(),
+                        });
+                        return next;
+                      });
                       trackBookOpened({ book_id: book.id, title: book.title, source: 'library' });
                     }}
                   />

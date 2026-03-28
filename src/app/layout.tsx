@@ -6,12 +6,9 @@ import './globals.css';
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://globoox.co';
 
 export const metadata: Metadata = {
-  title: {
-    default: 'Globoox — AI-Powered Ebook Translation',
-    template: '%s | Globoox',
-  },
+  title: 'Globoox',
   description:
-    'Reading app that instantly translates ebooks into your native language with AI. Upload EPUBs and read in English, French, Spanish, German, or Russian.',
+    'Reading app that instantly translates ebooks into your native language with Al. Upload EPUBs and read in English, French, Spanish or Russian',
   metadataBase: new URL(SITE_URL),
   alternates: {
     canonical: '/',
@@ -40,7 +37,7 @@ const organizationJsonLd = {
   url: SITE_URL,
   logo: `${SITE_URL}/icon-512.png`,
   description:
-    'A global book platform where any reader can discover, read, and translate any book in their native language.',
+    'Reading app that instantly translates ebooks into your native language with Al. Upload EPUBs and read in English, French, Spanish or Russian',
   sameAs: [],
 };
 

@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 
 export type Language = 'en' | 'fr' | 'es' | 'de' | 'ru';
 export type PageLayoutMode = 'single' | 'spread';
+export type ReaderThemeId = 'light' | 'dark' | 'forest-light' | 'forest-dark';
 
 export const languageNames: Record<Language, string> = {
   en: 'English',
@@ -25,6 +26,7 @@ interface ReaderSettings {
   lineHeightScale: number;
   language: Language;
   pageLayoutMode: PageLayoutMode;
+  readerTheme: ReaderThemeId;
 }
 
 interface ReadingProgress {
@@ -56,6 +58,7 @@ interface AppState {
   setLineHeightScale: (scale: number) => void;
   setLanguage: (language: Language) => void;
   setPageLayoutMode: (mode: PageLayoutMode) => void;
+  setReaderTheme: (theme: ReaderThemeId) => void;
 
   // Per-book language preferences
   perBookLanguages: Record<string, Language>;
@@ -101,6 +104,7 @@ export const useAppStore = create<AppState>()(
         lineHeightScale: 1,
         language: 'en',
         pageLayoutMode: 'single',
+        readerTheme: 'forest-light',
       },
 
       setFontSize: (size) =>
@@ -121,6 +125,11 @@ export const useAppStore = create<AppState>()(
       setPageLayoutMode: (mode) =>
         set((state) => ({
           settings: { ...state.settings, pageLayoutMode: mode }
+        })),
+
+      setReaderTheme: (readerTheme) =>
+        set((state) => ({
+          settings: { ...state.settings, readerTheme }
         })),
 
       // Per-book language preferences

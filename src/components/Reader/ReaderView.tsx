@@ -37,6 +37,7 @@ import TranslationGlow from './TranslationGlow';
 import AppleIntelligenceGlow from './AppleIntelligenceGlow';
 import LanguageSwitch from './LanguageSwitch';
 import ContentBlockRenderer from './ContentBlockRenderer';
+import { ReaderThemeProvider } from './ReaderThemeProvider';
 import { Button } from '@/components/ui/button';
 import IOSAlertDialog from '@/components/ui/ios-alert-dialog';
 import IOSIcon from '@/components/ui/ios-icon';
@@ -702,9 +703,9 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
     const blockStructureKey = useMemo(
         () => {
             const contentSignature = getLayoutContentSignature(normalizedBlocks);
-            return `${PAGINATION_ALGO_VERSION}__${contentSignature}__${pageHeight}__${resolvedColumnWidthPx}__${settings.fontSize}__${settings.lineHeightScale}__${displayBlocksLang}`;
+            return `${PAGINATION_ALGO_VERSION}__${contentSignature}__${pageHeight}__${resolvedColumnWidthPx}__${settings.fontSize}__${settings.lineHeightScale}__${settings.readerTheme}__${displayBlocksLang}`;
         },
-        [normalizedBlocks, pageHeight, resolvedColumnWidthPx, settings.fontSize, settings.lineHeightScale, displayBlocksLang]
+        [normalizedBlocks, pageHeight, resolvedColumnWidthPx, settings.fontSize, settings.lineHeightScale, settings.readerTheme, displayBlocksLang]
     );
     const prevBlockStructureKey = useRef('');
     const lastProgressFetchAtRef = useRef<Map<string, number>>(new Map());
@@ -718,6 +719,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
     }, [bookId, currentChapter?.id, blockStructureKey]);
     const localAnchorChapterAppliedRef = useRef<string | null>(null);
     const restoredFromPaginationCacheRef = useRef(false);
+    const prevResetChapterIdRef = useRef<string>('');
 
     useEffect(() => {
         if (chaptersLoading || chapters.length === 0) return;
@@ -768,6 +770,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                 displayBlocksLang ?? activeLang,
                 settings.lineHeightScale,
                 1,
+                settings.readerTheme,
                 blockMeasureRefs.current,
                 resolvedColumnWidthPx,
                 spreadModeEnabled ? SPREAD_PAGE_SHELL_CLASS : PAGE_SHELL_CLASS,
@@ -813,7 +816,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                 repaginateTimerRef.current = null;
             }
         };
-    }, [layoutCacheReadyKey, paginationCacheKey, blockStructureKey, pageHeight, pageWidth, resolvedColumnWidthPx, normalizedBlocks, settings.fontSize, settings.lineHeightScale, displayBlocksLang, activeLang, currentChapter?.id, bookId, spreadModeEnabled]);
+    }, [layoutCacheReadyKey, paginationCacheKey, blockStructureKey, pageHeight, pageWidth, resolvedColumnWidthPx, normalizedBlocks, settings.fontSize, settings.lineHeightScale, settings.readerTheme, displayBlocksLang, activeLang, currentChapter?.id, bookId, spreadModeEnabled]);
 
     // ─── Anchor restore ──────────────────────────────────────────────────────
     // Set by language-switch handler: blockId + sentenceIndex to jump to on next page recompute
@@ -821,9 +824,21 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
     const pendingAnchorSentenceIndex = useRef<number>(0);
 
     // Reset pagination state when chapter changes — but first try to restore from cache to avoid flashing skeletons.
+    // When only blockStructureKey changes within the same chapter (e.g. translations arriving),
+    // skip the full reset to avoid a skeleton flash — the repagination effect handles the update.
     useEffect(() => {
         const chapterId = currentChapter?.id ?? '';
         if (!chapterId) return;
+
+        const isChapterChange = chapterId !== prevResetChapterIdRef.current;
+        prevResetChapterIdRef.current = chapterId;
+
+        // If the chapter hasn't changed, only the block structure changed (translations arrived).
+        // Keep current pages visible and just let the repagination effect recompute in place.
+        if (!isChapterChange) {
+            setLayoutCacheReadyKey(paginationCacheKey);
+            return;
+        }
 
         let cancelled = false;
         setLayoutCacheReadyKey('');
@@ -1747,8 +1762,9 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
 
     // ─── Render ───────────────────────────────────────────────────────────────
     return (
-        <div className="bg-background" style={{ position: 'fixed', inset: 0, overflow: 'hidden', overscrollBehavior: 'none' } as React.CSSProperties}>
-            {IS_DEV && SHOW_READER_DEBUG_OVERLAY && debugSnapshot && (
+        <ReaderThemeProvider>
+            <div className="bg-background" style={{ position: 'fixed', inset: 0, overflow: 'hidden', overscrollBehavior: 'none' } as React.CSSProperties}>
+                {IS_DEV && SHOW_READER_DEBUG_OVERLAY && debugSnapshot && (
                 <div
                     style={{
                         position: 'fixed',
@@ -1888,8 +1904,8 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                         right: 0,
                         top: 'calc(env(safe-area-inset-top) + 16px + 44px)',
                         bottom: 'calc(env(safe-area-inset-bottom) + 40px)',
-                        overflowY: allowInternalScroll ? 'auto' : 'hidden',
-                        overflowX: 'hidden',
+                        overflowY: allowInternalScroll ? 'auto' : 'visible',
+                        overflowX: allowInternalScroll ? 'hidden' : 'visible',
                         WebkitOverflowScrolling: 'touch',
                     }}
                 >
@@ -2051,5 +2067,6 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                 </Button>
             </div>
         </div>
+        </ReaderThemeProvider>
     );
 }

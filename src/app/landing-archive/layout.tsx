@@ -3,7 +3,7 @@ import './landing.css';
 
 export const metadata = {
   title: 'Globoox - The world\'s library, in your native language',
-  description: 'Instantly translate any e-book and experience stories with the nuance and depth they were meant to be read.',
+  description: 'Reading app that instantly translates ebooks into your native language with Al. Upload EPUBs and read in English, French, Spanish or Russian',
 };
 
 export default function LandingLayout({ children }: { children: ReactNode }) {

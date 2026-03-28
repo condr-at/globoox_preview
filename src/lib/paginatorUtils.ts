@@ -1,5 +1,6 @@
 import { ContentBlock, ParagraphBlock } from './api'
 import { getLineHeightMultiplier, getLineHeightStyle } from './readerTypography'
+import { READER_THEME_CONFIGS, type ReaderThemeConfig, getReaderHeadingTypography, getReaderWeightClass, type ReaderThemeId } from './readerTheme'
 
 const PAGE_HEIGHT_BUFFER_PX = 6
 const PARAGRAPH_FRAGMENT_LAST_CLASS = 'mb-2'
@@ -84,8 +85,15 @@ export function splitSentences(text: string): string[] {
   return sentences.length > 0 ? sentences : [text]
 }
 
-function applyParagraphStyles(el: HTMLElement, fontSize: number, lang: string, isLastPart: boolean, lineHeightScale: number) {
-  el.className = isLastPart ? PARAGRAPH_FRAGMENT_LAST_CLASS : PARAGRAPH_FRAGMENT_MIDDLE_CLASS
+function applyParagraphStyles(
+  el: HTMLElement,
+  fontSize: number,
+  lang: string,
+  isLastPart: boolean,
+  lineHeightScale: number,
+  bodyWeightClass: string,
+) {
+  el.className = `${isLastPart ? PARAGRAPH_FRAGMENT_LAST_CLASS : PARAGRAPH_FRAGMENT_MIDDLE_CLASS} ${bodyWeightClass}`
   if (fontSize) el.style.fontSize = `${fontSize}px`
   el.style.lineHeight = getLineHeightStyle(fontSize, lineHeightScale)
   el.setAttribute('lang', lang)
@@ -93,38 +101,25 @@ function applyParagraphStyles(el: HTMLElement, fontSize: number, lang: string, i
   el.style.setProperty('-webkit-hyphens', 'auto')
 }
 
-function getHeadingTypography(level: number): {
-  className: string
-  sizeScale: number
-  italic: boolean
-} {
-  if (level === 1) {
-    return { className: 'font-medium mb-3 mt-6', sizeScale: 1.6, italic: false }
-  }
-  if (level === 2) {
-    return { className: 'font-medium mb-2 mt-5', sizeScale: 1.35, italic: false }
-  }
-  if (level === 3) {
-    return { className: 'font-medium mb-2 mt-4', sizeScale: 1.18, italic: false }
-  }
-  if (level === 4 || level === 5) {
-    return { className: 'font-normal mb-2 mt-4', sizeScale: 1.06, italic: true }
-  }
-  return { className: 'font-normal mb-2 mt-4', sizeScale: 1.06, italic: false }
-}
-
-function createBlockElement(block: ContentBlock, fontSize: number, lang: string, lineHeightScale: number): HTMLElement {
+function createBlockElement(
+  block: ContentBlock,
+  fontSize: number,
+  lang: string,
+  lineHeightScale: number,
+  readerThemeConfig: ReaderThemeConfig,
+): HTMLElement {
+  const bodyWeightClass = getReaderWeightClass(readerThemeConfig.typography.bodyWeight)
   switch (block.type) {
     case 'paragraph': {
       const el = document.createElement('p')
-      applyParagraphStyles(el, fontSize, lang, block.isLastPart ?? true, lineHeightScale)
+      applyParagraphStyles(el, fontSize, lang, block.isLastPart ?? true, lineHeightScale, bodyWeightClass)
       el.textContent = block.text
       return el
     }
     case 'heading': {
       const normalizedLevel = Math.max(1, Math.min(6, Number(block.level) || 1))
       const tag = `h${normalizedLevel}` as 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'
-      const headingTypography = getHeadingTypography(normalizedLevel)
+      const headingTypography = getReaderHeadingTypography(normalizedLevel, readerThemeConfig)
       const el = document.createElement(tag)
       el.className = headingTypography.className
       if (fontSize) el.style.fontSize = `${fontSize * headingTypography.sizeScale}px`
@@ -134,7 +129,7 @@ function createBlockElement(block: ContentBlock, fontSize: number, lang: string,
     }
     case 'quote': {
       const el = document.createElement('blockquote')
-      el.className = 'border-l-1 border-primary pl-3 my-4 italic text-foreground/80'
+      el.className = `border-l-1 border-primary pl-3 my-4 italic text-foreground/80 ${bodyWeightClass}`
       if (fontSize) el.style.fontSize = `${fontSize}px`
       el.textContent = block.text
       return el
@@ -142,7 +137,7 @@ function createBlockElement(block: ContentBlock, fontSize: number, lang: string,
     case 'list': {
       const tag = block.ordered ? 'ol' : 'ul'
       const el = document.createElement(tag)
-      el.className = `${block.ordered ? 'list-decimal' : 'list-disc'} pl-6 ${(block.isLastPart ?? true) ? 'mb-3' : 'mb-1'} space-y-1`
+      el.className = `${block.ordered ? 'list-decimal' : 'list-disc'} pl-6 ${(block.isLastPart ?? true) ? 'mb-3' : 'mb-1'} space-y-1 ${bodyWeightClass}`
       if (fontSize) el.style.fontSize = `${fontSize}px`
       if (block.ordered && block.partIndex !== undefined) {
         el.setAttribute('start', String(block.partIndex + 1))
@@ -191,9 +186,10 @@ function createMeasuredWrapper(
   fontSize: number,
   lang: string,
   lineHeightScale: number,
+  readerThemeConfig: ReaderThemeConfig,
   measuredBlockRoots?: MeasuredBlockRoots,
 ): HTMLDivElement {
-  return cloneMeasuredWrapper(block.id, measuredBlockRoots) ?? wrapMeasuredElement(createBlockElement(block, fontSize, lang, lineHeightScale))
+  return cloneMeasuredWrapper(block.id, measuredBlockRoots) ?? wrapMeasuredElement(createBlockElement(block, fontSize, lang, lineHeightScale, readerThemeConfig))
 }
 
 function createParagraphMeasuredWrapper(
@@ -203,20 +199,21 @@ function createParagraphMeasuredWrapper(
   lang: string,
   isLastPart: boolean,
   lineHeightScale: number,
+  bodyWeightClass: string,
   measuredBlockRoots?: MeasuredBlockRoots,
 ): HTMLDivElement {
   const clone = cloneMeasuredWrapper(sourceBlockId, measuredBlockRoots)
   if (clone) {
     const paragraph = clone.querySelector('p')
     if (paragraph) {
-      applyParagraphStyles(paragraph, fontSize, lang, isLastPart, lineHeightScale)
+      applyParagraphStyles(paragraph, fontSize, lang, isLastPart, lineHeightScale, bodyWeightClass)
       paragraph.textContent = text
       return clone
     }
   }
 
   const paragraph = document.createElement('p')
-  applyParagraphStyles(paragraph, fontSize, lang, isLastPart, lineHeightScale)
+  applyParagraphStyles(paragraph, fontSize, lang, isLastPart, lineHeightScale, bodyWeightClass)
   paragraph.textContent = text
   return wrapMeasuredElement(paragraph)
 }
@@ -319,6 +316,7 @@ function measureParagraphLinesInProbe(
   lang: string,
   isLastPart: boolean,
   lineHeightScale: number,
+  bodyWeightClass: string,
   measuredBlockRoots?: MeasuredBlockRoots,
 ): number {
   const wrapper = createParagraphMeasuredWrapper(
@@ -328,6 +326,7 @@ function measureParagraphLinesInProbe(
     lang,
     isLastPart,
     lineHeightScale,
+    bodyWeightClass,
     measuredBlockRoots,
   )
   probe.appendChild(wrapper)
@@ -345,6 +344,7 @@ function violatesParagraphWidowOrphan(
   fontSize: number,
   lang: string,
   lineHeightScale: number,
+  bodyWeightClass: string,
   measuredBlockRoots?: MeasuredBlockRoots,
 ): boolean {
   if (!restText.trim()) return false
@@ -356,6 +356,7 @@ function violatesParagraphWidowOrphan(
     lang,
     false,
     lineHeightScale,
+    bodyWeightClass,
     measuredBlockRoots,
   )
   const restLines = measureParagraphLinesInProbe(
@@ -366,6 +367,7 @@ function violatesParagraphWidowOrphan(
     lang,
     false,
     lineHeightScale,
+    bodyWeightClass,
     measuredBlockRoots,
   )
   return firstLines < MIN_PARAGRAPH_LINES_AT_PAGE_BOTTOM || restLines < MIN_PARAGRAPH_LINES_AT_PAGE_TOP
@@ -379,6 +381,7 @@ function fitParagraphByDom(
   lang: string,
   lineHeightScale: number,
   sourceBlockId: string,
+  bodyWeightClass: string,
   measuredBlockRoots?: MeasuredBlockRoots,
 ): SplitResult {
   const normalizedText = text.trim()
@@ -386,7 +389,7 @@ function fitParagraphByDom(
     return { firstPart: '', restPart: '' }
   }
 
-  const wrapper = createParagraphMeasuredWrapper(sourceBlockId, '', fontSize, lang, false, lineHeightScale, measuredBlockRoots)
+  const wrapper = createParagraphMeasuredWrapper(sourceBlockId, '', fontSize, lang, false, lineHeightScale, bodyWeightClass, measuredBlockRoots)
   const candidate = wrapper.querySelector('p') as HTMLParagraphElement | null
   if (!candidate) {
     return { firstPart: '', restPart: normalizedText }
@@ -394,7 +397,7 @@ function fitParagraphByDom(
   probe.appendChild(wrapper)
 
   const fitsText = (candidateText: string, isLastPart = false): boolean => {
-    candidate.className = isLastPart ? PARAGRAPH_FRAGMENT_LAST_CLASS : PARAGRAPH_FRAGMENT_MIDDLE_CLASS
+    candidate.className = `${isLastPart ? PARAGRAPH_FRAGMENT_LAST_CLASS : PARAGRAPH_FRAGMENT_MIDDLE_CLASS} ${bodyWeightClass}`
     candidate.textContent = candidateText
     return fitsProbe(probe, effectiveHeight)
   }
@@ -452,10 +455,12 @@ function computePagesDom(
   lang: string,
   lineHeightScale: number,
   minBlocksPerPage: number,
+  readerThemeConfig: ReaderThemeConfig,
   measuredBlockRoots?: MeasuredBlockRoots,
   pageWidthPx?: number,
   pageShellClassName?: string,
 ): ComputedPagesResult {
+  const bodyWeightClass = getReaderWeightClass(readerThemeConfig.typography.bodyWeight)
   const effectiveHeight = Math.max(1, pageHeight - PAGE_HEIGHT_BUFFER_PX)
   const pages: string[][] = []
   const finalBlocks: ContentBlock[] = []
@@ -509,7 +514,7 @@ function computePagesDom(
         nextBlock.type === 'heading' &&
         nextBlock.level === 2
       ) {
-        const h1Node = createMeasuredWrapper(block, fontSize, lang, lineHeightScale, measuredBlockRoots)
+        const h1Node = createMeasuredWrapper(block, fontSize, lang, lineHeightScale, readerThemeConfig, measuredBlockRoots)
         probe.appendChild(h1Node)
         if (!fitsProbe(probe, effectiveHeight)) {
           probe.removeChild(h1Node)
@@ -532,7 +537,7 @@ function computePagesDom(
           const runNodes: HTMLDivElement[] = []
           let runFits = true
           for (let j = i; j <= runEnd; j++) {
-            const headingNode = createMeasuredWrapper(blocks[j], fontSize, lang, lineHeightScale, measuredBlockRoots)
+            const headingNode = createMeasuredWrapper(blocks[j], fontSize, lang, lineHeightScale, readerThemeConfig, measuredBlockRoots)
             probe.appendChild(headingNode)
             runNodes.push(headingNode)
             if (!fitsProbe(probe, effectiveHeight)) {
@@ -578,7 +583,7 @@ function computePagesDom(
       }
 
       if (block.type !== 'paragraph') {
-        const node = createMeasuredWrapper(block, fontSize, lang, lineHeightScale, measuredBlockRoots)
+        const node = createMeasuredWrapper(block, fontSize, lang, lineHeightScale, readerThemeConfig, measuredBlockRoots)
         probe.appendChild(node)
         if (fitsProbe(probe, effectiveHeight) || currentPage.length < minBlocksPerPage) {
           // List lookahead: avoid starting list at page bottom with a single list item.
@@ -590,7 +595,7 @@ function computePagesDom(
             const nextBlock = blocks[i + 1]
             const nextSameList = !!nextBlock && nextBlock.type === 'list' && (nextBlock.parentId ?? nextBlock.id) === blockParentId
             if (startsNewListOnPage && nextSameList && MIN_LIST_ITEMS_AT_PAGE_BOTTOM > 1) {
-              const nextNode = createMeasuredWrapper(nextBlock!, fontSize, lang, lineHeightScale, measuredBlockRoots)
+              const nextNode = createMeasuredWrapper(nextBlock!, fontSize, lang, lineHeightScale, readerThemeConfig, measuredBlockRoots)
               probe.appendChild(nextNode)
               const nextFits = fitsProbe(probe, effectiveHeight)
               probe.removeChild(nextNode)
@@ -612,6 +617,7 @@ function computePagesDom(
                 fontSize,
                 lang,
                 lineHeightScale,
+                readerThemeConfig,
                 measuredBlockRoots,
               )
               probe.appendChild(nextHeadingNode)
@@ -685,6 +691,7 @@ function computePagesDom(
           lang,
           block.isLastPart ?? true,
           lineHeightScale,
+          bodyWeightClass,
           measuredBlockRoots,
         )
         probe.appendChild(wholeNode)
@@ -697,7 +704,7 @@ function computePagesDom(
             PARAGRAPH_KEEP_WITH_NEXT_TYPES.has(nextBlock.type) &&
             currentPage.length >= minBlocksPerPage
           if (shouldKeepWithNext) {
-            const nextNode = createMeasuredWrapper(nextBlock!, fontSize, lang, lineHeightScale, measuredBlockRoots)
+            const nextNode = createMeasuredWrapper(nextBlock!, fontSize, lang, lineHeightScale, readerThemeConfig, measuredBlockRoots)
             probe.appendChild(nextNode)
             const nextFits = fitsProbe(probe, effectiveHeight)
             probe.removeChild(nextNode)
@@ -738,6 +745,7 @@ function computePagesDom(
           lang,
           lineHeightScale,
           block.id,
+          bodyWeightClass,
           measuredBlockRoots,
         )
         const forcedFirstWord = !split.firstPart.trim()
@@ -769,6 +777,7 @@ function computePagesDom(
             fontSize,
             lang,
             lineHeightScale,
+            bodyWeightClass,
             measuredBlockRoots,
           )
         ) {
@@ -811,6 +820,7 @@ function computePagesDom(
           lang,
           fragmentBlock.isLastPart ?? false,
           lineHeightScale,
+          bodyWeightClass,
           measuredBlockRoots,
         )
         probe.appendChild(fragmentNode)
@@ -849,9 +859,10 @@ function measureParagraphFragmentHeight(
   lineHeightScale: number,
   containerRef: HTMLElement,
   isLastPart: boolean,
+  bodyWeightClass: string,
 ): number {
   const temp = document.createElement('p')
-  applyParagraphStyles(temp, fontSize, lang, isLastPart, lineHeightScale)
+  applyParagraphStyles(temp, fontSize, lang, isLastPart, lineHeightScale, bodyWeightClass)
   temp.style.position = 'absolute'
   temp.style.visibility = 'hidden'
   temp.style.width = '100%'
@@ -868,6 +879,7 @@ function splitParagraphByHeight(
   lang: string,
   lineHeightScale: number,
   containerRef: HTMLElement,
+  bodyWeightClass: string,
 ): SplitResult {
   const words = text.split(/\s+/)
   if (words.length <= 1) {
@@ -875,7 +887,7 @@ function splitParagraphByHeight(
   }
 
   const temp = document.createElement('p')
-  applyParagraphStyles(temp, fontSize, lang, false, lineHeightScale)
+  applyParagraphStyles(temp, fontSize, lang, false, lineHeightScale, bodyWeightClass)
   temp.style.position = 'absolute'
   temp.style.visibility = 'hidden'
   temp.style.width = '100%'
@@ -888,7 +900,7 @@ function splitParagraphByHeight(
   while (low <= high) {
     const mid = Math.floor((low + high) / 2)
     const testText = words.slice(0, mid).join(' ')
-    temp.className = mid === words.length ? PARAGRAPH_FRAGMENT_LAST_CLASS : PARAGRAPH_FRAGMENT_MIDDLE_CLASS
+    temp.className = `${mid === words.length ? PARAGRAPH_FRAGMENT_LAST_CLASS : PARAGRAPH_FRAGMENT_MIDDLE_CLASS} ${bodyWeightClass}`
     const h = measureTextHeight(testText, temp)
 
     if (h <= availableHeight) {
@@ -917,7 +929,9 @@ function computePagesFallback(
   lang: string,
   lineHeightScale: number,
   minBlocksPerPage: number,
+  readerThemeConfig: ReaderThemeConfig,
 ): ComputedPagesResult {
+  const bodyWeightClass = getReaderWeightClass(readerThemeConfig.typography.bodyWeight)
   const effectiveHeight = containerRef ? Math.max(1, pageHeight - PAGE_HEIGHT_BUFFER_PX) : pageHeight
   const pages: string[][] = []
   let currentPage: string[] = []
@@ -1068,6 +1082,7 @@ function computePagesFallback(
           lang,
           lineHeightScale,
           containerRef,
+          bodyWeightClass,
         )
 
         if (!split.firstPart.trim() && currentPage.length > 0) {
@@ -1089,8 +1104,8 @@ function computePagesFallback(
         }
 
         if (currentPage.length > 0 && restText) {
-          const firstHeight = measureParagraphFragmentHeight(firstText, fontSize, lang, lineHeightScale, containerRef, false)
-          const restHeight = measureParagraphFragmentHeight(restText, fontSize, lang, lineHeightScale, containerRef, false)
+          const firstHeight = measureParagraphFragmentHeight(firstText, fontSize, lang, lineHeightScale, containerRef, false, bodyWeightClass)
+          const restHeight = measureParagraphFragmentHeight(restText, fontSize, lang, lineHeightScale, containerRef, false, bodyWeightClass)
           const firstLines = estimateLinesByHeight(firstHeight)
           const restLines = estimateLinesByHeight(restHeight)
           if (
@@ -1141,7 +1156,7 @@ function computePagesFallback(
           currentPage = []
           currentHeight = 0
         } else {
-          currentHeight += measureParagraphFragmentHeight(firstText, fontSize, lang, lineHeightScale, containerRef, isLastPart)
+          currentHeight += measureParagraphFragmentHeight(firstText, fontSize, lang, lineHeightScale, containerRef, isLastPart, bodyWeightClass)
         }
 
         remainingText = restText
@@ -1171,10 +1186,12 @@ export function computePages(
   lang: string,
   lineHeightScale = 1,
   minBlocksPerPage = 1,
+  readerThemeId: ReaderThemeId = 'light',
   measuredBlockRoots?: MeasuredBlockRoots,
   pageWidthPx?: number,
   pageShellClassName?: string,
 ): ComputedPagesResult {
+  const readerThemeConfig = READER_THEME_CONFIGS[readerThemeId] ?? READER_THEME_CONFIGS.light
   if (blocks.length === 0 || pageHeight <= 0) {
     return { pages: [], finalBlocks: [], fragmentMap: new Map() }
   }
@@ -1188,13 +1205,14 @@ export function computePages(
       lang,
       lineHeightScale,
       minBlocksPerPage,
+      readerThemeConfig,
       measuredBlockRoots,
       pageWidthPx,
       pageShellClassName,
     )
   }
 
-  return computePagesFallback(blocks, blockHeights, pageHeight, containerRef, fontSize, lang, lineHeightScale, minBlocksPerPage)
+  return computePagesFallback(blocks, blockHeights, pageHeight, containerRef, fontSize, lang, lineHeightScale, minBlocksPerPage, readerThemeConfig)
 }
 
 export function findPageForBlockAndSentence(

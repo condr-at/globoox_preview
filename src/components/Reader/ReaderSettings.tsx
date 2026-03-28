@@ -2,19 +2,19 @@
 
 import { useState, useRef } from 'react';
 import { Settings, Type, Check } from 'lucide-react';
-import { useAppTheme } from '@/lib/hooks/useAppTheme';
 import IOSBottomDrawer from '@/components/ui/ios-bottom-drawer';
 import IOSBottomDrawerHeader from '@/components/ui/ios-bottom-drawer-header';
 import { uiIconTriggerButton } from '@/components/ui/button-styles';
 import { useAppStore } from '@/lib/store';
 import { trackFontSizeChanged } from '@/lib/posthog';
 import { APP_THEME_PALETTE_OPTIONS } from '@/lib/theme-options';
+import { READER_THEME_CONFIGS } from '@/lib/readerTheme';
 
 const THEMES = [
-    { id: 'light', label: `${APP_THEME_PALETTE_OPTIONS.find((p) => p.id === 'default')?.label ?? 'Default'} Light`, bg: '#F6F6FA', accent: '#007AFF', text: '#000000' },
-    { id: 'dark', label: `${APP_THEME_PALETTE_OPTIONS.find((p) => p.id === 'default')?.label ?? 'Default'} Dark`, bg: '#09090B', accent: '#0A84FF', text: '#FFFFFF' },
-    { id: 'forest-light', label: `${APP_THEME_PALETTE_OPTIONS.find((p) => p.id === 'globoox')?.label ?? 'Globoox'} Light`, bg: '#F4F0E8', accent: '#C05A3A', text: '#2C3B2D' },
-    { id: 'forest-dark', label: `${APP_THEME_PALETTE_OPTIONS.find((p) => p.id === 'globoox')?.label ?? 'Globoox'} Dark`, bg: '#1A2419', accent: '#E8B89A', text: '#F4F0E8' },
+    { id: 'light', label: `${APP_THEME_PALETTE_OPTIONS.find((p) => p.id === 'default')?.label ?? 'Default'} Light` },
+    { id: 'dark', label: `${APP_THEME_PALETTE_OPTIONS.find((p) => p.id === 'default')?.label ?? 'Default'} Dark` },
+    { id: 'forest-light', label: `${APP_THEME_PALETTE_OPTIONS.find((p) => p.id === 'globoox')?.label ?? 'Globoox'} Light` },
+    { id: 'forest-dark', label: `${APP_THEME_PALETTE_OPTIONS.find((p) => p.id === 'globoox')?.label ?? 'Globoox'} Dark` },
 ] as const;
 
 interface ReaderSettingsProps {
@@ -31,8 +31,7 @@ export default function ReaderSettings({
     const isOpen = externalOpen !== undefined ? externalOpen : internalOpen;
     const setIsOpen = setExternalOpen !== undefined ? setExternalOpen : setInternalOpen;
 
-    const { theme, setAppTheme } = useAppTheme();
-    const { settings, setFontSize, setPageLayoutMode } = useAppStore();
+    const { settings, setFontSize, setPageLayoutMode, setReaderTheme } = useAppStore();
     const fontSizeBeforeRef = useRef(settings.fontSize);
     const fontSizeSliderProgress = `${((settings.fontSize - 14) / (32 - 14)) * 100}%`;
     const sliderEdgeBoxClassName = 'flex h-5 w-5 shrink-0 items-center justify-center';
@@ -68,14 +67,12 @@ export default function ReaderSettings({
                         <p className="text-[15px] text-muted-foreground mb-[12px]">Theme</p>
                         <div className="grid grid-cols-4 gap-[8px]">
                             {THEMES.map((t) => {
-                                const isActive = theme === t.id;
+                                const isActive = settings.readerTheme === t.id;
                                 return (
                                     <button
                                         key={t.id}
                                         onClick={() => {
-                                            const palette = t.id.startsWith('forest') ? 'globoox' : 'default';
-                                            const mode = t.id.endsWith('dark') ? 'dark' : 'light';
-                                            setAppTheme(mode, palette);
+                                            setReaderTheme(t.id);
                                         }}
                                         className="cursor-pointer flex flex-col items-center gap-[6px] transition-opacity hover:opacity-85 active:opacity-70"
                                         aria-label={t.label}
@@ -84,19 +81,19 @@ export default function ReaderSettings({
                                         <div
                                             className="relative w-full aspect-square rounded-[12px] border-[2px] transition-colors"
                                             style={{
-                                                background: t.bg,
-                                                borderColor: isActive ? t.accent : 'transparent',
+                                                background: READER_THEME_CONFIGS[t.id].colors.bg,
+                                                borderColor: isActive ? READER_THEME_CONFIGS[t.id].colors.accent : 'transparent',
                                                 boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
                                             }}
                                         >
                                             {/* Mini preview dot */}
                                             <span
                                                 className="absolute top-[6px] left-[6px] w-[8px] h-[8px] rounded-full"
-                                                style={{ background: t.accent }}
+                                                style={{ background: READER_THEME_CONFIGS[t.id].colors.accent }}
                                             />
                                             {isActive && (
-                                                <span className="absolute bottom-[4px] right-[4px] flex items-center justify-center w-[16px] h-[16px] rounded-full" style={{ background: t.accent }}>
-                                                    <Check className="w-[10px] h-[10px]" style={{ color: t.bg }} strokeWidth={2} />
+                                                <span className="absolute bottom-[4px] right-[4px] flex items-center justify-center w-[16px] h-[16px] rounded-full" style={{ background: READER_THEME_CONFIGS[t.id].colors.accent }}>
+                                                    <Check className="w-[10px] h-[10px]" style={{ color: READER_THEME_CONFIGS[t.id].colors.bg }} strokeWidth={2} />
                                                 </span>
                                             )}
                                         </div>

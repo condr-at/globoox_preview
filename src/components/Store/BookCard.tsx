@@ -235,7 +235,7 @@ function getContainFrameStyle(imageAspect: number | null): CSSProperties {
   const containerAspect = 2 / 3;
 
   if (!imageAspect || imageAspect <= 0) {
-    return { width: '66.667%', height: '100%' };
+    return { width: '100%', height: '100%' };
   }
 
   if (imageAspect > containerAspect) {
@@ -271,21 +271,39 @@ export default function BookCard({
   onOpen,
 }: BookCardProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [canHover, setCanHover] = useState(false);
+  const [canHover, setCanHover] = useState<boolean | null>(null);
   const [isCardHovered, setIsCardHovered] = useState(false);
   const [isCardFocused, setIsCardFocused] = useState(false);
   const { isAuthenticated } = useAuth();
   const hasActions = isAuthenticated && Boolean(onHide || onDelete);
   const sourceCover = (cover ?? '').trim();
-  const displayCover = useCompressedCover(sourceCover);
+  const displayCover = sourceCover;
   const [failedCoverSrc, setFailedCoverSrc] = useState<string | null>(null);
   const hasValidCover = Boolean(displayCover) && failedCoverSrc !== displayCover;
-  const coverAccent = useCoverAccent(displayCover);
-  const { aspect: coverAspect, isReady: isAspectReady } = useImageAspect(hasValidCover ? displayCover : '');
+  const coverAspect = useMemo(() => {
+    if (!hasValidCover || typeof window === 'undefined') return null;
+    try {
+      const key = `globoox:cover-aspect:${hashString(displayCover)}`;
+      const raw = window.localStorage.getItem(key);
+      const parsed = raw ? Number(raw) : Number.NaN;
+      return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+    } catch {
+      return null;
+    }
+  }, [displayCover, hasValidCover]);
+  const coverAccent = useMemo(() => {
+    const hash = hashString(`${id}-${title}`);
+    const r = 110 + (hash % 90);
+    const g = 100 + ((hash >> 3) % 90);
+    const b = 95 + ((hash >> 6) % 90);
+    return rgbToCss(r, g, b);
+  }, [id, title]);
   const coverFrameStyle = getContainFrameStyle(coverAspect);
-  const effectiveCoverFrameStyle = isAspectReady ? coverFrameStyle : { width: '100%', height: '100%' };
-  const showMenuButton = !canHover || isCardHovered || isCardFocused || isMenuOpen;
-  const isDarkTheme = useThemeIsDark();
+  const effectiveCoverFrameStyle = coverFrameStyle;
+  const showMenuButton = canHover === null
+    ? false
+    : (!canHover || isCardHovered || isCardFocused || isMenuOpen);
+  const isDarkTheme = false;
   const fallbackColor = useMemo(() => {
     const hash = hashString(`${id}-${title}`);
     const hue = hash % 360;
@@ -372,7 +390,7 @@ export default function BookCard({
                   style={{ background: ambientShadowColor }}
                 />
                 <div className="relative h-full w-full overflow-hidden rounded-[3px]">
-                  {hasValidCover && isAspectReady ? (
+                  {hasValidCover ? (
                     <Image
                       src={displayCover}
                       alt={title}
@@ -381,8 +399,6 @@ export default function BookCard({
                       sizes="(max-width: 640px) 45vw, 180px"
                       onError={() => setFailedCoverSrc(displayCover)}
                     />
-                  ) : hasValidCover ? (
-                    <Skeleton className="h-full w-full rounded-[3px] bg-muted animate-pulse" />
                   ) : (
                     <div aria-hidden="true" className="h-full w-full" style={{ backgroundColor: fallbackColor }} />
                   )}

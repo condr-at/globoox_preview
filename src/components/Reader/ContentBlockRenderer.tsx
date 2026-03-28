@@ -1,5 +1,7 @@
 import { ContentBlock } from '@/lib/api'
 import { getLineHeightStyle } from '@/lib/readerTypography'
+import { useReaderTheme } from '@/lib/hooks/useReaderTheme'
+import { getReaderHeadingTypography, getReaderWeightClass, type ReaderThemeConfig } from '@/lib/readerTheme'
 
 interface ContentBlockRendererProps {
   block: ContentBlock
@@ -13,24 +15,15 @@ interface ContentBlockRendererProps {
   lineHeightScale?: number
 }
 
-function getHeadingTypography(level: number): {
+function getHeadingTypography(
+  level: number,
+  readerTheme: ReaderThemeConfig,
+): {
   className: string
   sizeScale: number
   italic: boolean
 } {
-  if (level === 1) {
-    return { className: 'font-medium mb-3 mt-6', sizeScale: 1.6, italic: false }
-  }
-  if (level === 2) {
-    return { className: 'font-medium mb-2 mt-5', sizeScale: 1.35, italic: false }
-  }
-  if (level === 3) {
-    return { className: 'font-medium mb-2 mt-4', sizeScale: 1.18, italic: false }
-  }
-  if (level === 4 || level === 5) {
-    return { className: 'font-normal mb-2 mt-4', sizeScale: 1.06, italic: true }
-  }
-  return { className: 'font-normal mb-2 mt-4', sizeScale: 1.06, italic: false }
+  return getReaderHeadingTypography(level, readerTheme)
 }
 
 // Wrapper component for pending translation overlay
@@ -74,9 +67,10 @@ export default function ContentBlockRenderer({
   imageMaxHeight,
   lineHeightScale = 1,
 }: ContentBlockRendererProps) {
+  const readerTheme = useReaderTheme()
   const style = fontSize ? { fontSize: `${fontSize}px` } : undefined
   const textStyle = fontSize
-    ? { ...style, lineHeight: getLineHeightStyle(fontSize, lineHeightScale) }
+    ? { ...style, lineHeight: getLineHeightStyle(fontSize, lineHeightScale * readerTheme.typography.lineHeightScale) }
     : style
   const resolvedImageMaxHeight = imageMaxHeight ? Math.max(160, imageMaxHeight - 24) : undefined
 
@@ -119,7 +113,7 @@ export default function ContentBlockRenderer({
   if (block.type === 'heading') {
     const normalizedLevel = Math.max(1, Math.min(6, Number(block.level) || 1))
     const Tag = `h${normalizedLevel}` as 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'
-    const headingTypography = getHeadingTypography(normalizedLevel)
+    const headingTypography = getHeadingTypography(normalizedLevel, readerTheme)
     const headingStyle = fontSize
       ? { fontSize: `${fontSize * headingTypography.sizeScale}px`, fontStyle: headingTypography.italic ? 'italic' : 'normal' as const }
       : { fontStyle: headingTypography.italic ? 'italic' : 'normal' as const }
@@ -133,10 +127,11 @@ export default function ContentBlockRenderer({
   if (block.type === 'paragraph') {
     const isLast = block.isLastPart ?? true;
     const mbClass = isLast ? 'mb-2' : 'mb-0';
+    const bodyWeightClass = getReaderWeightClass(readerTheme.typography.bodyWeight)
     return (
       <PendingWrapper isPending={isPending} showLabel={showTranslatingLabel} pendingLabel={pendingLabel}>
         <p
-          className={mbClass}
+          className={`${mbClass} ${bodyWeightClass}`}
           style={{ ...textStyle, hyphens: 'auto', WebkitHyphens: 'auto' }}
         >
           {block.text}
@@ -146,9 +141,10 @@ export default function ContentBlockRenderer({
   }
 
   if (block.type === 'quote') {
+    const bodyWeightClass = getReaderWeightClass(readerTheme.typography.bodyWeight)
     return (
       <PendingWrapper isPending={isPending} showLabel={showTranslatingLabel} pendingLabel={pendingLabel}>
-        <blockquote className="border-l-1 border-primary pl-3 my-4 italic text-foreground/80" style={style}>
+        <blockquote className={`border-l-1 border-primary pl-3 my-4 italic text-foreground/80 ${bodyWeightClass}`} style={style}>
           {block.text}
         </blockquote>
       </PendingWrapper>
@@ -160,11 +156,12 @@ export default function ContentBlockRenderer({
     const listClass = block.ordered ? 'list-decimal' : 'list-disc'
     const isLast = block.isLastPart ?? true;
     const mbClass = isLast ? 'mb-3' : 'mb-1';
+    const bodyWeightClass = getReaderWeightClass(readerTheme.typography.bodyWeight)
     const startProp = block.ordered && block.partIndex !== undefined ? block.partIndex + 1 : undefined;
 
     return (
       <PendingWrapper isPending={isPending} showLabel={showTranslatingLabel} pendingLabel={pendingLabel}>
-        <Tag className={`${listClass} pl-6 ${mbClass} space-y-1`} style={style} start={startProp}>
+        <Tag className={`${listClass} pl-6 ${mbClass} space-y-1 ${bodyWeightClass}`} style={style} start={startProp}>
           {block.items.map((item, i) => (
             <li key={i} style={{ ...textStyle, hyphens: 'auto', WebkitHyphens: 'auto' }}>{item}</li>
           ))}
