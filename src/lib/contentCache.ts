@@ -204,6 +204,18 @@ interface CachedBooksList {
   fetchedAt: number
 }
 
+export interface CachedLibraryViewSnapshot {
+  key: CacheKey
+  scope: string
+  view: 'recently_opened'
+  order: string[]
+  effectiveLastReadByBookId: Record<string, string | null>
+  computedAt: number
+  fetchedAt: number
+}
+
+const libraryViewSnapshotMemory = new Map<string, CachedLibraryViewSnapshot>()
+
 interface CachedBookMeta {
   key: CacheKey
   scope: string
@@ -264,6 +276,83 @@ export interface CachedChapterLayoutEntry {
   fetchedAt: number
 }
 
+const MAX_BOOKS_LIST_ENTRIES = 200
+const MAX_BOOK_META_ENTRIES = 2000
+const MAX_READING_POSITION_ENTRIES = 4000
+const MAX_CHAPTER_LAYOUT_ENTRIES = 300
+
+async function pruneStoreByFetchedAt(
+  storeName: string,
+  maxEntries: number,
+  filter?: (value: unknown) => boolean,
+): Promise<void> {
+  try {
+    const entries: Array<{ key: IDBValidKey; value: unknown }> = []
+    const db = await openDb()
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(storeName, 'readwrite')
+      const store = tx.objectStore(storeName)
+      const index = store.indexNames.contains('by_fetchedAt')
+        ? store.index('by_fetchedAt')
+        : store.index('by_updatedAt')
+      const req = index.openCursor()
+
+      req.onsuccess = () => {
+        const cursor = req.result as IDBCursorWithValue | null
+        if (!cursor) return
+        entries.push({ key: cursor.primaryKey, value: cursor.value })
+        cursor.continue()
+      }
+      req.onerror = () => reject(req.error ?? new Error('IndexedDB cursor failed'))
+
+      tx.oncomplete = () => {
+        db.close()
+        resolve()
+      }
+      tx.onerror = () => {
+        db.close()
+        reject(tx.error ?? new Error('IndexedDB transaction failed'))
+      }
+      tx.onabort = () => {
+        db.close()
+        reject(tx.error ?? new Error('IndexedDB transaction aborted'))
+      }
+    })
+
+    if (entries.length <= maxEntries) {
+      return
+    }
+
+    const filtered = filter ? entries.filter((entry) => filter(entry.value)) : entries
+    if (filtered.length <= maxEntries) {
+      return
+    }
+    const toDelete = filtered.length - maxEntries
+    const keysToDelete = filtered.slice(0, toDelete).map((entry) => entry.key)
+
+    const deleteDb = await openDb()
+    await new Promise<void>((resolve, reject) => {
+      const tx = deleteDb.transaction(storeName, 'readwrite')
+      const store = tx.objectStore(storeName)
+      keysToDelete.forEach((key) => store.delete(key))
+      tx.oncomplete = () => {
+        deleteDb.close()
+        resolve()
+      }
+      tx.onerror = () => {
+        deleteDb.close()
+        reject(tx.error ?? new Error('IndexedDB transaction failed'))
+      }
+      tx.onabort = () => {
+        deleteDb.close()
+        reject(tx.error ?? new Error('IndexedDB transaction aborted'))
+      }
+    })
+  } catch {
+    // best-effort cache pruning
+  }
+}
+
 export async function getCachedBooksList(scope: string, status = 'active'): Promise<CachedBooksList | null> {
   try {
     const key = makeScopedKey(scope, status)
@@ -283,6 +372,54 @@ export async function setCachedBooksList(scope: string, status: string, books: A
     fetchedAt: Date.now(),
   }
   await withStore(STORE_BOOKS_LIST, 'readwrite', (store) => store.put(entry))
+  void pruneStoreByFetchedAt(STORE_BOOKS_LIST, MAX_BOOKS_LIST_ENTRIES)
+}
+
+export async function getCachedLibraryViewSnapshot(
+  scope: string,
+  view: 'recently_opened',
+): Promise<CachedLibraryViewSnapshot | null> {
+  try {
+    const key = makeScopedKey(scope, '__library_view__', view)
+    const memory = libraryViewSnapshotMemory.get(key)
+    if (memory) return memory
+    const entry = await withStore<CachedLibraryViewSnapshot | undefined>(STORE_BOOKS_LIST, 'readonly', (store) => store.get(key))
+    if (entry) libraryViewSnapshotMemory.set(key, entry)
+    return entry ?? null
+  } catch {
+    return null
+  }
+}
+
+export function getCachedLibraryViewSnapshotSync(
+  scope: string,
+  view: 'recently_opened',
+): CachedLibraryViewSnapshot | null {
+  const key = makeScopedKey(scope, '__library_view__', view)
+  return libraryViewSnapshotMemory.get(key) ?? null
+}
+
+export async function setCachedLibraryViewSnapshot(
+  scope: string,
+  view: 'recently_opened',
+  payload: { order: string[]; effectiveLastReadByBookId: Record<string, string | null>; computedAt?: number },
+): Promise<void> {
+  const entry: CachedLibraryViewSnapshot = {
+    key: makeScopedKey(scope, '__library_view__', view),
+    scope,
+    view,
+    order: payload.order,
+    effectiveLastReadByBookId: payload.effectiveLastReadByBookId,
+    computedAt: payload.computedAt ?? Date.now(),
+    fetchedAt: Date.now(),
+  }
+  libraryViewSnapshotMemory.set(entry.key, entry)
+  await withStore(STORE_BOOKS_LIST, 'readwrite', (store) => store.put(entry))
+  void pruneStoreByFetchedAt(
+    STORE_BOOKS_LIST,
+    MAX_BOOKS_LIST_ENTRIES,
+    (value) => typeof value === 'object' && value !== null && 'scope' in (value as Record<string, unknown>) && (value as { scope?: string }).scope === scope,
+  )
 }
 
 export async function clearCachedBooksList(scope?: string): Promise<void> {
@@ -327,6 +464,7 @@ export async function setCachedBookMeta(scope: string, book: ApiBook): Promise<v
     fetchedAt: Date.now(),
   }
   await withStore(STORE_BOOK_META, 'readwrite', (store) => store.put(entry))
+  void pruneStoreByFetchedAt(STORE_BOOK_META, MAX_BOOK_META_ENTRIES)
 }
 
 export async function clearCachedBookMeta(scope?: string): Promise<void> {
@@ -386,6 +524,7 @@ export async function setCachedReadingPosition(scope: string, bookId: string, en
     fetchedAt: Date.now(),
   }
   await withStore(STORE_READING_POSITIONS, 'readwrite', (store) => store.put(full))
+  void pruneStoreByFetchedAt(STORE_READING_POSITIONS, MAX_READING_POSITION_ENTRIES)
 }
 
 export async function touchCachedLastRead(scope: string, bookId: string, iso: string): Promise<void> {
@@ -567,6 +706,7 @@ export async function setCachedChapterLayout(entry: Omit<CachedChapterLayoutEntr
     fetchedAt: Date.now(),
   }
   await withStore(STORE_CHAPTER_LAYOUT, 'readwrite', (store) => store.put(fullEntry))
+  void pruneStoreByFetchedAt(STORE_CHAPTER_LAYOUT, MAX_CHAPTER_LAYOUT_ENTRIES)
 }
 
 export async function clearCachedChapterLayouts(bookId?: string, chapterId?: string): Promise<void> {
