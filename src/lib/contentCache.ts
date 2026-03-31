@@ -280,6 +280,21 @@ const MAX_BOOKS_LIST_ENTRIES = 200
 const MAX_BOOK_META_ENTRIES = 2000
 const MAX_READING_POSITION_ENTRIES = 4000
 const MAX_CHAPTER_LAYOUT_ENTRIES = 300
+const DEBUG_CACHE_WRITES = process.env.NODE_ENV !== 'production'
+
+function safeStringify(value: unknown): string {
+  try {
+    return JSON.stringify(value)
+  } catch {
+    return ''
+  }
+}
+
+function debugCacheWrite(store: string, key: string, changed: boolean, reason: string) {
+  if (!DEBUG_CACHE_WRITES) return
+  // eslint-disable-next-line no-console
+  console.log(`[cache:${store}] ${changed ? 'write' : 'skip'} key=${key} reason=${reason}`)
+}
 
 async function pruneStoreByFetchedAt(
   storeName: string,
@@ -364,14 +379,22 @@ export async function getCachedBooksList(scope: string, status = 'active'): Prom
 }
 
 export async function setCachedBooksList(scope: string, status: string, books: ApiBook[]): Promise<void> {
+  const key = makeScopedKey(scope, status)
   const entry: CachedBooksList = {
-    key: makeScopedKey(scope, status),
+    key,
     scope,
     status,
     books,
     fetchedAt: Date.now(),
   }
+  const existing = await getCachedBooksList(scope, status)
+  const changed = !existing || safeStringify(existing.books) !== safeStringify(books)
+  if (!changed) {
+    debugCacheWrite(STORE_BOOKS_LIST, key, false, 'books_list_unchanged')
+    return
+  }
   await withStore(STORE_BOOKS_LIST, 'readwrite', (store) => store.put(entry))
+  debugCacheWrite(STORE_BOOKS_LIST, key, true, 'books_list_changed')
   void pruneStoreByFetchedAt(STORE_BOOKS_LIST, MAX_BOOKS_LIST_ENTRIES)
 }
 
@@ -404,8 +427,17 @@ export async function setCachedLibraryViewSnapshot(
   view: 'recently_opened',
   payload: { order: string[]; effectiveLastReadByBookId: Record<string, string | null>; computedAt?: number },
 ): Promise<void> {
+  const key = makeScopedKey(scope, '__library_view__', view)
+  const existing = await getCachedLibraryViewSnapshot(scope, view)
+  const changed = !existing
+    || !safeStringify(existing.order) || safeStringify(existing.order) !== safeStringify(payload.order)
+    || safeStringify(existing.effectiveLastReadByBookId) !== safeStringify(payload.effectiveLastReadByBookId)
+  if (!changed) {
+    debugCacheWrite(STORE_BOOKS_LIST, key, false, 'library_view_unchanged')
+    return
+  }
   const entry: CachedLibraryViewSnapshot = {
-    key: makeScopedKey(scope, '__library_view__', view),
+    key,
     scope,
     view,
     order: payload.order,
@@ -415,6 +447,7 @@ export async function setCachedLibraryViewSnapshot(
   }
   libraryViewSnapshotMemory.set(entry.key, entry)
   await withStore(STORE_BOOKS_LIST, 'readwrite', (store) => store.put(entry))
+  debugCacheWrite(STORE_BOOKS_LIST, key, true, 'library_view_changed')
   void pruneStoreByFetchedAt(
     STORE_BOOKS_LIST,
     MAX_BOOKS_LIST_ENTRIES,
@@ -456,14 +489,22 @@ export async function getCachedBookMeta(scope: string, bookId: string): Promise<
 }
 
 export async function setCachedBookMeta(scope: string, book: ApiBook): Promise<void> {
+  const key = makeScopedKey(scope, book.id)
+  const existing = await getCachedBookMeta(scope, book.id)
+  const changed = !existing || safeStringify(existing) !== safeStringify(book)
+  if (!changed) {
+    debugCacheWrite(STORE_BOOK_META, key, false, 'book_meta_unchanged')
+    return
+  }
   const entry: CachedBookMeta = {
-    key: makeScopedKey(scope, book.id),
+    key,
     scope,
     bookId: book.id,
     book,
     fetchedAt: Date.now(),
   }
   await withStore(STORE_BOOK_META, 'readwrite', (store) => store.put(entry))
+  debugCacheWrite(STORE_BOOK_META, key, true, 'book_meta_changed')
   void pruneStoreByFetchedAt(STORE_BOOK_META, MAX_BOOK_META_ENTRIES)
 }
 
@@ -514,8 +555,18 @@ export async function getCachedReadingPosition(scope: string, bookId: string): P
 }
 
 export async function setCachedReadingPosition(scope: string, bookId: string, entry: Omit<CachedReadingPositionEntry, 'key' | 'scope' | 'bookId' | 'fetchedAt'>): Promise<void> {
+  const key = makeScopedKey(scope, bookId)
+  const existing = await getCachedReadingPosition(scope, bookId)
+  const nextUpdatedAt = entry.updatedAt ?? entry.position.updated_at ?? null
+  const changed = !existing
+    || existing.updatedAt !== nextUpdatedAt
+    || safeStringify(existing.position) !== safeStringify(entry.position)
+  if (!changed) {
+    debugCacheWrite(STORE_READING_POSITIONS, key, false, 'reading_position_unchanged')
+    return
+  }
   const full: CachedReadingPositionEntry = {
-    key: makeScopedKey(scope, bookId),
+    key,
     scope,
     bookId,
     position: entry.position,
@@ -524,6 +575,7 @@ export async function setCachedReadingPosition(scope: string, bookId: string, en
     fetchedAt: Date.now(),
   }
   await withStore(STORE_READING_POSITIONS, 'readwrite', (store) => store.put(full))
+  debugCacheWrite(STORE_READING_POSITIONS, key, true, 'reading_position_changed')
   void pruneStoreByFetchedAt(STORE_READING_POSITIONS, MAX_READING_POSITION_ENTRIES)
 }
 
