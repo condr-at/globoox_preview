@@ -41,7 +41,7 @@ export const metadata: Metadata = {
     telephone: false,
   },
   openGraph: {
-    title: 'Globoox — AI-Powered Ebook Translation',
+    title: 'Globoox',
     description:
       'Reading app that instantly translates ebooks into your native language with Al. Upload EPUBs and read in English, French, Spanish or Russian',
     type: 'website',
@@ -51,7 +51,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Globoox — AI-Powered Ebook Translation',
+    title: 'Globoox',
     description:
       'Reading app that instantly translates ebooks into your native language with Al. Upload EPUBs and read in English, French, Spanish or Russian',
   },

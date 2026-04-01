@@ -14,12 +14,18 @@ export const metadata: Metadata = {
     canonical: '/',
   },
   openGraph: {
+    title: 'Globoox',
+    description:
+      'Reading app that instantly translates ebooks into your native language with Al. Upload EPUBs and read in English, French, Spanish or Russian',
     siteName: 'Globoox',
     type: 'website',
     locale: 'en_US',
   },
   twitter: {
     card: 'summary_large_image',
+    title: 'Globoox',
+    description:
+      'Reading app that instantly translates ebooks into your native language with Al. Upload EPUBs and read in English, French, Spanish or Russian',
   },
   robots: {
     index: true,
