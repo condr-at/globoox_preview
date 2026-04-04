@@ -62,7 +62,8 @@ export default function BookActionsMenu({ onHide, onDelete, hideLabel = 'Hide', 
       <button
         ref={triggerRef}
         type="button"
-        className={`${uiIconCircleButton} h-8 w-8 bg-[var(--app-elevated-bg)] backdrop-blur text-[var(--app-accent)]`}
+        className={`${uiIconCircleButton} h-8 w-8 bg-background dark:bg-background/80 backdrop-blur`}
+        style={{ color: 'var(--app-accent)' }}
         onPointerDown={(e) => {
           e.stopPropagation();
         }}
