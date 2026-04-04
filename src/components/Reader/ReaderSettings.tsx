@@ -8,7 +8,7 @@ import { uiIconTriggerButton } from '@/components/ui/button-styles';
 import { useAppStore } from '@/lib/store';
 import { trackFontSizeChanged } from '@/lib/posthog';
 import { APP_THEME_PALETTE_OPTIONS } from '@/lib/theme-options';
-import { getReaderUiColors, READER_THEME_CONFIGS } from '@/lib/readerTheme';
+import { getReaderPreviewTokens, getReaderSemanticTokens, READER_THEME_CONFIGS } from '@/lib/readerTheme';
 import { useReaderTheme } from '@/lib/hooks/useReaderTheme';
 import { getThemeStyle } from '@/lib/themes';
 
@@ -33,7 +33,7 @@ export default function ReaderSettings({
     const isOpen = externalOpen !== undefined ? externalOpen : internalOpen;
     const setIsOpen = setExternalOpen !== undefined ? setExternalOpen : setInternalOpen;
     const readerTheme = useReaderTheme();
-    const uiColors = getReaderUiColors(readerTheme);
+    const semanticTokens = getReaderSemanticTokens(readerTheme);
     const readerThemeStyle = getThemeStyle(readerTheme.id);
 
     const { settings, setFontSize, setPageLayoutMode, setReaderTheme } = useAppStore();
@@ -84,25 +84,30 @@ export default function ReaderSettings({
                                         aria-label={t.label}
                                         aria-pressed={isActive}
                                     >
+                                        {(() => {
+                                            const previewTokens = getReaderPreviewTokens(READER_THEME_CONFIGS[t.id]);
+                                            return (
                                         <div
                                             className="relative w-full aspect-square rounded-[12px] border-[2px] transition-colors"
                                             style={{
-                                                background: READER_THEME_CONFIGS[t.id].colors.bg,
-                                                borderColor: isActive ? READER_THEME_CONFIGS[t.id].colors.accent : 'transparent',
+                                                background: previewTokens.swatchBackground,
+                                                borderColor: isActive ? previewTokens.activeRing : 'transparent',
                                                 boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
                                             }}
                                         >
                                             {/* Mini preview dot */}
                                             <span
                                                 className="absolute top-[6px] left-[6px] w-[8px] h-[8px] rounded-full"
-                                                style={{ background: READER_THEME_CONFIGS[t.id].colors.accent }}
+                                                style={{ background: previewTokens.swatchAccent }}
                                             />
                                             {isActive && (
-                                                <span className="absolute bottom-[4px] right-[4px] flex items-center justify-center w-[16px] h-[16px] rounded-full" style={{ background: READER_THEME_CONFIGS[t.id].colors.accent }}>
-                                                    <Check className="w-[10px] h-[10px]" style={{ color: READER_THEME_CONFIGS[t.id].colors.bg }} strokeWidth={2} />
+                                                <span className="absolute bottom-[4px] right-[4px] flex items-center justify-center w-[16px] h-[16px] rounded-full" style={{ background: previewTokens.activeCheckBackground }}>
+                                                    <Check className="w-[10px] h-[10px]" style={{ color: previewTokens.activeCheckForeground }} strokeWidth={2} />
                                                 </span>
                                             )}
                                         </div>
+                                            );
+                                        })()}
                                         <span className="text-[11px] leading-tight text-center text-[var(--reader-muted-text)]">{t.label}</span>
                                     </button>
                                 );
@@ -176,8 +181,8 @@ export default function ReaderSettings({
                                 onClick={() => setPageLayoutMode('single')}
                                 className="rounded-[12px] border px-3 py-2 text-[14px] transition-colors"
                                 style={{
-                                    borderColor: settings.pageLayoutMode === 'single' ? uiColors.accent : uiColors.border,
-                                    background: settings.pageLayoutMode === 'single' ? `color-mix(in srgb, ${uiColors.accent} 14%, transparent)` : 'transparent',
+                                    borderColor: settings.pageLayoutMode === 'single' ? semanticTokens.accent : semanticTokens.border,
+                                    background: settings.pageLayoutMode === 'single' ? `color-mix(in srgb, ${semanticTokens.accent} 14%, transparent)` : 'transparent',
                                 }}
                             >
                                 Single Page
@@ -187,8 +192,8 @@ export default function ReaderSettings({
                                 onClick={() => setPageLayoutMode('spread')}
                                 className="rounded-[12px] border px-3 py-2 text-[14px] transition-colors"
                                 style={{
-                                    borderColor: settings.pageLayoutMode === 'spread' ? uiColors.accent : uiColors.border,
-                                    background: settings.pageLayoutMode === 'spread' ? `color-mix(in srgb, ${uiColors.accent} 14%, transparent)` : 'transparent',
+                                    borderColor: settings.pageLayoutMode === 'spread' ? semanticTokens.accent : semanticTokens.border,
+                                    background: settings.pageLayoutMode === 'spread' ? `color-mix(in srgb, ${semanticTokens.accent} 14%, transparent)` : 'transparent',
                                 }}
                             >
                                 Two-Page Spread

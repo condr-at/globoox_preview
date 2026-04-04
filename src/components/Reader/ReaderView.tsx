@@ -44,7 +44,7 @@ import IOSIcon from '@/components/ui/ios-icon';
 import { Skeleton } from '@/components/ui/skeleton';
 import TranslationLimitDialog from '@/components/TranslationLimitDialog';
 import { uiHeaderControlHitArea, uiIconTriggerButton } from '@/components/ui/button-styles';
-import { READER_THEME_CONFIGS, getReaderUiColors } from '@/lib/readerTheme';
+import { READER_THEME_CONFIGS, getReaderContentTokens, getReaderSemanticTokens } from '@/lib/readerTheme';
 import { getThemeStyle } from '@/lib/themes';
 
 // Source of a navigation event. Any source other than manual_scroll is a "jump"
@@ -176,7 +176,8 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
     } = useAppStore();
     const isTranslating = useAppStore((state) => state.isTranslatingByBook[bookId] ?? false);
     const readerThemeConfig = READER_THEME_CONFIGS[settings.readerTheme] ?? READER_THEME_CONFIGS['light'];
-    const readerUiColors = getReaderUiColors(readerThemeConfig);
+    const readerSemanticTokens = getReaderSemanticTokens(readerThemeConfig);
+    const readerContentTokens = getReaderContentTokens(readerThemeConfig);
 
     useEffect(() => {
         const previousVersion = window.localStorage.getItem(PAGINATION_ALGO_VERSION_STORAGE_KEY);
@@ -1767,7 +1768,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
     // ─── Render ───────────────────────────────────────────────────────────────
     return (
         <ReaderThemeProvider>
-            <div style={{ ...getThemeStyle(readerThemeConfig.id), position: 'fixed', inset: 0, overflow: 'hidden', overscrollBehavior: 'none', backgroundColor: readerUiColors.background, color: readerUiColors.text } as React.CSSProperties}>
+            <div style={{ ...getThemeStyle(readerThemeConfig.id), position: 'fixed', inset: 0, overflow: 'hidden', overscrollBehavior: 'none', backgroundColor: readerSemanticTokens.background, color: readerSemanticTokens.text } as React.CSSProperties}>
                 {IS_DEV && SHOW_READER_DEBUG_OVERLAY && debugSnapshot && (
                 <div
                     style={{
@@ -1824,9 +1825,9 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                     top: 0,
                     paddingTop: 'calc(env(safe-area-inset-top) + 16px)',
                     transform: chromeVisible ? 'translateY(0)' : 'translateY(-100%)',
-                    backgroundColor: readerUiColors.surface,
-                    borderColor: readerUiColors.border,
-                    color: readerUiColors.text,
+                    backgroundColor: readerSemanticTokens.chromeBackground,
+                    borderColor: readerSemanticTokens.border,
+                    color: readerSemanticTokens.text,
                 }}
             >
                 <div className="flex h-11 items-center px-4">
@@ -1843,7 +1844,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                             }}
                             className={`${uiIconTriggerButton} ${uiHeaderControlHitArea} -ml-2 flex-shrink-0`}
                         >
-                            <IOSIcon icon={ChevronLeft} strokeWidth={2} style={{ color: readerUiColors.accent }} />
+                            <IOSIcon icon={ChevronLeft} strokeWidth={2} style={{ color: readerSemanticTokens.accent }} />
                         </Link>
                     </div>
 
@@ -1853,7 +1854,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                                 {readerBookTitle}
                             </h1>
                             {readerBookAuthor && (
-                                <p className={`max-w-full text-[11px] leading-3 truncate ${isBookMetaPending ? 'blur-[3px] opacity-40' : ''}`} style={{ color: readerUiColors.mutedText }}>
+                                <p className={`max-w-full text-[11px] leading-3 truncate ${isBookMetaPending ? 'blur-[3px] opacity-40' : ''}`} style={{ color: readerSemanticTokens.mutedText }}>
                                     {readerBookAuthor}
                                 </p>
                             )}
@@ -1991,17 +1992,17 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                         <div className="h-full select-none" lang={activeLang}>
                             {isLoading || !visiblePagesReady ? (
                                 <div className={PAGE_SHELL_CLASS}>
-                                    <Skeleton className="h-7 w-64 mb-5" style={{ backgroundColor: readerUiColors.border }} />
+                                    <Skeleton className="h-7 w-64 mb-5" style={{ backgroundColor: readerContentTokens.skeletonFill }} />
                                     <div className="space-y-5">
                                         {[100, 95, 88, 100, 72, 100, 90, 85, 100, 60, 100, 92].map((width, i) => (
-                                            <Skeleton key={i} className="h-5" style={{ width: `${width}%`, backgroundColor: readerUiColors.border }} />
+                                            <Skeleton key={i} className="h-5" style={{ width: `${width}%`, backgroundColor: readerContentTokens.skeletonFill }} />
                                         ))}
                                     </div>
                                 </div>
                             ) : chaptersError ? (
-                                <p className="py-8 text-center text-sm" style={{ color: '#dc2626' }}>{chaptersError}</p>
+                                <p className="py-8 text-center text-sm" style={{ color: readerSemanticTokens.danger }}>{chaptersError}</p>
                             ) : contentError ? (
-                                <p className="py-8 text-center text-sm" style={{ color: '#dc2626' }}>{contentError}</p>
+                                <p className="py-8 text-center text-sm" style={{ color: readerSemanticTokens.danger }}>{contentError}</p>
                             ) : spreadModeEnabled ? (
                                 <div
                                     className="mx-auto flex h-full w-full items-stretch justify-center"
@@ -2038,9 +2039,9 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                     bottom: 0,
                     paddingBottom: 'env(safe-area-inset-bottom)',
                     transform: chromeVisible ? 'translateY(0)' : 'translateY(100%)',
-                    borderColor: readerUiColors.border,
-                    backgroundColor: readerUiColors.surface,
-                    color: readerUiColors.mutedText,
+                    borderColor: readerSemanticTokens.border,
+                    backgroundColor: readerSemanticTokens.chromeBackground,
+                    color: readerSemanticTokens.mutedText,
                 }}
             >
                 <Button
@@ -2049,7 +2050,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                     onClick={goToPrevPage}
                     disabled={activePageIdx === 0 && currentChapterIndex === 1}
                     className="hidden md:flex items-center gap-1 text-xs disabled:opacity-30 px-1"
-                    style={{ color: readerUiColors.accent }}
+                    style={{ color: readerSemanticTokens.accent }}
                 >
                     <IOSIcon icon={ChevronLeft} className="size-4" strokeWidth={2} />
                     <span className="truncate">Previous page</span>
@@ -2072,7 +2073,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                     onClick={goToNextPage}
                     disabled={activePageIdx >= pages.length - 1 && currentChapterIndex === chapters.length}
                     className="hidden md:flex items-center gap-1 text-xs disabled:opacity-30 px-1"
-                    style={{ color: readerUiColors.accent }}
+                    style={{ color: readerSemanticTokens.accent }}
                 >
                     <span className="truncate">Next page</span>
                     <IOSIcon icon={ChevronRight} className="size-4" strokeWidth={2} />

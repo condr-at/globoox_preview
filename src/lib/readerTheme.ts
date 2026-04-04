@@ -9,6 +9,35 @@ export type ReaderThemeConfig = (typeof THEME_DEFINITIONS)[keyof typeof THEME_DE
 
 export const READER_THEME_CONFIGS = THEME_DEFINITIONS;
 
+export interface ReaderSemanticTokens {
+  background: string;
+  panelBackground: string;
+  chromeBackground: string;
+  text: string;
+  mutedText: string;
+  subtleText: string;
+  accent: string;
+  border: string;
+  danger: string;
+}
+
+export interface ReaderContentTokens {
+  quoteText: string;
+  quoteBorder: string;
+  captionText: string;
+  skeletonFill: string;
+  pendingLabelText: string;
+}
+
+export interface ReaderPreviewTokens {
+  swatchBackground: string;
+  swatchAccent: string;
+  swatchText: string;
+  activeRing: string;
+  activeCheckBackground: string;
+  activeCheckForeground: string;
+}
+
 export function getReaderWeightClass(weight: ReaderFontWeight): string {
   const weightClasses: Record<ReaderFontWeight, string> = {
     light: 'font-light',
@@ -63,17 +92,57 @@ function withAlpha(hex: string, alpha: number): string {
 }
 
 export function getReaderUiColors(config: ReaderThemeConfig) {
+  const semantic = getReaderSemanticTokens(config);
+  const content = getReaderContentTokens(config);
+
+  return {
+    background: semantic.background,
+    text: semantic.text,
+    accent: semantic.accent,
+    surface: semantic.chromeBackground,
+    panelSurface: semantic.panelBackground,
+    border: semantic.border,
+    mutedText: semantic.mutedText,
+    subtleText: semantic.subtleText,
+    quoteText: content.quoteText,
+  };
+}
+
+export function getReaderSemanticTokens(config: ReaderThemeConfig): ReaderSemanticTokens {
   const isDark = config.id.endsWith('dark');
 
   return {
     background: config.colors.bg,
+    panelBackground: config.colors.bg,
+    chromeBackground: withAlpha(config.colors.bg, isDark ? 0.9 : 0.92),
     text: config.colors.text,
-    accent: config.colors.accent,
-    surface: withAlpha(config.colors.bg, isDark ? 0.9 : 0.92),
-    panelSurface: config.colors.bg,
-    border: withAlpha(config.colors.text, isDark ? 0.16 : 0.12),
     mutedText: withAlpha(config.colors.text, isDark ? 0.7 : 0.62),
     subtleText: withAlpha(config.colors.text, isDark ? 0.52 : 0.46),
-    quoteText: withAlpha(config.colors.text, isDark ? 0.82 : 0.78),
+    accent: config.colors.accent,
+    border: withAlpha(config.colors.text, isDark ? 0.16 : 0.12),
+    danger: '#dc2626',
+  };
+}
+
+export function getReaderContentTokens(config: ReaderThemeConfig): ReaderContentTokens {
+  const semantic = getReaderSemanticTokens(config);
+
+  return {
+    quoteText: withAlpha(config.colors.text, config.id.endsWith('dark') ? 0.82 : 0.78),
+    quoteBorder: semantic.accent,
+    captionText: semantic.mutedText,
+    skeletonFill: semantic.border,
+    pendingLabelText: semantic.mutedText,
+  };
+}
+
+export function getReaderPreviewTokens(config: ReaderThemeConfig): ReaderPreviewTokens {
+  return {
+    swatchBackground: config.colors.bg,
+    swatchAccent: config.colors.accent,
+    swatchText: config.colors.text,
+    activeRing: config.colors.accent,
+    activeCheckBackground: config.colors.accent,
+    activeCheckForeground: config.colors.bg,
   };
 }
