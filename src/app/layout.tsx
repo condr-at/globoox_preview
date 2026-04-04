@@ -1,31 +1,29 @@
 import { ReactNode } from 'react';
 import type { Metadata } from 'next';
 import UtmCapture from '@/components/UtmCapture';
+import { sharedWidgetDescription, siteTitle } from '@/lib/shareMetadata';
 import './globals.css';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://globoox.co';
 
 export const metadata: Metadata = {
-  title: 'Globoox',
-  description:
-    'Reading app that instantly translates ebooks into your native language with Al. Upload EPUBs and read in English, French, Spanish or Russian',
+  title: siteTitle,
+  description: sharedWidgetDescription,
   metadataBase: new URL(SITE_URL),
   alternates: {
     canonical: '/',
   },
   openGraph: {
-    title: 'Globoox',
-    description:
-      'Reading app that instantly translates ebooks into your native language with Al. Upload EPUBs and read in English, French, Spanish or Russian',
-    siteName: 'Globoox',
+    title: siteTitle,
+    description: sharedWidgetDescription,
+    siteName: siteTitle,
     type: 'website',
     locale: 'en_US',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Globoox',
-    description:
-      'Reading app that instantly translates ebooks into your native language with Al. Upload EPUBs and read in English, French, Spanish or Russian',
+    title: siteTitle,
+    description: sharedWidgetDescription,
   },
   robots: {
     index: true,
@@ -39,11 +37,10 @@ export const metadata: Metadata = {
 const organizationJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'Organization',
-  name: 'Globoox',
+  name: siteTitle,
   url: SITE_URL,
   logo: `${SITE_URL}/icon-512.png`,
-  description:
-    'Reading app that instantly translates ebooks into your native language with Al. Upload EPUBs and read in English, French, Spanish or Russian',
+  description: sharedWidgetDescription,
   sameAs: [],
 };
 

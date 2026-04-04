@@ -1,40 +1,37 @@
 import { ReactNode } from 'react';
 import type { Metadata } from 'next';
+import { sharedWidgetDescription, sharedWidgetTitle, siteTitle } from '@/lib/shareMetadata';
 import './landing.css';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://globoox.co';
 
 export const metadata: Metadata = {
-  title: 'Globoox',
-  description:
-    'Reading app that instantly translates ebooks into your native language with Al. Upload EPUBs and read in English, French, Spanish or Russian',
+  title: siteTitle,
+  description: sharedWidgetDescription,
   alternates: {
     canonical: '/landing',
   },
   openGraph: {
-    title: 'Globoox — Read Any Book in Your Language',
-    description:
-      'Reading app that instantly translates ebooks into your native language with Al. Upload EPUBs and read in English, French, Spanish or Russian',
+    title: sharedWidgetTitle,
+    description: sharedWidgetDescription,
     url: `${SITE_URL}/landing`,
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Globoox — Read Any Book in Your Language',
-    description:
-      'Reading app that instantly translates ebooks into your native language with Al. Upload EPUBs and read in English, French, Spanish or Russian',
+    title: sharedWidgetTitle,
+    description: sharedWidgetDescription,
   },
 };
 
 const webAppJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'WebApplication',
-  name: 'Globoox',
+  name: siteTitle,
   url: SITE_URL,
   applicationCategory: 'ReadingApplication',
   operatingSystem: 'Any',
-  description:
-    'Reading app that instantly translates ebooks into your native language with Al. Upload EPUBs and read in English, French, Spanish or Russian',
+  description: sharedWidgetDescription,
   offers: {
     '@type': 'Offer',
     price: '0',

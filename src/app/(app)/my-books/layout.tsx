@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
-import { createSharedPreviewMetadata } from '@/lib/shareMetadata';
+import { createProductPageTitle, createSharedPreviewMetadata } from '@/lib/shareMetadata';
 
 export const metadata: Metadata = {
-  title: 'My Books | Globoox',
+  title: createProductPageTitle('My Books'),
   description:
     'Your Globoox library. Keep your translated EPUBs, sync reading progress, and continue reading across devices.',
   alternates: {

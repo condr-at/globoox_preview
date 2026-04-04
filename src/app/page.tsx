@@ -1,14 +1,14 @@
 import type { Metadata } from 'next';
 import {
 	createSharedPreviewMetadata,
-	sharedPreviewDescription,
-	sharedPreviewTitle,
+	sharedWidgetDescription,
+	siteTitle,
 } from '@/lib/shareMetadata';
 import './landing/landing.css';
 
 export const metadata: Metadata = {
-	title: sharedPreviewTitle,
-	description: sharedPreviewDescription,
+	title: siteTitle,
+	description: sharedWidgetDescription,
 	alternates: {
 		canonical: '/',
 	},

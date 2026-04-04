@@ -4,6 +4,7 @@ import Header from '@/components/ui/Header';
 import PostHogProvider from '@/components/PostHogProvider';
 import SyncCheckClient from '@/components/SyncCheckClient';
 import PaletteSync from '@/components/PaletteSync';
+import { sharedWidgetDescription, siteTitle } from '@/lib/shareMetadata';
 import { getThemeBootstrapScript } from '@/lib/themes';
 
 export const viewport: Viewport = {
@@ -19,8 +20,8 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: 'Globoox',
-  description: 'Reading app that instantly translates ebooks into your native language with Al. Upload EPUBs and read in English, French, Spanish or Russian',
+  title: siteTitle,
+  description: sharedWidgetDescription,
   keywords: [
     'reading',
     'books',
@@ -36,25 +37,23 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'Globoox',
+    title: siteTitle,
   },
   formatDetection: {
     telephone: false,
   },
   openGraph: {
-    title: 'Globoox',
-    description:
-      'Reading app that instantly translates ebooks into your native language with Al. Upload EPUBs and read in English, French, Spanish or Russian',
+    title: siteTitle,
+    description: sharedWidgetDescription,
     type: 'website',
     url: 'https://globoox.com',
-    siteName: 'Globoox',
+    siteName: siteTitle,
     locale: 'en_US',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Globoox',
-    description:
-      'Reading app that instantly translates ebooks into your native language with Al. Upload EPUBs and read in English, French, Spanish or Russian',
+    title: siteTitle,
+    description: sharedWidgetDescription,
   },
 };
 
