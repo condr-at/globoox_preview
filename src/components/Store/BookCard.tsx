@@ -280,17 +280,7 @@ export default function BookCard({
   const displayCover = sourceCover;
   const [failedCoverSrc, setFailedCoverSrc] = useState<string | null>(null);
   const hasValidCover = Boolean(displayCover) && failedCoverSrc !== displayCover;
-  const coverAspect = useMemo(() => {
-    if (!hasValidCover || typeof window === 'undefined') return null;
-    try {
-      const key = `globoox:cover-aspect:${hashString(displayCover)}`;
-      const raw = window.localStorage.getItem(key);
-      const parsed = raw ? Number(raw) : Number.NaN;
-      return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
-    } catch {
-      return null;
-    }
-  }, [displayCover, hasValidCover]);
+  const { aspect: coverAspect, isReady: isAspectReady } = useImageAspect(hasValidCover ? displayCover : '');
   const coverAccent = useMemo(() => {
     const hash = hashString(`${id}-${title}`);
     const r = 110 + (hash % 90);
@@ -299,7 +289,7 @@ export default function BookCard({
     return rgbToCss(r, g, b);
   }, [id, title]);
   const coverFrameStyle = getContainFrameStyle(coverAspect);
-  const effectiveCoverFrameStyle = coverFrameStyle;
+  const effectiveCoverFrameStyle = isAspectReady ? coverFrameStyle : { width: '100%', height: '100%' };
   const showMenuButton = canHover === null
     ? false
     : (!canHover || isCardHovered || isCardFocused || isMenuOpen);
@@ -390,7 +380,7 @@ export default function BookCard({
                   style={{ background: ambientShadowColor }}
                 />
                 <div className="relative h-full w-full overflow-hidden rounded-[3px]">
-                  {hasValidCover ? (
+                  {hasValidCover && isAspectReady ? (
                     <Image
                       src={displayCover}
                       alt={title}
@@ -399,6 +389,8 @@ export default function BookCard({
                       sizes="(max-width: 640px) 45vw, 180px"
                       onError={() => setFailedCoverSrc(displayCover)}
                     />
+                  ) : hasValidCover ? (
+                    <Skeleton className="h-full w-full rounded-[3px] bg-muted animate-pulse" />
                   ) : (
                     <div aria-hidden="true" className="h-full w-full" style={{ backgroundColor: fallbackColor }} />
                   )}

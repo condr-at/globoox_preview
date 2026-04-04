@@ -52,7 +52,7 @@ export const READER_THEME_CONFIGS: Record<ReaderThemeId, ReaderThemeConfig> = {
       h3Weight: 'medium',
       h4Weight: 'regular',
       bodyWeight: 'medium',
-      lineHeightScale: 1.1,
+      lineHeightScale: 1,
     },
   },
   'forest-dark': {
@@ -100,5 +100,39 @@ export function getReaderHeadingTypography(level: number, config: ReaderThemeCon
     className: `${weightClass} ${level === 1 ? 'mb-3 mt-6' : level === 2 ? 'mb-2 mt-5' : 'mb-2 mt-4'}`,
     sizeScale,
     italic: level > 4,
+  };
+}
+
+function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  const normalized = hex.replace('#', '');
+  const expanded = normalized.length === 3
+    ? normalized.split('').map((char) => `${char}${char}`).join('')
+    : normalized;
+  const value = Number.parseInt(expanded, 16);
+
+  return {
+    r: (value >> 16) & 255,
+    g: (value >> 8) & 255,
+    b: value & 255,
+  };
+}
+
+function withAlpha(hex: string, alpha: number): string {
+  const { r, g, b } = hexToRgb(hex);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+export function getReaderUiColors(config: ReaderThemeConfig) {
+  const isDark = config.id.endsWith('dark');
+
+  return {
+    background: config.colors.bg,
+    text: config.colors.text,
+    accent: config.colors.accent,
+    surface: withAlpha(config.colors.bg, isDark ? 0.9 : 0.92),
+    border: withAlpha(config.colors.text, isDark ? 0.16 : 0.12),
+    mutedText: withAlpha(config.colors.text, isDark ? 0.7 : 0.62),
+    subtleText: withAlpha(config.colors.text, isDark ? 0.52 : 0.46),
+    quoteText: withAlpha(config.colors.text, isDark ? 0.82 : 0.78),
   };
 }

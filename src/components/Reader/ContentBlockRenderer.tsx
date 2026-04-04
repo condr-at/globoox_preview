@@ -1,7 +1,7 @@
 import { ContentBlock } from '@/lib/api'
 import { getLineHeightStyle } from '@/lib/readerTypography'
 import { useReaderTheme } from '@/lib/hooks/useReaderTheme'
-import { getReaderHeadingTypography, getReaderWeightClass, type ReaderThemeConfig } from '@/lib/readerTheme'
+import { getReaderHeadingTypography, getReaderUiColors, getReaderWeightClass, type ReaderThemeConfig } from '@/lib/readerTheme'
 
 interface ContentBlockRendererProps {
   block: ContentBlock
@@ -32,11 +32,13 @@ function PendingWrapper({
   isPending,
   showLabel,
   pendingLabel = 'Translating...',
+  mutedTextColor,
 }: {
   children: React.ReactNode;
   isPending?: boolean;
   showLabel?: boolean;
   pendingLabel?: string;
+  mutedTextColor?: string;
 }) {
   if (!isPending) return <>{children}</>;
   
@@ -47,7 +49,7 @@ function PendingWrapper({
       </div>
       {showLabel && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <span className="text-sm font-medium text-muted-foreground animate-pulse-text">
+          <span className="text-sm font-medium animate-pulse-text" style={mutedTextColor ? { color: mutedTextColor } : undefined}>
             {pendingLabel}
           </span>
         </div>
@@ -68,6 +70,7 @@ export default function ContentBlockRenderer({
   lineHeightScale = 1,
 }: ContentBlockRendererProps) {
   const readerTheme = useReaderTheme()
+  const uiColors = getReaderUiColors(readerTheme)
   const style = fontSize ? { fontSize: `${fontSize}px` } : undefined
   const textStyle = fontSize
     ? { ...style, lineHeight: getLineHeightStyle(fontSize, lineHeightScale * readerTheme.typography.lineHeightScale) }
@@ -75,7 +78,7 @@ export default function ContentBlockRenderer({
   const resolvedImageMaxHeight = imageMaxHeight ? Math.max(160, imageMaxHeight - 24) : undefined
 
   if (block.type === 'hr') {
-    return <hr className="my-5 border-border" />
+    return <hr className="my-5" style={{ borderColor: uiColors.border }} />
   }
 
   if (block.type === 'image') {
@@ -102,7 +105,7 @@ export default function ContentBlockRenderer({
           style={resolvedImageMaxHeight ? { maxHeight: `${resolvedImageMaxHeight}px` } : undefined}
         />
         {block.caption && (
-          <figcaption className="text-xs text-muted-foreground text-center mt-1">
+          <figcaption className="mt-1 text-center text-xs" style={{ color: uiColors.mutedText }}>
             {block.caption}
           </figcaption>
         )}
@@ -118,7 +121,7 @@ export default function ContentBlockRenderer({
       ? { fontSize: `${fontSize * headingTypography.sizeScale}px`, fontStyle: headingTypography.italic ? 'italic' : 'normal' as const }
       : { fontStyle: headingTypography.italic ? 'italic' : 'normal' as const }
     return (
-      <PendingWrapper isPending={isPending} showLabel={showTranslatingLabel} pendingLabel={pendingLabel}>
+      <PendingWrapper isPending={isPending} showLabel={showTranslatingLabel} pendingLabel={pendingLabel} mutedTextColor={uiColors.mutedText}>
         <Tag className={headingTypography.className} style={headingStyle}>{block.text}</Tag>
       </PendingWrapper>
     )
@@ -129,7 +132,7 @@ export default function ContentBlockRenderer({
     const mbClass = isLast ? 'mb-2' : 'mb-0';
     const bodyWeightClass = getReaderWeightClass(readerTheme.typography.bodyWeight)
     return (
-      <PendingWrapper isPending={isPending} showLabel={showTranslatingLabel} pendingLabel={pendingLabel}>
+      <PendingWrapper isPending={isPending} showLabel={showTranslatingLabel} pendingLabel={pendingLabel} mutedTextColor={uiColors.mutedText}>
         <p
           className={`${mbClass} ${bodyWeightClass}`}
           style={{ ...textStyle, hyphens: 'auto', WebkitHyphens: 'auto' }}
@@ -143,8 +146,8 @@ export default function ContentBlockRenderer({
   if (block.type === 'quote') {
     const bodyWeightClass = getReaderWeightClass(readerTheme.typography.bodyWeight)
     return (
-      <PendingWrapper isPending={isPending} showLabel={showTranslatingLabel} pendingLabel={pendingLabel}>
-        <blockquote className={`border-l-1 border-primary pl-3 my-4 italic text-foreground/80 ${bodyWeightClass}`} style={style}>
+      <PendingWrapper isPending={isPending} showLabel={showTranslatingLabel} pendingLabel={pendingLabel} mutedTextColor={uiColors.mutedText}>
+        <blockquote className={`border-l-1 pl-3 my-4 italic ${bodyWeightClass}`} style={{ ...style, borderColor: uiColors.accent, color: uiColors.quoteText }}>
           {block.text}
         </blockquote>
       </PendingWrapper>
@@ -160,7 +163,7 @@ export default function ContentBlockRenderer({
     const startProp = block.ordered && block.partIndex !== undefined ? block.partIndex + 1 : undefined;
 
     return (
-      <PendingWrapper isPending={isPending} showLabel={showTranslatingLabel} pendingLabel={pendingLabel}>
+      <PendingWrapper isPending={isPending} showLabel={showTranslatingLabel} pendingLabel={pendingLabel} mutedTextColor={uiColors.mutedText}>
         <Tag className={`${listClass} pl-6 ${mbClass} space-y-1 ${bodyWeightClass}`} style={style} start={startProp}>
           {block.items.map((item, i) => (
             <li key={i} style={{ ...textStyle, hyphens: 'auto', WebkitHyphens: 'auto' }}>{item}</li>

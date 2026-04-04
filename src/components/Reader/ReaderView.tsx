@@ -44,6 +44,7 @@ import IOSIcon from '@/components/ui/ios-icon';
 import { Skeleton } from '@/components/ui/skeleton';
 import TranslationLimitDialog from '@/components/TranslationLimitDialog';
 import { uiHeaderControlHitArea, uiIconTriggerButton } from '@/components/ui/button-styles';
+import { READER_THEME_CONFIGS, getReaderUiColors } from '@/lib/readerTheme';
 
 // Source of a navigation event. Any source other than manual_scroll is a "jump"
 // that aborts in-flight prefetch requests and updates readingAnchor immediately.
@@ -173,6 +174,8 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
         updateServerProgress,
     } = useAppStore();
     const isTranslating = useAppStore((state) => state.isTranslatingByBook[bookId] ?? false);
+    const readerThemeConfig = READER_THEME_CONFIGS[settings.readerTheme] ?? READER_THEME_CONFIGS['light'];
+    const readerUiColors = getReaderUiColors(readerThemeConfig);
 
     useEffect(() => {
         const previousVersion = window.localStorage.getItem(PAGINATION_ALGO_VERSION_STORAGE_KEY);
@@ -1763,7 +1766,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
     // ─── Render ───────────────────────────────────────────────────────────────
     return (
         <ReaderThemeProvider>
-            <div className="bg-background" style={{ position: 'fixed', inset: 0, overflow: 'hidden', overscrollBehavior: 'none' } as React.CSSProperties}>
+            <div style={{ position: 'fixed', inset: 0, overflow: 'hidden', overscrollBehavior: 'none', backgroundColor: readerUiColors.background, color: readerUiColors.text } as React.CSSProperties}>
                 {IS_DEV && SHOW_READER_DEBUG_OVERLAY && debugSnapshot && (
                 <div
                     style={{
@@ -1815,11 +1818,14 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
 
             {/* ── Header (fixed, slides out upward) ── */}
             <header
-                className="mobile-ui-no-select fixed left-0 right-0 z-40 bg-background/80 backdrop-blur-xl border-b transition-transform duration-300 ease-in-out"
+                className="mobile-ui-no-select fixed left-0 right-0 z-40 backdrop-blur-xl border-b transition-transform duration-300 ease-in-out"
                 style={{
                     top: 0,
                     paddingTop: 'calc(env(safe-area-inset-top) + 16px)',
                     transform: chromeVisible ? 'translateY(0)' : 'translateY(-100%)',
+                    backgroundColor: readerUiColors.surface,
+                    borderColor: readerUiColors.border,
+                    color: readerUiColors.text,
                 }}
             >
                 <div className="flex h-11 items-center px-4">
@@ -1846,7 +1852,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                                 {readerBookTitle}
                             </h1>
                             {readerBookAuthor && (
-                                <p className={`max-w-full text-[11px] leading-3 text-muted-foreground truncate ${isBookMetaPending ? 'blur-[3px] opacity-40' : ''}`}>
+                                <p className={`max-w-full text-[11px] leading-3 truncate ${isBookMetaPending ? 'blur-[3px] opacity-40' : ''}`} style={{ color: readerUiColors.mutedText }}>
                                     {readerBookAuthor}
                                 </p>
                             )}
@@ -1981,13 +1987,13 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
 
                     {/* Visible page */}
                     <TranslationGlow>
-                        <div className="h-full select-none md:select-text" lang={activeLang}>
+                        <div className="h-full select-none" lang={activeLang}>
                             {isLoading || !visiblePagesReady ? (
                                 <div className={PAGE_SHELL_CLASS}>
-                                    <Skeleton className="h-7 w-64 mb-5" />
+                                    <Skeleton className="h-7 w-64 mb-5" style={{ backgroundColor: readerUiColors.border }} />
                                     <div className="space-y-5">
                                         {[100, 95, 88, 100, 72, 100, 90, 85, 100, 60, 100, 92].map((width, i) => (
-                                            <Skeleton key={i} className="h-5" style={{ width: `${width}%` }} />
+                                            <Skeleton key={i} className="h-5" style={{ width: `${width}%`, backgroundColor: readerUiColors.border }} />
                                         ))}
                                     </div>
                                 </div>
@@ -2026,11 +2032,14 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
 
             {/* ── Footer / progress bar (fixed, slides out downward) ── */}
             <div
-                className="fixed left-0 right-0 z-40 flex items-center justify-center md:justify-between px-4 h-10 border-t border-border/20 text-xs text-muted-foreground bg-background/80 backdrop-blur-xl transition-transform duration-300 ease-in-out"
+                className="fixed left-0 right-0 z-40 flex items-center justify-center md:justify-between px-4 h-10 border-t text-xs backdrop-blur-xl transition-transform duration-300 ease-in-out"
                 style={{
                     bottom: 0,
                     paddingBottom: 'env(safe-area-inset-bottom)',
                     transform: chromeVisible ? 'translateY(0)' : 'translateY(100%)',
+                    borderColor: readerUiColors.border,
+                    backgroundColor: readerUiColors.surface,
+                    color: readerUiColors.mutedText,
                 }}
             >
                 <Button
