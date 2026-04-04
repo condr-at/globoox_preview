@@ -36,6 +36,7 @@ yarn-error.log*
 # vercel
 .vercel
 .playwright-vercel-profile
+.tmp-auth-state.json
 
 # typescript
 *.tsbuildinfo
