@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 
 interface LandingHeaderProps {
@@ -9,6 +9,70 @@ interface LandingHeaderProps {
 
 export function LandingHeader({ navItems = [] }: LandingHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [activeHref, setActiveHref] = useState<string>('');
+  const sectionIds = useMemo(
+    () => navItems.filter((item) => item.href.startsWith('#')).map((item) => item.href.slice(1)),
+    [navItems]
+  );
+
+  useEffect(() => {
+    if (sectionIds.length === 0) return;
+
+    const sections = sectionIds
+      .map((id) => document.getElementById(id))
+      .filter((el): el is HTMLElement => el !== null);
+
+    if (sections.length === 0) return;
+
+    const initialHash = window.location.hash;
+    const initialHref =
+      initialHash && sectionIds.includes(initialHash.slice(1)) ? initialHash : `#${sections[0].id}`;
+    const frameId = window.requestAnimationFrame(() => {
+      setActiveHref(initialHref);
+    });
+
+    const updateActiveSection = () => {
+      const scrollAnchor = window.scrollY + 180;
+      const firstSectionTop = sections[0].offsetTop;
+      if (scrollAnchor < firstSectionTop) {
+        setActiveHref('');
+        return;
+      }
+
+      let currentId = sections[0].id;
+
+      for (const section of sections) {
+        if (section.offsetTop <= scrollAnchor) {
+          currentId = section.id;
+        } else {
+          break;
+        }
+      }
+
+      setActiveHref(`#${currentId}`);
+    };
+
+    updateActiveSection();
+    window.addEventListener('scroll', updateActiveSection, { passive: true });
+    window.addEventListener('resize', updateActiveSection);
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      window.removeEventListener('scroll', updateActiveSection);
+      window.removeEventListener('resize', updateActiveSection);
+    };
+  }, [sectionIds]);
+
+  const handleLogoClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    const hero = document.getElementById('hero');
+    if (!hero) return;
+
+    event.preventDefault();
+    hero.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    window.history.replaceState(null, '', '#hero');
+    setActiveHref('');
+    setMenuOpen(false);
+  };
 
   return (
     <>
@@ -40,7 +104,8 @@ export function LandingHeader({ navItems = [] }: LandingHeaderProps) {
           }}
         >
           <Link
-            href="/"
+            href="#hero"
+            onClick={handleLogoClick}
             className="landing-header-logo"
             style={{
               fontFamily: "'Lora', serif",
@@ -60,11 +125,15 @@ export function LandingHeader({ navItems = [] }: LandingHeaderProps) {
               <div key={item.href} style={{ display: 'flex', alignItems: 'center' }}>
                 <a
                   href={item.href}
+                  aria-current={activeHref === item.href ? 'true' : undefined}
                   style={{
-                    color: 'var(--marketing-text-muted)',
-                    textDecoration: 'none',
+                    color: activeHref === item.href ? 'var(--marketing-text)' : 'var(--marketing-text-muted)',
+                    textDecorationLine: activeHref === item.href ? 'underline' : 'none',
+                    textDecorationColor: 'var(--marketing-accent)',
+                    textDecorationThickness: '2px',
+                    textUnderlineOffset: '6px',
                     fontSize: '14px',
-                    fontWeight: 500,
+                    fontWeight: activeHref === item.href ? 600 : 500,
                     padding: '0 18px',
                   }}
                 >
@@ -186,11 +255,15 @@ export function LandingHeader({ navItems = [] }: LandingHeaderProps) {
                 key={item.href}
                 href={item.href}
                 onClick={() => setMenuOpen(false)}
+                aria-current={activeHref === item.href ? 'true' : undefined}
                 style={{
-                  color: 'var(--marketing-text-muted)',
-                  textDecoration: 'none',
+                  color: activeHref === item.href ? 'var(--marketing-text)' : 'var(--marketing-text-muted)',
+                  textDecorationLine: activeHref === item.href ? 'underline' : 'none',
+                  textDecorationColor: 'var(--marketing-accent)',
+                  textDecorationThickness: '2px',
+                  textUnderlineOffset: '6px',
                   fontSize: '15px',
-                  fontWeight: 500,
+                  fontWeight: activeHref === item.href ? 600 : 500,
                   padding: '14px 0',
                   borderBottom: index < navItems.length - 1 ? '1px solid var(--marketing-border)' : 'none',
                 }}

@@ -1,11 +1,19 @@
 'use client';
 
 import Image from 'next/image';
+import { BookOpen } from 'lucide-react';
 import { SectionLabel } from './SectionLabel';
 
 export function SupportedLanguages() {
   const currentLangs = ['English', 'Spanish', 'Russian', 'French'];
-  const futureLangs = ['German', 'Portuguese', 'Italian', 'Japanese', 'Korean', 'and dozens more'];
+  const futureLangs = [
+    { label: 'German', soon: true },
+    { label: 'Portuguese', soon: true },
+    { label: 'Italian', soon: true },
+    { label: 'Japanese', soon: true },
+    { label: 'Korean', soon: true },
+    { label: 'and dozens more', soon: false },
+  ];
 
   return (
     <section className="supported-section" style={{ padding: '120px 40px', background: 'var(--ink)' }}>
@@ -31,7 +39,7 @@ export function SupportedLanguages() {
               style={{ width: '64px', height: 'auto' }}
             />
           </div>
-          <SectionLabel>Formats & Languages</SectionLabel>
+          <SectionLabel>Supported languages</SectionLabel>
           <h2
             className="supported-heading"
             style={{
@@ -43,7 +51,7 @@ export function SupportedLanguages() {
               fontWeight: 400,
             }}
           >
-            EPUB. More to come
+            Language coverage
           </h2>
           <p
             style={{
@@ -52,7 +60,7 @@ export function SupportedLanguages() {
               lineHeight: 1.7,
             }}
           >
-            Currently, we support EPUB books and can translate them into English, Spanish, Russian, and French. Arabic, Chinese, and other languages are coming soon.
+            Right now, you can translate into English, Spanish, Russian, and French. Support for other European languages, along with Arabic, Chinese, and Hindi, is coming soon.
           </p>
         </div>
 
@@ -152,25 +160,25 @@ export function SupportedLanguages() {
                     boxShadow: '0 18px 34px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.12)',
                   }}
                 >
-                  <span style={{ color: 'var(--mist)', fontSize: '11px', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: '8px' }}>
-                    Available now
-                  </span>
-                  <span className="supported-epub-core" style={{ color: 'var(--parchment)', fontFamily: "'Lora', serif", fontSize: '36px', lineHeight: 1, fontWeight: 500 }}>
-                    EPUB
-                  </span>
+                  <BookOpen
+                    aria-hidden="true"
+                    size={60}
+                    strokeWidth={1}
+                    style={{ color: 'var(--parchment)', opacity: 0.7 }}
+                  />
                 </div>
 
                 {[
-                  { label: currentLangs[0], top: '14%', left: '12%', active: true },
+                  { label: currentLangs[0], top: '11%', left: '15%', active: true },
                   { label: currentLangs[1], top: '18%', right: '8%', active: true },
-                  { label: currentLangs[2], bottom: '20%', left: '10%', active: true },
+                  { label: currentLangs[2], bottom: '23%', left: '10%', active: true },
                   { label: currentLangs[3], bottom: '14%', right: '14%', active: true },
-                  { label: futureLangs[0], top: '6%', left: '50%', active: false, center: true },
-                  { label: futureLangs[1], top: '42%', left: '0%', active: false },
-                  { label: futureLangs[2], top: '46%', right: '0%', active: false },
-                  { label: futureLangs[3], bottom: '8%', left: '2%', active: false },
-                  { label: futureLangs[4], bottom: '4%', right: '4%', active: false },
-                  { label: futureLangs[5], bottom: '-2%', left: '50%', active: false, center: true },
+                  { label: futureLangs[0].label, soon: futureLangs[0].soon, top: '6%', left: '53%', active: false, center: true },
+                  { label: futureLangs[1].label, soon: futureLangs[1].soon, top: '36%', left: '4%', active: false },
+                  { label: futureLangs[2].label, soon: futureLangs[2].soon, top: '46%', right: '0%', active: false },
+                  { label: futureLangs[3].label, soon: futureLangs[3].soon, bottom: '8%', left: '2%', active: false },
+                  { label: futureLangs[4].label, soon: futureLangs[4].soon, bottom: '4%', right: '4%', active: false },
+                  { label: futureLangs[5].label, soon: futureLangs[5].soon, bottom: '-2%', left: '50%', active: false, center: true },
                 ].map((lang) => (
                   <span
                     key={lang.label}
@@ -182,6 +190,8 @@ export function SupportedLanguages() {
                       ...(lang.left ? { left: lang.left } : {}),
                       ...(lang.right ? { right: lang.right } : {}),
                       ...(lang.center ? { transform: 'translateX(-50%)' } : {}),
+                      display: 'inline-flex',
+                      alignItems: 'center',
                       padding: lang.active ? '12px 22px' : '7px 13px',
                       borderRadius: '999px',
                       background: lang.active ? 'var(--primary)' : 'rgba(255,255,255,0.03)',
@@ -194,7 +204,29 @@ export function SupportedLanguages() {
                       zIndex: lang.active ? 2 : 1,
                     }}
                   >
-                    {lang.label}
+                    <span>{lang.label}</span>
+                    {lang.soon && (
+                      <span
+                        style={{
+                          position: 'absolute',
+                          top: '-7px',
+                          right: '-8px',
+                          padding: '1px 5px',
+                          borderRadius: '999px',
+                          fontSize: '8px',
+                          lineHeight: 1.1,
+                          fontWeight: 500,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.05em',
+                          color: 'var(--ash)',
+                          background: 'var(--ink)',
+                          border: 'none',
+                          boxShadow: '0 2px 6px rgba(44, 59, 45, 0.18)',
+                        }}
+                      >
+                        soon
+                      </span>
+                    )}
                   </span>
                 ))}
               </div>

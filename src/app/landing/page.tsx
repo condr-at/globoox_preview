@@ -28,7 +28,7 @@ export default async function LandingPage() {
           navItems={[
             { label: 'How it works', href: '#how-it-works' },
             { label: 'Quality', href: '#quality' },
-            { label: 'Formats & Languages', href: '#formats-languages' },
+            { label: 'Languages', href: '#languages' },
             { label: 'Start reading', href: '#start' },
           ]}
         />
@@ -47,13 +47,15 @@ export default async function LandingPage() {
             }
           }
         `}</style>
-        <Hero
-          variant="split"
-          withBooks={true}
-          title="Globoox — reading app that instantly translates e&#8209;books into your native language"
-          subtitle=""
-          titleClassName="hero-long-title"
-        />
+        <section id="hero" aria-label="Hero">
+          <Hero
+            variant="split"
+            withBooks={true}
+            title="Globoox — reading app that instantly translates e&#8209;books into your native language"
+            subtitle=""
+            titleClassName="hero-long-title"
+          />
+        </section>
 
         <section id="how-it-works" aria-label="How it works">
           <UsageAnimation />
@@ -67,7 +69,7 @@ export default async function LandingPage() {
           />
         </section>
 
-        <section id="formats-languages" aria-label="Supported formats and languages">
+        <section id="languages" aria-label="Supported languages">
           <SupportedLanguages />
         </section>
 
