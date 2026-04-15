@@ -2,7 +2,6 @@
 
 import Image from 'next/image';
 import { BookOpen } from 'lucide-react';
-import { SectionLabel } from './SectionLabel';
 
 export function SupportedLanguages() {
   const currentLangs = ['English', 'Spanish', 'Russian', 'French'];
@@ -39,7 +38,6 @@ export function SupportedLanguages() {
               style={{ width: '64px', height: 'auto' }}
             />
           </div>
-          <SectionLabel>Supported languages</SectionLabel>
           <h2
             className="supported-heading"
             style={{
@@ -51,13 +49,16 @@ export function SupportedLanguages() {
               fontWeight: 400,
             }}
           >
-            Language coverage
+            Languages
           </h2>
           <p
             style={{
               fontSize: '18px',
               color: 'var(--ash)',
               lineHeight: 1.7,
+              hyphens: 'none',
+              WebkitHyphens: 'none',
+              msHyphens: 'none',
             }}
           >
             Right now, you can translate into English, Spanish, Russian, and French. Support for other European languages, along with Arabic, Chinese, and Hindi, is coming soon.
