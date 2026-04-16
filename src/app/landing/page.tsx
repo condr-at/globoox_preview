@@ -29,6 +29,7 @@ export default async function LandingPage() {
             { label: 'How it works', href: '#how-it-works' },
             { label: 'Quality', href: '#quality' },
             { label: 'Languages', href: '#languages' },
+            { label: 'Privacy', href: '#privacy' },
             { label: 'Start reading', href: '#start' },
           ]}
         />
