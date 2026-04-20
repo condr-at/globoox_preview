@@ -292,11 +292,28 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
     const isContentLoading = contentLoading || isStale || !isDisplayBlocksSynced;
 
     // Merge translated blocks into displayBlocks
+    const paginatedBlocksUpdaterRef = useRef<React.Dispatch<React.SetStateAction<ContentBlock[]>> | null>(null);
     const handleBlocksTranslated = useCallback((translated: ContentBlock[]) => {
-        setDisplayBlocks((prev) => {
-            const translatedMap = new Map(translated.map((b) => [b.id, b]));
-            return prev.map((b) => translatedMap.get(b.id) ?? b);
-        });
+        const translatedMap = new Map(translated.map((b) => [b.id, b]));
+        const applyMap = (blocks: ContentBlock[]) =>
+            blocks.map((b) => {
+                // Direct match (non-fragmented block)
+                const direct = translatedMap.get(b.id)
+                if (direct) return direct
+                // Fragment match: display block has parentId pointing to the translated block
+                const parentId = (b as any).parentId
+                if (parentId) {
+                    const parent = translatedMap.get(parentId)
+                    if (parent) {
+                        return { ...b, targetLangReady: true, isTranslated: true, is_pending: false }
+                    }
+                }
+                return b
+            });
+        setDisplayBlocks(applyMap);
+        // Also update paginatedBlocks so the loader disappears immediately
+        // (before repagination runs from the displayBlocks change)
+        paginatedBlocksUpdaterRef.current?.(applyMap);
     }, []);
 
     const { getRefCallback, isTranslatingAny, abortAll, enqueueBlocks, enqueueBlocksImmediate, pendingBlockIds, reconcileBlocks } = useViewportTranslation({
@@ -391,6 +408,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
     const [pageWidth, setPageWidth] = useState(0);
     const [pages, setPages] = useState<string[][]>([]);
     const [paginatedBlocks, setPaginatedBlocks] = useState<ContentBlock[]>([]);
+    paginatedBlocksUpdaterRef.current = setPaginatedBlocks;
     const fragmentMapRef = useRef<Map<string, string>>(new Map());
     const [currentPageIdx, setCurrentPageIdx] = useState(0);
     // pagesReady: blocks have been measured and pages computed
