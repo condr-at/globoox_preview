@@ -35,6 +35,7 @@ export interface ApiChapter {
   translations?: Record<string, string>
   depth: number
   parent_id: string | null
+  first_block_id: string | null
   created_at: string
 }
 
@@ -488,6 +489,20 @@ export function fetchContent(chapterId: string, lang?: string, signal?: AbortSig
   return request<ContentBlock[]>(`/api/chapters/${chapterId}/content${params}`, { signal }).then((blocks) =>
     blocks.map(normalizeContentBlock),
   )
+}
+
+export type BatchContentBlock = ContentBlock & { chapter_id: string }
+
+export async function fetchBlockBatch(
+  blockId: string,
+  batchSize: number,
+  lang?: string | null,
+  signal?: AbortSignal,
+): Promise<BatchContentBlock[]> {
+  const params = new URLSearchParams({ block_id: blockId, batch_size: String(batchSize) })
+  if (lang) params.set('lang', lang.toUpperCase())
+  const blocks = await request<BatchContentBlock[]>(`/api/chapters?${params}`, { signal })
+  return blocks.map((b) => ({ ...normalizeContentBlock(b), chapter_id: b.chapter_id }))
 }
 
 export function translateBlocks(

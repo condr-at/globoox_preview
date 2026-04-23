@@ -1042,6 +1042,32 @@ export function isCacheFresh(entry: CachedAssembledChapter, ttlMs: number = DEFA
   return Date.now() - entry.fetchedAt < effectiveTtl
 }
 
+// ─── In-flight batch prefetch registry ───────────────────────────────────────
+// When ReaderView kicks off a first-open batch prefetch, it claims each
+// chapter against a per-chapter promise that resolves the moment that
+// chapter's cache write completes. useChapterContent consults this map before
+// firing its own /content request — if a batch is inbound for the chapter it's
+// about to load, it awaits only that chapter's promise (not the whole batch)
+// and reads the cache as soon as its write lands. This sidesteps the "loader
+// flashes between tiny early chapters" race without making later chapters
+// wait on earlier chapters' writes.
+
+const pendingBatchByChapter = new Map<string, Promise<void>>()
+
+export function markChapterPending(chapterId: string, promise: Promise<void>): void {
+  pendingBatchByChapter.set(chapterId, promise)
+  const cleanup = () => {
+    if (pendingBatchByChapter.get(chapterId) === promise) {
+      pendingBatchByChapter.delete(chapterId)
+    }
+  }
+  promise.then(cleanup, cleanup)
+}
+
+export function getPendingChapterBatch(chapterId: string): Promise<void> | null {
+  return pendingBatchByChapter.get(chapterId) ?? null
+}
+
 export async function invalidateAllChapterContentCache(): Promise<void> {
   try {
     const db = await openDb()

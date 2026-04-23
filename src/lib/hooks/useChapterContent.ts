@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { ContentBlock, fetchContent } from '@/lib/api'
-import { getCachedChapterContent, isCacheFresh, setCachedChapterContent } from '@/lib/contentCache'
+import { getCachedChapterContent, getPendingChapterBatch, isCacheFresh, setCachedChapterContent } from '@/lib/contentCache'
 
 export function useChapterContent(chapterId: string | null, lang?: string) {
   const [blocks, setBlocks] = useState<ContentBlock[]>([])
@@ -27,8 +27,29 @@ export function useChapterContent(chapterId: string | null, lang?: string) {
     abortControllerRef.current = controller
 
     void (async () => {
-      const cached = await getCachedChapterContent(chapterId, lang)
+      let cached = await getCachedChapterContent(chapterId, lang)
       if (controller.signal.aborted) return
+
+      // If the cache is cold but a first-open batch prefetch is inbound and
+      // claims this chapter, wait for it before deciding to show a loader.
+      // The batch usually lands in < 1s and will populate the cache — much
+      // better than showing a spinner and then flashing content once the
+      // batch finally writes.
+      if (!cached) {
+        const pending = getPendingChapterBatch(chapterId)
+        if (pending) {
+          setLoading(true)
+          try {
+            await pending
+          } catch {
+            // Batch errors are non-fatal — fall through to the normal fetch path.
+          }
+          if (controller.signal.aborted) return
+          cached = await getCachedChapterContent(chapterId, lang)
+          if (controller.signal.aborted) return
+        }
+      }
+
       setError(null)
 
       const hadCached = !!cached

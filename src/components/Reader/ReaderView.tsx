@@ -4,7 +4,8 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { useAppStore, Language, ReadingAnchor } from '@/lib/store';
-import { fetchContent, fetchReadingPosition, saveReadingPosition, translateBlocksStreaming, updateBookLanguage, checkTranslationLimit } from '@/lib/api';
+import { fetchBlockBatch, fetchContent, fetchReadingPosition, saveReadingPosition, translateBlocksStreaming, updateBookLanguage, checkTranslationLimit } from '@/lib/api';
+import type { BatchContentBlock } from '@/lib/api';
 import { useChapters } from '@/lib/hooks/useChapters';
 import { useChapterContent } from '@/lib/hooks/useChapterContent';
 import { useReaderMetadataTranslations } from '@/lib/hooks/useReaderMetadataTranslations';
@@ -20,6 +21,8 @@ import {
     getCachedChapterBlockIds,
     getCachedChapterLayout,
     getCachedReadingPosition,
+    getPendingChapterBatch,
+    markChapterPending,
     setCachedTranslatedBlockText,
     setCachedChapterContent,
     setCachedChapterLayout,
@@ -428,6 +431,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
     const analyzeTimerRef = useRef<number | null>(null);
     const resolveWidthTimerRef = useRef<number | null>(null);
     const repaginateTimerRef = useRef<number | null>(null);
+    const lastPaginatedChapterIdRef = useRef<string>('');
     const [debugSnapshot, setDebugSnapshot] = useState<ReaderDebugSnapshot | null>(null);
     const [headingTraceLines, setHeadingTraceLines] = useState<string[]>([]);
 
@@ -735,6 +739,14 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
         let timeoutId: number | null = null;
 
         const run = async () => {
+            // If the rolling prefetch (or first-open batch) is still in flight
+            // for this chapter, let it land first to avoid a duplicate /content.
+            const pending = getPendingChapterBatch(nextChapter.id);
+            if (pending) {
+                try { await pending } catch {}
+                if (cancelled) return;
+            }
+
             let nextChapterBlocks = (await getCachedChapterContent(nextChapter.id, activeLang.toUpperCase()))?.blocks ?? [];
             if (cancelled) return;
 
@@ -869,6 +881,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
     const localAnchorChapterAppliedRef = useRef<string | null>(null);
     const restoredFromPaginationCacheRef = useRef(false);
     const prevResetChapterIdRef = useRef<string>('');
+    const batchPrefetchedBookRef = useRef<string | null>(null);
 
     useEffect(() => {
         if (!hasHydrated) return;
@@ -885,6 +898,191 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
         localAnchorChapterAppliedRef.current = applyKey;
         setCurrentChapterIndex((prev) => (prev === chapterIdx + 1 ? prev : chapterIdx + 1));
     }, [bookId, chapters, chaptersLoading, getAnchor, hasHydrated]);
+
+    // First-open batch prefetch: when the user opens a book with no reading position
+    // (or anchored to the first chapter), fetch ~60 blocks starting from the first
+    // unread block and cache every complete chapter in that batch. Guards against
+    // the pathological "many tiny early chapters" case where per-chapter prefetch
+    // can't keep up with rapid chapter advancement.
+    useEffect(() => {
+        if (!hasHydrated) return;
+        if (chaptersLoading || chapters.length === 0) return;
+        if (batchPrefetchedBookRef.current === bookId) return;
+
+        const anchor = getAnchor(bookId);
+        const firstChapter = chapters[0];
+        if (!firstChapter) return;
+
+        const isNearStart = !anchor?.chapterId || anchor.chapterId === firstChapter.id;
+        if (!isNearStart) {
+            batchPrefetchedBookRef.current = bookId;
+            return;
+        }
+
+        // Pick the earliest block we can start from. first_block_id is null for
+        // chapters with no content blocks (e.g. bare image/cover chapters), so
+        // scan forward to the first chapter with a real starting block.
+        const hasMidChapterAnchor = !!anchor?.blockId;
+        let startBlockId: string | null = anchor?.blockId ?? null;
+        let startChapterIdx = 0;
+        if (!startBlockId) {
+            for (let i = 0; i < chapters.length; i++) {
+                if (chapters[i].first_block_id) {
+                    startBlockId = chapters[i].first_block_id;
+                    startChapterIdx = i;
+                    break;
+                }
+            }
+        } else if (anchor?.chapterId) {
+            const idx = chapters.findIndex((c) => c.id === anchor.chapterId);
+            if (idx >= 0) startChapterIdx = idx;
+        }
+        if (!startBlockId) {
+            batchPrefetchedBookRef.current = bookId;
+            return;
+        }
+
+        batchPrefetchedBookRef.current = bookId;
+
+        // Snapshot the lang at prefetch start — if the user switches languages later
+        // we write under the lang at the time of fetch, and lang-change logic in
+        // useChapterContent will re-fetch as needed.
+        const prefetchLang = activeLang.toUpperCase();
+
+        // If we started at a mid-chapter anchor, the batch's first chapter is
+        // partial (blocks from the anchor onward). Skip caching it — a partial
+        // skeleton would overwrite the full one. Also don't claim that chapter
+        // as batch-pending: that chapter is the user's current position, so
+        // making its useChapterContent wait on the batch would add pointless
+        // latency to the screen they're already looking at.
+        const skipFirstBatchChapter = hasMidChapterAnchor;
+        const firstClaimIdx = skipFirstBatchChapter ? startChapterIdx + 1 : startChapterIdx;
+        const candidateChapterIds = chapters.slice(firstClaimIdx).map((c) => c.id);
+
+        // Give every candidate chapter its own pending promise so a waiter
+        // only blocks on its specific chapter's write, not on the slowest
+        // chapter in the batch.
+        const resolvers = new Map<string, () => void>();
+        for (const chapterId of candidateChapterIds) {
+            const promise = new Promise<void>((resolve) => {
+                resolvers.set(chapterId, resolve);
+            });
+            markChapterPending(chapterId, promise);
+        }
+        const resolveAll = () => {
+            for (const resolve of resolvers.values()) resolve();
+            resolvers.clear();
+        };
+
+        // No AbortController: this is a fire-and-forget best-effort prefetch.
+        // Aborting on unmount/deps-change would kill in-flight requests during
+        // stale-while-revalidate dep churn; the ref guard prevents duplicates.
+        fetchBlockBatch(startBlockId, 60, prefetchLang)
+            .then(async (blocks) => {
+                if (blocks.length === 0) {
+                    resolveAll();
+                    return;
+                }
+                const grouped = new Map<string, BatchContentBlock[]>();
+                for (const b of blocks) {
+                    const list = grouped.get(b.chapter_id);
+                    if (list) list.push(b);
+                    else grouped.set(b.chapter_id, [b]);
+                }
+                const chapterIds = Array.from(grouped.keys());
+                // Drop the last chapter: batch may have cut off mid-chapter.
+                // Drop the first chapter too if we started mid-chapter (partial).
+                const firstIdx = skipFirstBatchChapter ? 1 : 0;
+                const completeChapterIds = new Set(chapterIds.slice(firstIdx, -1));
+
+                // Unblock any waiters for chapters we aren't going to write
+                // (not in response, skipped partial/cut-off) so they fall
+                // straight through to /content without hanging on this batch.
+                for (const [chapterId, resolve] of resolvers) {
+                    if (!completeChapterIds.has(chapterId)) {
+                        resolve();
+                        resolvers.delete(chapterId);
+                    }
+                }
+
+                // Writes run in parallel; each chapter's pending promise
+                // resolves the instant its own write completes, regardless of
+                // how long other chapters' writes take.
+                await Promise.all(
+                    Array.from(completeChapterIds).map(async (chapterId) => {
+                        const chapterBlocks = grouped.get(chapterId);
+                        const resolve = resolvers.get(chapterId);
+                        try {
+                            if (chapterBlocks && chapterBlocks.length > 0) {
+                                await setCachedChapterContent(chapterId, prefetchLang, chapterBlocks);
+                            }
+                        } finally {
+                            resolve?.();
+                            resolvers.delete(chapterId);
+                        }
+                    }),
+                );
+            })
+            .catch(() => {
+                // Best-effort prefetch — swallow errors and release waiters.
+                resolveAll();
+            });
+    }, [bookId, chapters, chaptersLoading, getAnchor, hasHydrated, activeLang]);
+
+    // Rolling prefetch: while the user reads, fetch the next couple of
+    // chapters in the background so moving forward is instant. The first-open
+    // batch already warms up the initial run of chapters; this kicks in from
+    // chapter ~N onward and any time the user jumps ahead via TOC/search.
+    // Each prefetch is registered in the pending-chapter registry so
+    // useChapterContent awaits it rather than firing a duplicate /content.
+    useEffect(() => {
+        if (!hasHydrated) return;
+        if (chaptersLoading || chapters.length === 0) return;
+        if (currentChapterIndex <= 0) return;
+
+        const lang = activeLang.toUpperCase();
+        const PREFETCH_AHEAD = 2;
+
+        let cancelled = false;
+
+        async function prefetchChapter(chapterId: string) {
+            // Already claimed by the first-open batch or a prior prefetch —
+            // whoever claimed it will populate the cache.
+            if (getPendingChapterBatch(chapterId)) return;
+
+            // Skeleton present means /content has already been fetched for
+            // this chapter at least once. Missing translations are the
+            // translation scheduler's job — another /content call won't help.
+            const existingSkeleton = await getCachedChapterBlockIds(chapterId);
+            if (cancelled) return;
+            if (existingSkeleton.length > 0) return;
+            if (getPendingChapterBatch(chapterId)) return;
+
+            let resolve!: () => void;
+            const promise = new Promise<void>((r) => { resolve = r });
+            markChapterPending(chapterId, promise);
+
+            try {
+                const blocks = await fetchContent(chapterId, lang);
+                if (cancelled) return;
+                await setCachedChapterContent(chapterId, lang, blocks);
+            } catch {
+                // best-effort prefetch
+            } finally {
+                resolve();
+            }
+        }
+
+        for (let i = 0; i < PREFETCH_AHEAD; i++) {
+            const nextChapter = chapters[currentChapterIndex + i];
+            if (!nextChapter) break;
+            void prefetchChapter(nextChapter.id);
+        }
+
+        return () => {
+            cancelled = true;
+        };
+    }, [currentChapterIndex, chapters, chaptersLoading, hasHydrated, activeLang]);
 
     useEffect(() => {
         if (layoutCacheReadyKey !== paginationCacheKey) return;
@@ -954,10 +1152,18 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
             });
         }
 
+        // Debounce exists to coalesce rapid resize/font-change triggers. A chapter
+        // change is a discrete user action with no follow-up — skip the debounce so
+        // the skeleton doesn't linger while nothing is happening.
+        const chapterId = currentChapter?.id ?? '';
+        const isChapterChange = chapterId !== lastPaginatedChapterIdRef.current;
+        lastPaginatedChapterIdRef.current = chapterId;
+        const delayMs = isChapterChange ? 0 : REPAGINATE_DEBOUNCE_MS;
+
         repaginateTimerRef.current = window.setTimeout(() => {
             void measureAndCompute();
             repaginateTimerRef.current = null;
-        }, REPAGINATE_DEBOUNCE_MS);
+        }, delayMs);
 
         return () => {
             cancelled = true;
