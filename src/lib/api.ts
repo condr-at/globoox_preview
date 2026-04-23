@@ -1,4 +1,4 @@
-import { trackApiRequest } from './posthog'
+import { trackApiRequest, trackTranslateStreamClient } from './posthog'
 import { setCachedBookMeta } from './contentCache'
 
 // In browser we must call local Next.js API routes (/api/*), so auth can be injected by proxy.
@@ -534,82 +534,127 @@ export async function translateBlocksStreaming(
   signal?: AbortSignal,
   onDone?: (event: TranslateDoneEvent) => void,
 ): Promise<void> {
-  const res = await fetch(`${API_URL}/api/chapters/${chapterId}/translate`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ lang: lang.toUpperCase(), blockIds, anchorBlockId, direction }),
-    signal,
-  })
+  const startTime = performance.now()
+  const path = `/api/chapters/${chapterId}/translate`
+  let firstBlockMs: number | null = null
+  let blocksReceived = 0
+  let cacheHits = 0
+  let cacheMisses = 0
+  let statusCode: number | undefined
 
-  if (!res.ok) {
-    const errBody = await res.json().catch((): unknown => ({}))
-    const message =
-      typeof errBody === 'object' &&
-      errBody !== null &&
-      'message' in errBody &&
-      typeof errBody.message === 'string'
-        ? errBody.message
-        : `Request failed: ${res.status}`
-    throw new Error(message)
+  const emitClientSummary = (success: boolean, error?: string) => {
+    const durationMs = performance.now() - startTime
+    trackApiRequest(path, 'POST', durationMs, success, statusCode, { stream: true })
+    trackTranslateStreamClient({
+      chapter_id: chapterId,
+      language: lang.toUpperCase(),
+      blocks_requested: blockIds.length,
+      blocks_received: blocksReceived,
+      cache_hits: cacheHits,
+      cache_misses: cacheMisses,
+      duration_ms: durationMs,
+      first_block_ms: firstBlockMs,
+      success,
+      error,
+    })
   }
 
-  if (!res.body) throw new Error('No response body')
+  const wrappedOnBlock = (result: TranslatedBlockResult) => {
+    if (firstBlockMs === null) firstBlockMs = performance.now() - startTime
+    blocksReceived += 1
+    if (result.cache === 'hit') cacheHits += 1
+    else if (result.cache === 'miss') cacheMisses += 1
+    onBlock(result)
+  }
 
-  const contentType = res.headers.get('content-type') ?? ''
+  try {
+    const res = await fetch(`${API_URL}${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lang: lang.toUpperCase(), blockIds, anchorBlockId, direction }),
+      signal,
+    })
+    statusCode = res.status
 
-  if (contentType.includes('ndjson')) {
-    // Parse NDJSON line-by-line as data arrives
-    const reader = res.body.getReader()
-    const decoder = new TextDecoder()
-    let buffer = ''
+    if (!res.ok) {
+      const errBody = await res.json().catch((): unknown => ({}))
+      const message =
+        typeof errBody === 'object' &&
+        errBody !== null &&
+        'message' in errBody &&
+        typeof errBody.message === 'string'
+          ? errBody.message
+          : `Request failed: ${res.status}`
+      throw new Error(message)
+    }
 
-    try {
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        buffer += decoder.decode(value, { stream: true })
-        const lines = buffer.split('\n')
-        buffer = lines.pop() ?? '' // keep incomplete last line
-        for (const line of lines) {
-          const trimmed = line.trim()
-          if (!trimmed) continue
-          try {
-            const message = JSON.parse(trimmed) as TranslateStreamMessage
-            if ('event' in message && message.event === 'translate_done') {
-              // This is the final summary event
-              if (onDone) onDone(message)
-            } else {
-              // This is a block translation result
-              onBlock(message as TranslatedBlockResult)
+    if (!res.body) throw new Error('No response body')
+
+    const contentType = res.headers.get('content-type') ?? ''
+
+    if (contentType.includes('ndjson')) {
+      // Parse NDJSON line-by-line as data arrives
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          buffer += decoder.decode(value, { stream: true })
+          const lines = buffer.split('\n')
+          buffer = lines.pop() ?? '' // keep incomplete last line
+          for (const line of lines) {
+            const trimmed = line.trim()
+            if (!trimmed) continue
+            try {
+              const message = JSON.parse(trimmed) as TranslateStreamMessage
+              if ('event' in message && message.event === 'translate_done') {
+                // This is the final summary event
+                if (onDone) onDone(message)
+              } else {
+                // This is a block translation result
+                wrappedOnBlock(message as TranslatedBlockResult)
+              }
+            } catch {
+              // skip malformed lines
             }
-          } catch {
-            // skip malformed lines
           }
         }
+        // Handle any remaining buffered content
+        if (buffer.trim()) {
+          try {
+            const message = JSON.parse(buffer.trim()) as TranslateStreamMessage
+            if ('event' in message && message.event === 'translate_done') {
+              if (onDone) onDone(message)
+            } else {
+              wrappedOnBlock(message as TranslatedBlockResult)
+            }
+          } catch { /* ignore */ }
+        }
+      } finally {
+        reader.releaseLock()
       }
-      // Handle any remaining buffered content
-      if (buffer.trim()) {
-        try {
-          const message = JSON.parse(buffer.trim()) as TranslateStreamMessage
-          if ('event' in message && message.event === 'translate_done') {
-            if (onDone) onDone(message)
-          } else {
-            onBlock(message as TranslatedBlockResult)
-          }
-        } catch { /* ignore */ }
+    } else {
+      // Fallback: plain JSON array (older server version)
+      const data = await res.json() as ContentBlock[]
+      for (const block of data) {
+        let translatedText = ''
+        if ('text' in block && typeof block.text === 'string') translatedText = block.text
+        else if ('items' in block && Array.isArray(block.items)) translatedText = block.items.join('\n')
+        wrappedOnBlock({ blockId: block.id, status: 'ok', cache: 'miss', translatedText })
       }
-    } finally {
-      reader.releaseLock()
     }
-  } else {
-    // Fallback: plain JSON array (older server version)
-    const data = await res.json() as ContentBlock[]
-    for (const block of data) {
-      let translatedText = ''
-      if ('text' in block && typeof block.text === 'string') translatedText = block.text
-      else if ('items' in block && Array.isArray(block.items)) translatedText = block.items.join('\n')
-      onBlock({ blockId: block.id, status: 'ok', cache: 'miss', translatedText })
+
+    emitClientSummary(true)
+  } catch (error) {
+    const isAbort = error instanceof Error && error.name === 'AbortError'
+    // Aborts are normal (user navigated away) — skip tracking to avoid skew.
+    if (!isAbort) {
+      emitClientSummary(false, error instanceof Error ? error.message : String(error))
     }
+    throw error
   }
 }
 
@@ -714,14 +759,27 @@ export function getSignedUploadUrl(bucket: string, path: string): Promise<Signed
 
 /** Upload file directly to Supabase Storage using signed URL */
 export async function uploadToStorage(signedUrl: string, file: File, contentType: string): Promise<void> {
-  const res = await fetch(signedUrl, {
-    method: 'PUT',
-    headers: { 'Content-Type': contentType },
-    body: file,
-  })
-  if (!res.ok) {
-    const errorText = await res.text()
-    throw new Error(`Storage upload failed: ${errorText}`)
+  const startTime = performance.now()
+  let statusCode: number | undefined
+  try {
+    const res = await fetch(signedUrl, {
+      method: 'PUT',
+      headers: { 'Content-Type': contentType },
+      body: file,
+    })
+    statusCode = res.status
+    if (!res.ok) {
+      const errorText = await res.text()
+      throw new Error(`Storage upload failed: ${errorText}`)
+    }
+    trackApiRequest('/storage/upload', 'PUT', performance.now() - startTime, true, statusCode, {
+      file_size_kb: Math.round(file.size / 1024),
+    })
+  } catch (error) {
+    trackApiRequest('/storage/upload', 'PUT', performance.now() - startTime, false, statusCode, {
+      file_size_kb: Math.round(file.size / 1024),
+    })
+    throw error
   }
 }
 

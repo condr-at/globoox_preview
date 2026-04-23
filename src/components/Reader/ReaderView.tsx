@@ -36,6 +36,8 @@ import {
   trackChapterCompleted,
   trackBookFinished,
   trackLanguageSwitched,
+  trackReaderBookOpenReady,
+  trackReaderChapterNavReady,
 } from '@/lib/posthog';
 import ReaderActionsMenu from './ReaderActionsMenu';
 import TranslationGlow from './TranslationGlow';
@@ -356,6 +358,27 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
     const sessionStartRef = useRef(Date.now());
     const pagesReadRef = useRef(0);
     const chaptersNavigatedRef = useRef(0);
+
+    // ─── Performance tracking: book-open → first page ready ──────────────────
+    // Measures the wall-clock time between ReaderView mount and the first
+    // moment where the current page's visible blocks are fully rendered and
+    // readable in the active language. Fires exactly once per mount.
+    const bookOpenStartRef = useRef(
+        typeof performance !== 'undefined' ? performance.now() : Date.now()
+    );
+    const bookOpenReadyFiredRef = useRef(false);
+    // Tracks whether we started with cached content (no spinner shown).
+    const bookOpenHadCachedContentRef = useRef<boolean | null>(null);
+
+    // ─── Performance tracking: chapter navigation → next page ready ──────────
+    // Set when the user triggers a chapter jump (TOC / link / slider / page
+    // overflow). Cleared once the destination page is readable.
+    const chapterNavStartRef = useRef<{
+        startedAt: number;
+        fromChapterId: string | null;
+        toChapterIndex: number;
+        source: 'toc' | 'link' | 'slider' | 'next' | 'prev' | 'search' | 'restore_anchor' | 'other';
+    } | null>(null);
 
     // Fire session_started once on mount, session_ended on unmount
     useEffect(() => {
@@ -1664,6 +1687,85 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
         currentPageHasReadyBlock,
     ]);
 
+    // Capture whether the initial content came from cache (no spinner shown).
+    // Frozen the first time we have a real snapshot of the loading path.
+    useEffect(() => {
+        if (bookOpenHadCachedContentRef.current !== null) return;
+        if (isContentLoading) {
+            bookOpenHadCachedContentRef.current = false;
+            return;
+        }
+        if (hasServerSnapshot) {
+            bookOpenHadCachedContentRef.current = true;
+        }
+    }, [isContentLoading, hasServerSnapshot]);
+
+    // Strict readiness: every translatable block on the current page has a
+    // translation (not just "at least one"). This matches the user-perceived
+    // "all visible parts are loaded" signal used for the performance metrics.
+    const isCurrentPageFullyReady = useMemo(() => {
+        if (isContentLoading) return false;
+        if (!pagesReady || !visiblePagesReady) return false;
+        if (!currentPageBlocks.length) return false;
+        if (isSourceLang) return true;
+        if (currentPageTranslatableBlocks.length === 0) return true;
+        return currentPageTranslatableBlocks.every(
+            (block) => !isBlockPendingForActiveLang(block, pendingBlockIds)
+        );
+    }, [
+        isContentLoading,
+        pagesReady,
+        visiblePagesReady,
+        currentPageBlocks.length,
+        isSourceLang,
+        currentPageTranslatableBlocks,
+        pendingBlockIds,
+    ]);
+
+    // Book-open → ready. Fires once, when the first page's visible blocks are
+    // all loaded in the active language. In translated mode this waits for every
+    // translatable block on the page to land.
+    useEffect(() => {
+        if (bookOpenReadyFiredRef.current) return;
+        if (!isCurrentPageFullyReady) return;
+        if (!currentChapterId) return;
+
+        bookOpenReadyFiredRef.current = true;
+        const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+        trackReaderBookOpenReady({
+            book_id: bookId,
+            chapter_id: currentChapterId,
+            language: activeLang.toUpperCase(),
+            mode: isSourceLang ? 'original' : 'translation',
+            duration_ms: Math.round(now - bookOpenStartRef.current),
+            visible_blocks: currentPageBlocks.length,
+            had_cached_content: bookOpenHadCachedContentRef.current ?? false,
+        });
+    }, [isCurrentPageFullyReady, currentChapterId, bookId, activeLang, isSourceLang, currentPageBlocks.length]);
+
+    // Chapter-nav → ready. Fires when a tracked navigation (goToChapter) completes
+    // — i.e. the destination page's visible blocks are fully loaded. Split by mode
+    // so dashboards can compare "source text only" vs "translation visible" latency.
+    useEffect(() => {
+        const pending = chapterNavStartRef.current;
+        if (!pending) return;
+        if (!currentChapterId) return;
+        if (!isCurrentPageFullyReady) return;
+
+        chapterNavStartRef.current = null;
+        const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+        trackReaderChapterNavReady({
+            book_id: bookId,
+            from_chapter_id: pending.fromChapterId,
+            to_chapter_id: currentChapterId,
+            language: activeLang.toUpperCase(),
+            mode: isSourceLang ? 'original' : 'translation',
+            source: pending.source,
+            duration_ms: Math.round(now - pending.startedAt),
+            visible_blocks: currentPageBlocks.length,
+        });
+    }, [isCurrentPageFullyReady, currentChapterId, bookId, activeLang, isSourceLang, currentPageBlocks.length]);
+
     useEffect(() => {
         currentPageIdxRef.current = activePageIdx;
     }, [activePageIdx]);
@@ -1787,13 +1889,30 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
         currentPageBlocksRef.current = currentPageBlocks;
     }, [currentPageBlocks]);
 
-    const goToChapter = useCallback((index: number, options?: { targetPage?: 'start' | 'end' }) => {
+    const goToChapter = useCallback((index: number, options?: {
+        targetPage?: 'start' | 'end'
+        navSource?: 'toc' | 'link' | 'slider' | 'next' | 'prev' | 'search' | 'restore_anchor' | 'other'
+    }) => {
         if (index >= 1 && index <= chapters.length) {
             // Save current anchor before switching chapters
             if (currentPageBlocksRef.current.length > 0) {
                 const currentBlock = currentPageBlocksRef.current[0];
                 const blockId = currentBlock.parentId ?? currentBlock.id;
                 saveAnchor(blockId, currentBlock.position, getSentenceIndex(currentBlock), currentBlock.id);
+            }
+
+            // Mark start of chapter navigation for reader_chapter_nav_ready metric.
+            // We only set this if nothing is already pending — if a nav is mid-flight
+            // we keep the earliest start time (user-perceived latency).
+            if (!chapterNavStartRef.current) {
+                chapterNavStartRef.current = {
+                    startedAt: typeof performance !== 'undefined' ? performance.now() : Date.now(),
+                    fromChapterId: currentChapter?.id ?? null,
+                    toChapterIndex: index,
+                    source: options?.navSource ?? 'other',
+                };
+            } else {
+                chapterNavStartRef.current.toChapterIndex = index;
             }
 
             pendingAnchorBlockId.current = options?.targetPage === 'end' ? LAST_PAGE_SENTINEL : null;
@@ -1806,7 +1925,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
             pendingChapterEntryPersistRef.current = index;
             setCurrentChapterIndex(index);
         }
-    }, [chapters.length, saveAnchor]);
+    }, [chapters.length, saveAnchor, currentChapter]);
 
     useEffect(() => {
         if (pendingChapterEntryPersistRef.current == null) return;
@@ -1851,7 +1970,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
             return;
         }
         if (currentChapterIndex < chapters.length) {
-            goToChapter(currentChapterIndex + 1, { targetPage: 'start' });
+            goToChapter(currentChapterIndex + 1, { targetPage: 'start', navSource: 'next' });
         }
     }, [activePageIdx, spreadModeEnabled, pages.length, goToPage, currentChapterIndex, chapters.length, goToChapter]);
 
@@ -1862,7 +1981,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
             return;
         }
         if (currentChapterIndex > 1) {
-            goToChapter(currentChapterIndex - 1, { targetPage: 'end' });
+            goToChapter(currentChapterIndex - 1, { targetPage: 'end', navSource: 'prev' });
         }
     }, [activePageIdx, spreadModeEnabled, goToPage, currentChapterIndex, goToChapter]);
 
@@ -1907,7 +2026,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
     // TOC selects chapters (not blocks). Abort prefetch immediately, then switch chapter.
     const handleSelectChapterFromToc = useCallback((chapterIndex: number) => {
         navigateTo('', 'toc'); // abort + mark as jump; no in-chapter blockId yet
-        goToChapter(chapterIndex);
+        goToChapter(chapterIndex, { navSource: 'toc' });
     }, [navigateTo, goToChapter]);
 
     // ─── TOC open: translate chapter titles if needed ─────────────────────────

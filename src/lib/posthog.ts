@@ -2,14 +2,84 @@ import posthog from 'posthog-js'
 
 // ─── Generic API tracking ─────────────────────────────────────────────────────
 
+// Strip UUIDs and numeric ids so dashboards aggregate per-route instead of per-entity.
+// Mirrors server/middleware/api-timing.ts:normalizeRoute — keep in sync.
+function normalizeRoute(path: string): string {
+  const withoutQuery = path.split('?')[0] ?? path
+  return withoutQuery
+    .replace(/\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, '/:id')
+    .replace(/\/\d{4,}/g, '/:id')
+}
+
 export function trackApiRequest(
   endpoint: string,
   method: string,
   durationMs: number,
   success: boolean,
-  statusCode?: number
+  statusCode?: number,
+  extra?: Record<string, unknown>,
 ) {
-  posthog.capture('api_request', { endpoint, method, duration_ms: durationMs, success, status_code: statusCode })
+  const route = normalizeRoute(endpoint)
+  posthog.capture('api_request', {
+    endpoint,
+    route,
+    method,
+    duration_ms: durationMs,
+    success,
+    status_code: statusCode,
+    status_class: statusCode ? `${Math.floor(statusCode / 100)}xx` : undefined,
+    ...extra,
+  })
+}
+
+// ─── Reader performance ───────────────────────────────────────────────────────
+
+// Time from opening a book to the first page being visible and fully readable.
+// mode='original' when the active language matches the book's source language
+// (no translation pending); mode='translation' otherwise — in which case the
+// event fires only after translations for the visible blocks have landed.
+export function trackReaderBookOpenReady(props: {
+  book_id: string
+  chapter_id: string
+  language: string
+  mode: 'original' | 'translation'
+  duration_ms: number
+  visible_blocks: number
+  had_cached_content: boolean
+}) {
+  posthog.capture('reader_book_open_ready', props)
+}
+
+// Time from a chapter navigation action (toc/link/slider/next/prev) to the new
+// page being fully loaded. Split by mode like reader_book_open_ready.
+export function trackReaderChapterNavReady(props: {
+  book_id: string
+  from_chapter_id: string | null
+  to_chapter_id: string
+  language: string
+  mode: 'original' | 'translation'
+  source: 'toc' | 'link' | 'slider' | 'next' | 'prev' | 'search' | 'restore_anchor' | 'other'
+  duration_ms: number
+  visible_blocks: number
+}) {
+  posthog.capture('reader_chapter_nav_ready', props)
+}
+
+// Streaming translation summary — fired once per translate request on the client.
+// Complements the server-side translate_done with a client-perceived latency.
+export function trackTranslateStreamClient(props: {
+  chapter_id: string
+  language: string
+  blocks_requested: number
+  blocks_received: number
+  cache_hits: number
+  cache_misses: number
+  duration_ms: number
+  first_block_ms: number | null
+  success: boolean
+  error?: string
+}) {
+  posthog.capture('translate_stream_client', props)
 }
 
 // ─── User Identity ─────────────────────────────────────────────────────────────
