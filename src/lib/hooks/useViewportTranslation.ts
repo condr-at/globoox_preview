@@ -194,6 +194,23 @@ export function useViewportTranslation({
     if (isMountedRef.current) setPendingBlockIds(allPending)
   }, [])
 
+  // Mark blocks as translated and remove them from every pending/queued/inflight set.
+  // Call from any path that has just delivered a translation to the UI (streaming
+  // callback, reconcile, recovery, retry) — without this, blocks stay in the pending
+  // sets and the "Translating..." loader keeps rendering even though the text is ready.
+  const markBlocksAsTranslated = useCallback((ids: string[]) => {
+    if (ids.length === 0) return
+    for (const id of ids) {
+      translatedIds.current.add(id)
+      inflightIds.current.delete(id)
+      pendingIds.current.delete(id)
+      queuedIds.current.delete(id)
+      highPriorityPendingIds.current.delete(id)
+      highPriorityQueuedIds.current.delete(id)
+    }
+    updatePendingBlockIds()
+  }, [updatePendingBlockIds])
+
   const getRecentFetchKey = useCallback((requestChapterId: string, requestLang: string, blockId: string) => {
     return `${requestChapterId}::${requestLang.toUpperCase()}::${blockId}`
   }, [])
@@ -475,10 +492,10 @@ export function useViewportTranslation({
         anchorBlockId,
         'down',
         (result: TranslatedBlockResult) => {
-          // Each block resolves here as soon as the server emits it — one-by-one
-          inflightIds.current.delete(result.blockId)
-          translatedIds.current.add(result.blockId)
-          updatePendingBlockIds()
+          // Each block resolves here as soon as the server emits it — one-by-one.
+          // Clear from every queue, not just inflight — the same id may have been
+          // re-queued (e.g. after a high-priority abort moved it back to pending).
+          markBlocksAsTranslated([result.blockId])
 
           if (result.status === 'ok') {
             if (result.cache === 'hit') hits += 1
@@ -582,7 +599,7 @@ export function useViewportTranslation({
         if (isMountedRef.current) setIsTranslatingAny(false)
       }
     }
-  }, [updatePendingBlockIds, flushSession, resetSession, SESSION_INACTIVITY_MS])
+  }, [markBlocksAsTranslated, updatePendingBlockIds, flushSession, resetSession, SESSION_INACTIVITY_MS])
 
   // Schedule a debounced flush
   const scheduleFlush = useCallback((isHighPriority = false) => {
@@ -655,6 +672,7 @@ export function useViewportTranslation({
             langRef.current === recoveryLang
           if (sameRequestContext && isMountedRef.current) {
             onBlocksTranslatedRef.current([translated])
+            markBlocksAsTranslated([result.blockId])
           }
         },
       )
@@ -663,7 +681,7 @@ export function useViewportTranslation({
     } finally {
       recoveryRetryInFlightRef.current.delete(queueKey)
     }
-  }, [clearRecoveryRetryState, markRecoveryRetried, pruneRecoveryRetryState, wasRecoveryRetriedRecently])
+  }, [clearRecoveryRetryState, markBlocksAsTranslated, markRecoveryRetried, pruneRecoveryRetryState, wasRecoveryRetriedRecently])
 
   const reconcileBlocks = useCallback(async (ids: string[]) => {
     if (!canTranslateRef.current) return
@@ -730,6 +748,7 @@ export function useViewportTranslation({
           langRef.current === requestLang
         if (sameRequestContext && translated.length > 0 && isMountedRef.current) {
           onBlocksTranslatedRef.current(translated)
+          markBlocksAsTranslated(translated.map((block) => block.id))
         }
       } catch {
         // best-effort reconcile
@@ -737,7 +756,7 @@ export function useViewportTranslation({
     }, RECONCILE_COALESCE_MS)
 
     reconcileTimerRef.current.set(queueKey, timer)
-  }, [markRecentlyChecked, pruneRecentChecked, wasRecentlyChecked])
+  }, [markBlocksAsTranslated, markRecentlyChecked, pruneRecentChecked, wasRecentlyChecked])
 
   // Enqueue a single block for translation.
   // triggerFlush: when false, caller is responsible for calling scheduleFlush after
@@ -948,13 +967,38 @@ export function useViewportTranslation({
 
         try {
           const res = await fetchBlockTexts(recoveryChapterId, recoveryLang, ids)
+          const sameContext =
+            chapterIdRef.current === recoveryChapterId &&
+            langRef.current.toUpperCase() === recoveryLang.toUpperCase()
+          const blocksById = sameContext
+            ? new Map(blocksRef.current.map((block) => [block.id, block] as const))
+            : null
+          const uiUpdates: ContentBlock[] = []
           for (const payload of res.ok) {
             const type = idToType.get(payload.blockId)
             if (!type) continue
             const translatedBlock = buildRecoveredTranslatedBlock(payload, type as ContentBlock['type'])
             void setCachedTranslatedBlockText(recoveryChapterId, recoveryLang, translatedBlock)
+            // If the user is still on this chapter+lang, push the translation
+            // through to the UI so the loader stops rendering. Without this,
+            // the recovery loop would only persist to IDB while the on-screen
+            // block stays stuck behind the "Translating..." overlay.
+            if (blocksById) {
+              const original = blocksById.get(payload.blockId)
+              const merged = original
+                ? applyTranslation(
+                    original,
+                    payload.type === 'list' ? payload.items.join('\n') : payload.text,
+                  )
+                : null
+              if (merged) uiUpdates.push(merged)
+            }
             idToType.delete(payload.blockId)
             clearRecoveryRetryState(recoveryChapterId, recoveryLang, [payload.blockId])
+          }
+          if (uiUpdates.length > 0 && isMountedRef.current) {
+            onBlocksTranslatedRef.current(uiUpdates)
+            markBlocksAsTranslated(uiUpdates.map((block) => block.id))
           }
           for (const blockId of res.missing) {
             if (hasExceededRecoveryRetries(recoveryChapterId, recoveryLang, blockId)) {
@@ -976,7 +1020,7 @@ export function useViewportTranslation({
       if (recoveryTimerRef.current) clearInterval(recoveryTimerRef.current)
       recoveryTimerRef.current = null
     }
-  }, [clearRecoveryRetryState, hasExceededRecoveryRetries, markRecentlyChecked, pruneRecentChecked, retryRecoveryMissing, wasRecentlyChecked])
+  }, [clearRecoveryRetryState, hasExceededRecoveryRetries, markBlocksAsTranslated, markRecentlyChecked, pruneRecentChecked, retryRecoveryMissing, wasRecentlyChecked])
 
   // Cleanup on unmount
   useEffect(() => {
