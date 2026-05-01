@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useAppStore, Language, ReadingAnchor } from '@/lib/store';
 import { fetchBlockBatch, fetchContent, fetchReadingPosition, saveReadingPosition, translateBlocksStreaming, updateBookLanguage, checkTranslationLimit } from '@/lib/api';
@@ -10,7 +10,7 @@ import { useChapters } from '@/lib/hooks/useChapters';
 import { useChapterContent } from '@/lib/hooks/useChapterContent';
 import { useReaderMetadataTranslations } from '@/lib/hooks/useReaderMetadataTranslations';
 import { useViewportTranslation } from '@/lib/hooks/useViewportTranslation';
-import { usePageGestures } from '@/lib/hooks/usePageGestures';
+import { getTapZones, usePageGestures } from '@/lib/hooks/usePageGestures';
 import { computePages, findPageForBlock, findPageForBlockAndSentence, findPageByBlockPosition, normalizeBlocks } from '@/lib/paginatorUtils';
 import { ContentBlock } from '@/lib/api';
 import { applyTypografToBlocks } from '@/lib/typograf';
@@ -62,6 +62,9 @@ const SPREAD_MIN_VIEWPORT_PX = 1408;
 const SPREAD_GAP_PX = 120;
 const SPREAD_SIDE_PADDING_PX = 40;
 const SPREAD_MAX_COLUMN_PX = 560;
+const PAGE_TEXT_SIDE_PADDING_PX = 16;
+const ARROW_CENTER_MIN_OFFSET_PX = 20;
+const ARROW_OPTICAL_COMPENSATION_PX = 4;
 const LAYOUT_SIGNIFICANT_DELTA_PX = 2;
 const REPAGINATE_DEBOUNCE_MS = 160;
 const PAGINATION_ALGO_VERSION = 'v2026-03-25-probe-visible-css-parity';
@@ -2141,9 +2144,38 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
 
     // ─── Chrome visibility (header + footer toggle) ───────────────────────────
     const [chromeVisible, setChromeVisible] = useState(true);
+    const [hoverZone, setHoverZone] = useState<'left' | 'right' | null>(null);
+    const [hoverCursor, setHoverCursor] = useState<'pointer' | 'default' | 'auto'>('auto');
 
     const toggleChrome = useCallback(() => {
         setChromeVisible((v) => !v);
+    }, []);
+
+    const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+        const rect = pageViewportRef.current?.getBoundingClientRect();
+        if (!rect) return;
+        const x = e.clientX;
+        const zones = getTapZones(rect, spreadModeEnabled);
+        if (x <= zones.leftEdge || x >= zones.rightEdge) {
+            setHoverZone(null);
+            setHoverCursor('auto');
+            return;
+        }
+        if (x > zones.iosEdge && x < zones.leftZoneEnd) {
+            setHoverZone('left');
+            setHoverCursor('pointer');
+        } else if (x > zones.rightZoneStart) {
+            setHoverZone('right');
+            setHoverCursor('pointer');
+        } else {
+            setHoverZone(null);
+            setHoverCursor('default');
+        }
+    }, [spreadModeEnabled]);
+
+    const handleMouseLeave = useCallback(() => {
+        setHoverZone(null);
+        setHoverCursor('auto');
     }, []);
 
     // ─── Gesture handler ──────────────────────────────────────────────────────
@@ -2204,6 +2236,32 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
         if (anchorIdx < 0) return 0;
         return Math.round((anchorIdx / paginatedBlocks.length) * 100);
     }, [pagesReady, pages, activePageIdx, paginatedBlocks]);
+    const hasPrevPage = useMemo(() => (
+        activePageIdx > 0 || currentChapterIndex > 1
+    ), [activePageIdx, currentChapterIndex]);
+    const hasNextPage = useMemo(() => (
+        activePageIdx < pages.length - 1 || currentChapterIndex < chapters.length
+    ), [activePageIdx, pages.length, currentChapterIndex, chapters.length]);
+    const arrowCenterOffsetPx = useMemo(() => {
+        const rect = pageViewportRef.current?.getBoundingClientRect();
+        if (!rect) return ARROW_CENTER_MIN_OFFSET_PX;
+
+        if (spreadModeEnabled) {
+            const totalSpreadWidth = (SPREAD_MAX_COLUMN_PX * 2) + SPREAD_GAP_PX + (SPREAD_SIDE_PADDING_PX * 2);
+            const spreadInset = Math.max((rect.width - totalSpreadWidth) / 2, 0) + SPREAD_SIDE_PADDING_PX;
+            return Math.max(
+                ARROW_CENTER_MIN_OFFSET_PX,
+                (spreadInset / 2) - ARROW_OPTICAL_COMPENSATION_PX,
+            );
+        }
+
+        const contentWidth = Math.min(rect.width, 672);
+        const textInset = Math.max((rect.width - contentWidth) / 2, 0) + PAGE_TEXT_SIDE_PADDING_PX;
+        return Math.max(
+            ARROW_CENTER_MIN_OFFSET_PX,
+            (textInset / 2) - ARROW_OPTICAL_COMPENSATION_PX,
+        );
+    }, [spreadModeEnabled, pageWidth]);
 
     const isLoading = chaptersLoading || isContentLoading;
     const renderPageBlocks = useCallback((pageBlocks: ContentBlock[]) => {
@@ -2391,8 +2449,11 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                     touchAction: allowInternalScroll ? 'pan-y' : 'none',
                     overscrollBehavior: 'none',
                     WebkitOverflowScrolling: 'auto',
+                    cursor: hoverCursor,
                 } as React.CSSProperties}
                 {...gestures}
+                onMouseMove={handleMouseMove}
+                onMouseLeave={handleMouseLeave}
             >
                 <div
                     ref={pageViewportRef}
@@ -2522,6 +2583,41 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                 </div>
             </div>
 
+            <div
+                aria-hidden="true"
+                className="pointer-events-none fixed inset-y-0 left-0 right-0 z-30"
+            >
+                <div
+                    className="absolute top-1/2 transition-all duration-300 ease-in-out"
+                    style={{
+                        left: `${arrowCenterOffsetPx}px`,
+                        transform: chromeVisible
+                            ? 'translate3d(-50%, -50%, 0)'
+                            : 'translate3d(calc(-150% - 24px), -50%, 0)',
+                        opacity: chromeVisible && hasPrevPage ? (hoverZone === 'left' ? 0.66 : 0.44) : 0,
+                    }}
+                >
+                    <svg width="42" height="61" viewBox="0 0 42 61" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M22.8 8.5L11.6 30.5L22.8 52.5" stroke={hoverZone === 'left' ? readerSemanticTokens.text : readerSemanticTokens.mutedText} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                </div>
+
+                <div
+                    className="absolute top-1/2 transition-all duration-300 ease-in-out"
+                    style={{
+                        left: `calc(100% - ${arrowCenterOffsetPx}px)`,
+                        transform: chromeVisible
+                            ? 'translate3d(-50%, -50%, 0)'
+                            : 'translate3d(calc(50% + 24px), -50%, 0)',
+                        opacity: chromeVisible && hasNextPage ? (hoverZone === 'right' ? 0.66 : 0.44) : 0,
+                    }}
+                >
+                    <svg width="42" height="61" viewBox="0 0 42 61" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M19.2 8.5L30.4 30.5L19.2 52.5" stroke={hoverZone === 'right' ? readerSemanticTokens.text : readerSemanticTokens.mutedText} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                </div>
+            </div>
+
             {/* ── Footer / progress bar (fixed, slides out downward) ── */}
             <div
                 className="fixed left-0 right-0 z-40 flex items-center justify-center md:justify-between px-4 h-10 border-t text-xs backdrop-blur-xl transition-transform duration-300 ease-in-out"
@@ -2534,17 +2630,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                     color: readerSemanticTokens.mutedText,
                 }}
             >
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={goToPrevPage}
-                    disabled={activePageIdx === 0 && currentChapterIndex === 1}
-                    className="hidden md:flex items-center gap-1 text-xs disabled:opacity-30 px-1"
-                    style={{ color: readerSemanticTokens.accent }}
-                >
-                    <IOSIcon icon={ChevronLeft} className="size-4" strokeWidth={2} />
-                    <span className="truncate">Previous page</span>
-                </Button>
+                <div className="hidden md:block" />
 
                 <div className="min-w-0 max-w-[70vw] md:max-w-[50vw] flex items-center gap-2 text-center">
                     <span className="min-w-0 truncate text-center">
@@ -2557,17 +2643,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                     )}
                 </div>
 
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={goToNextPage}
-                    disabled={activePageIdx >= pages.length - 1 && currentChapterIndex === chapters.length}
-                    className="hidden md:flex items-center gap-1 text-xs disabled:opacity-30 px-1"
-                    style={{ color: readerSemanticTokens.accent }}
-                >
-                    <span className="truncate">Next page</span>
-                    <IOSIcon icon={ChevronRight} className="size-4" strokeWidth={2} />
-                </Button>
+                <div className="hidden md:block" />
             </div>
         </div>
         </ReaderThemeProvider>

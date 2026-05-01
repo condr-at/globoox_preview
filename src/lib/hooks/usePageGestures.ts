@@ -17,23 +17,53 @@ interface UsePageGesturesOptions {
 }
 
 interface TouchPoint { x: number; y: number }
+export interface TapZones {
+  leftEdge: number
+  rightEdge: number
+  iosEdge: number
+  leftZoneEnd: number
+  rightZoneStart: number
+  centerStart: number
+  centerEnd: number
+}
 
 // px of horizontal drag required to trigger a page turn
 const SWIPE_THRESHOLD = 60
 // px of movement below which touch counts as a tap (not drag)
 const TAP_THRESHOLD = 12
-// 30/40/30 zone fractions
-const LEFT_ZONE = 0.30
-const RIGHT_ZONE = 0.70
+const TAP_ZONE_MIN_PX = 72
+const TAP_ZONE_TARGET_VIEWPORT_RATIO = 0.20
+const TAP_ZONE_MAX_PX = 160
 // small safe margin from the very edges (px) — avoids iOS system gestures
 const EDGE_SAFE_PX = 12
-// fraction of screen width: safe zone for drag starts
-const DRAG_SAFE_MIN = 0.15
-const DRAG_SAFE_MAX = 0.85
+// fraction of screen width used for drag-safe edge gutters
+const DRAG_SAFE_EDGE_FRACTION = 0.08
 // px from the very left edge reserved for the iOS system back gesture
 const IOS_SYSTEM_EDGE = 20
-// Fixed center zone width for spread tap model: flex / center / flex
-const SPREAD_CENTER_ZONE_PX = 1000
+const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max)
+
+export function getTapZones(rect: DOMRect, spreadModeEnabled: boolean): TapZones {
+  const leftEdge = rect.left + EDGE_SAFE_PX
+  const rightEdge = rect.right - EDGE_SAFE_PX
+  const iosEdge = rect.left + IOS_SYSTEM_EDGE
+
+  const sideZoneWidth = clamp(
+    rect.width * TAP_ZONE_TARGET_VIEWPORT_RATIO,
+    TAP_ZONE_MIN_PX,
+    TAP_ZONE_MAX_PX,
+  )
+  const leftZoneEnd = rect.left + sideZoneWidth
+  const rightZoneStart = rect.right - sideZoneWidth
+  return {
+    leftEdge,
+    rightEdge,
+    iosEdge,
+    leftZoneEnd,
+    rightZoneStart,
+    centerStart: leftZoneEnd,
+    centerEnd: rightZoneStart,
+  }
+}
 
 export function usePageGestures({
   onPrev,
@@ -59,30 +89,12 @@ export function usePageGestures({
 
   const handleTapZoneAction = useCallback((x: number) => {
     const rect = getTapRect()
-    const leftEdge = rect.left + EDGE_SAFE_PX
-    const rightEdge = rect.right - EDGE_SAFE_PX
-    const iosEdge = rect.left + IOS_SYSTEM_EDGE
-    if (x <= leftEdge || x >= rightEdge) return
+    const zones = getTapZones(rect, spreadModeEnabled)
+    if (x <= zones.leftEdge || x >= zones.rightEdge) return
 
-    if (spreadModeEnabled) {
-      const centerWidth = Math.min(SPREAD_CENTER_ZONE_PX, rect.width)
-      const centerStart = rect.left + (rect.width - centerWidth) / 2
-      const centerEnd = centerStart + centerWidth
-      if (x > iosEdge && x < centerStart) {
-        onPrev()
-      } else if (x > centerEnd) {
-        onNext()
-      } else {
-        onToggleChrome()
-      }
-      return
-    }
-
-    const leftZoneEnd = rect.left + rect.width * LEFT_ZONE
-    const rightZoneStart = rect.left + rect.width * RIGHT_ZONE
-    if (x > iosEdge && x < leftZoneEnd) {
+    if (x > zones.iosEdge && x < zones.leftZoneEnd) {
       onPrev()
-    } else if (x > rightZoneStart) {
+    } else if (x > zones.rightZoneStart) {
       onNext()
     } else {
       onToggleChrome()
@@ -124,10 +136,10 @@ export function usePageGestures({
 
     // Drag / swipe — only accept if the gesture started in the central safe zone
     // and not within the iOS system-back-gesture strip
+    const safeEdgeInset = Math.max(rect.width * DRAG_SAFE_EDGE_FRACTION, IOS_SYSTEM_EDGE)
     const inSafeZone =
-      start.x > rect.left + rect.width * DRAG_SAFE_MIN &&
-      start.x < rect.left + rect.width * DRAG_SAFE_MAX &&
-      start.x > rect.left + IOS_SYSTEM_EDGE
+      start.x > rect.left + safeEdgeInset &&
+      start.x < rect.right - safeEdgeInset
 
     if (inSafeZone && Math.abs(dx) > SWIPE_THRESHOLD) {
       if (dx > 0) onPrev()   // swipe right → previous
