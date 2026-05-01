@@ -63,6 +63,9 @@ const SPREAD_GAP_PX = 120;
 const SPREAD_SIDE_PADDING_PX = 40;
 const SPREAD_MAX_COLUMN_PX = 560;
 const PAGE_TEXT_SIDE_PADDING_PX = 16;
+const CONTENT_MAX_WIDTH_PX = 672;
+const ARROW_SVG_WIDTH_PX = 42;
+const ARROW_REQUIRED_GAP_PX = 8;
 const ARROW_CENTER_MIN_OFFSET_PX = 20;
 const ARROW_OPTICAL_COMPENSATION_PX = 4;
 const LAYOUT_SIGNIFICANT_DELTA_PX = 2;
@@ -2242,25 +2245,33 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
     const hasNextPage = useMemo(() => (
         activePageIdx < pages.length - 1 || currentChapterIndex < chapters.length
     ), [activePageIdx, pages.length, currentChapterIndex, chapters.length]);
-    const arrowCenterOffsetPx = useMemo(() => {
+    const arrowLayout = useMemo(() => {
         const rect = pageViewportRef.current?.getBoundingClientRect();
-        if (!rect) return ARROW_CENTER_MIN_OFFSET_PX;
-
-        if (spreadModeEnabled) {
-            const totalSpreadWidth = (SPREAD_MAX_COLUMN_PX * 2) + SPREAD_GAP_PX + (SPREAD_SIDE_PADDING_PX * 2);
-            const spreadInset = Math.max((rect.width - totalSpreadWidth) / 2, 0) + SPREAD_SIDE_PADDING_PX;
-            return Math.max(
-                ARROW_CENTER_MIN_OFFSET_PX,
-                (spreadInset / 2) - ARROW_OPTICAL_COMPENSATION_PX,
-            );
+        if (!rect) {
+            return {
+                centerOffsetPx: ARROW_CENTER_MIN_OFFSET_PX,
+                canFit: false,
+            };
         }
 
-        const contentWidth = Math.min(rect.width, 672);
-        const textInset = Math.max((rect.width - contentWidth) / 2, 0) + PAGE_TEXT_SIDE_PADDING_PX;
-        return Math.max(
+        let textInset: number;
+        if (spreadModeEnabled) {
+            const totalSpreadWidth = (SPREAD_MAX_COLUMN_PX * 2) + SPREAD_GAP_PX + (SPREAD_SIDE_PADDING_PX * 2);
+            textInset = Math.max((rect.width - totalSpreadWidth) / 2, 0) + SPREAD_SIDE_PADDING_PX;
+        } else {
+            const contentWidth = Math.min(rect.width, CONTENT_MAX_WIDTH_PX);
+            textInset = Math.max((rect.width - contentWidth) / 2, 0) + PAGE_TEXT_SIDE_PADDING_PX;
+        }
+
+        const centerOffsetPx = Math.max(
             ARROW_CENTER_MIN_OFFSET_PX,
             (textInset / 2) - ARROW_OPTICAL_COMPENSATION_PX,
         );
+
+        return {
+            centerOffsetPx,
+            canFit: centerOffsetPx + (ARROW_SVG_WIDTH_PX / 2) + ARROW_REQUIRED_GAP_PX <= textInset,
+        };
     }, [spreadModeEnabled, pageWidth]);
 
     const isLoading = chaptersLoading || isContentLoading;
@@ -2590,11 +2601,11 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                 <div
                     className="absolute top-1/2 transition-all duration-300 ease-in-out"
                     style={{
-                        left: `${arrowCenterOffsetPx}px`,
+                        left: `${arrowLayout.centerOffsetPx}px`,
                         transform: chromeVisible
                             ? 'translate3d(-50%, -50%, 0)'
                             : 'translate3d(calc(-150% - 24px), -50%, 0)',
-                        opacity: chromeVisible && hasPrevPage ? (hoverZone === 'left' ? 0.66 : 0.44) : 0,
+                        opacity: chromeVisible && hasPrevPage && arrowLayout.canFit ? (hoverZone === 'left' ? 0.66 : 0.44) : 0,
                     }}
                 >
                     <svg width="42" height="61" viewBox="0 0 42 61" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -2605,11 +2616,11 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                 <div
                     className="absolute top-1/2 transition-all duration-300 ease-in-out"
                     style={{
-                        left: `calc(100% - ${arrowCenterOffsetPx}px)`,
+                        left: `calc(100% - ${arrowLayout.centerOffsetPx}px)`,
                         transform: chromeVisible
                             ? 'translate3d(-50%, -50%, 0)'
                             : 'translate3d(calc(50% + 24px), -50%, 0)',
-                        opacity: chromeVisible && hasNextPage ? (hoverZone === 'right' ? 0.66 : 0.44) : 0,
+                        opacity: chromeVisible && hasNextPage && arrowLayout.canFit ? (hoverZone === 'right' ? 0.66 : 0.44) : 0,
                     }}
                 >
                     <svg width="42" height="61" viewBox="0 0 42 61" fill="none" xmlns="http://www.w3.org/2000/svg">
