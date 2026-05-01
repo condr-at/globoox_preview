@@ -2382,14 +2382,14 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                 className="mobile-ui-no-select fixed left-0 right-0 z-40 backdrop-blur-xl border-b transition-transform duration-300 ease-in-out"
                 style={{
                     top: 0,
-                    paddingTop: 'calc(env(safe-area-inset-top) + 16px)',
+                    paddingTop: 'env(safe-area-inset-top)',
                     transform: chromeVisible ? 'translateY(0)' : 'translateY(-100%)',
                     backgroundColor: readerSemanticTokens.chromeBackground,
                     borderColor: readerSemanticTokens.border,
                     color: readerSemanticTokens.text,
                 }}
             >
-                <div className="flex h-11 items-center px-4">
+                <div className="flex min-h-11 items-center px-1 py-1">
                     <div className="flex h-full items-center justify-start shrink-0">
                         <Link
                             href="/my-books"
@@ -2401,7 +2401,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                                     );
                                 } catch { /* ignore */ }
                             }}
-                            className={`${uiIconTriggerButton} ${uiHeaderControlHitArea} -ml-2 flex-shrink-0`}
+                            className={`${uiIconTriggerButton} ${uiHeaderControlHitArea} flex-shrink-0`}
                         >
                             <IOSIcon icon={ChevronLeft} strokeWidth={2} style={{ color: readerSemanticTokens.accent }} />
                         </Link>
@@ -2472,7 +2472,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
                         position: 'absolute',
                         left: 0,
                         right: 0,
-                        top: 'calc(env(safe-area-inset-top) + 16px + 44px)',
+                        top: 'calc(env(safe-area-inset-top) + 44px + 8px)',
                         bottom: 'calc(env(safe-area-inset-bottom) + 40px)',
                         overflowY: allowInternalScroll ? 'auto' : 'visible',
                         overflowX: allowInternalScroll ? 'hidden' : 'visible',
@@ -2631,7 +2631,7 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
 
             {/* ── Footer / progress bar (fixed, slides out downward) ── */}
             <div
-                className="fixed left-0 right-0 z-40 flex items-center justify-center md:justify-between px-4 h-10 border-t text-xs backdrop-blur-xl transition-transform duration-300 ease-in-out"
+                className="mobile-ui-no-select fixed left-0 right-0 z-40 flex items-center justify-center md:justify-between px-4 h-10 border-t text-xs backdrop-blur-xl transition-transform duration-300 ease-in-out"
                 style={{
                     bottom: 0,
                     paddingBottom: 'env(safe-area-inset-bottom)',

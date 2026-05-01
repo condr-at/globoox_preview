@@ -77,6 +77,7 @@ export default function UploadBookModal({ isOpen, onClose, onUploaded }: UploadB
   const [progress, setProgress] = useState(0);
   const [message, setMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [isDropActive, setIsDropActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadHelp = getUploadHelp(error)
   const sectionClassName = 'rounded-[20px] bg-[var(--bg-grouped)] p-5'
@@ -102,18 +103,45 @@ export default function UploadBookModal({ isOpen, onClose, onUploaded }: UploadB
     }
   };
 
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (selectedFile) {
-      const valid = await isLikelyEpub(selectedFile);
-      if (!valid) {
-        setError('Please select an EPUB file');
-        e.target.value = '';
-        return;
-      }
-      setFile(selectedFile);
-      setError(null);
+  const handleSelectedFile = async (selectedFile: File | null) => {
+    if (!selectedFile) return false;
+    const valid = await isLikelyEpub(selectedFile);
+    if (!valid) {
+      setError('Please select an EPUB file');
+      return false;
     }
+    setFile(selectedFile);
+    setError(null);
+    return true;
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0] ?? null;
+    const isAccepted = await handleSelectedFile(selectedFile);
+    if (!isAccepted) e.target.value = '';
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!uploading) setIsDropActive(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+    setIsDropActive(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDropActive(false);
+    if (uploading) return;
+    const droppedFile = e.dataTransfer.files?.[0] ?? null;
+    const isAccepted = await handleSelectedFile(droppedFile);
+    if (!isAccepted && fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleUpload = async () => {
@@ -185,6 +213,7 @@ export default function UploadBookModal({ isOpen, onClose, onUploaded }: UploadB
     setProgress(0);
     setMessage('');
     setError(null);
+    setIsDropActive(false);
     onClose();
   };
 
@@ -201,7 +230,11 @@ export default function UploadBookModal({ isOpen, onClose, onUploaded }: UploadB
           <>
             <div
               onClick={() => fileInputRef.current?.click()}
-              className={`${sectionClassName} cursor-pointer py-7 text-center transition-colors hover:bg-[var(--fill-tertiary)]`}
+              onDragOver={handleDragOver}
+              onDragEnter={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              className={`${sectionClassName} cursor-pointer border border-[var(--app-border)] py-7 text-center transition-all duration-150 hover:bg-[var(--fill-tertiary)] ${isDropActive ? 'bg-[var(--fill-tertiary)] border-transparent scale-[1.01]' : ''}`}
             >
               {file ? (
                 <FileText className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />

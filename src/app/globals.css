@@ -609,13 +609,11 @@ input:focus-visible {
   }
 }
 
-/* Mobile-only UI chrome selection guard.
+/* UI chrome selection guard.
    Apply only to navigational/chrome containers, never modal/content text blocks. */
-@media (max-width: 768px) {
-  .mobile-ui-no-select,
-  .mobile-ui-no-select * {
-    -webkit-user-select: none;
-    user-select: none;
-    -webkit-touch-callout: none;
-  }
+.mobile-ui-no-select,
+.mobile-ui-no-select * {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
