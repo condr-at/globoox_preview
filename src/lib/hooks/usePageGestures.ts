@@ -34,6 +34,12 @@ const TAP_THRESHOLD = 12
 const TAP_ZONE_MIN_PX = 72
 const TAP_ZONE_TARGET_VIEWPORT_RATIO = 0.20
 const TAP_ZONE_MAX_PX = 160
+const TAP_ZONE_OVERLAP_PX = 16
+const CONTENT_MAX_WIDTH_PX = 672
+const PAGE_TEXT_SIDE_PADDING_PX = 16
+const SPREAD_GAP_PX = 120
+const SPREAD_SIDE_PADDING_PX = 40
+const SPREAD_MAX_COLUMN_PX = 560
 // small safe margin from the very edges (px) — avoids iOS system gestures
 const EDGE_SAFE_PX = 12
 // fraction of screen width used for drag-safe edge gutters
@@ -47,11 +53,15 @@ export function getTapZones(rect: DOMRect, spreadModeEnabled: boolean): TapZones
   const rightEdge = rect.right - EDGE_SAFE_PX
   const iosEdge = rect.left + IOS_SYSTEM_EDGE
 
-  const sideZoneWidth = clamp(
+  const defaultSideZoneWidth = clamp(
     rect.width * TAP_ZONE_TARGET_VIEWPORT_RATIO,
     TAP_ZONE_MIN_PX,
     TAP_ZONE_MAX_PX,
   )
+  const textInset = spreadModeEnabled
+    ? Math.max((rect.width - ((SPREAD_MAX_COLUMN_PX * 2) + SPREAD_GAP_PX + (SPREAD_SIDE_PADDING_PX * 2))) / 2, 0) + SPREAD_SIDE_PADDING_PX
+    : Math.max((rect.width - Math.min(rect.width, CONTENT_MAX_WIDTH_PX)) / 2, 0) + PAGE_TEXT_SIDE_PADDING_PX
+  const sideZoneWidth = Math.max(defaultSideZoneWidth, (textInset / 2) + TAP_ZONE_OVERLAP_PX)
   const leftZoneEnd = rect.left + sideZoneWidth
   const rightZoneStart = rect.right - sideZoneWidth
   return {
