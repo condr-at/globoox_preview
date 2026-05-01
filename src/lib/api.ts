@@ -386,6 +386,104 @@ export function fetchBooks(status?: string): Promise<ApiBook[]> {
   })
 }
 
+/**
+ * Streamed variant of fetchBooks. Calls onBatch as each batch arrives over NDJSON,
+ * resolving with the full accumulated list once the stream ends.
+ *
+ * Use this on first paint (no cache) so the head batch can render before the tail
+ * is even fetched server-side.
+ */
+export async function fetchBooksStreaming(
+  status: string | undefined,
+  onBatch: (books: ApiBook[], isFirst: boolean) => void,
+  signal?: AbortSignal
+): Promise<ApiBook[]> {
+  const params = new URLSearchParams()
+  if (status) params.set('status', status)
+  params.set('stream', '1')
+  const path = `/api/books?${params.toString()}`
+
+  const startTime = performance.now()
+  let statusCode: number | undefined
+  let isFirst = true
+  const accumulated: ApiBook[] = []
+
+  const headers = new Headers({ Accept: 'application/x-ndjson' })
+  const token = await getBrowserAccessToken()
+  if (token) headers.set('Authorization', `Bearer ${token}`)
+
+  try {
+    const res = await fetch(`${API_URL}${path}`, { method: 'GET', headers, signal })
+    statusCode = res.status
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      throw new Error(
+        (body && typeof body === 'object' && 'message' in body && typeof body.message === 'string'
+          ? body.message
+          : `Request failed: ${res.status}`)
+      )
+    }
+
+    const contentType = res.headers.get('content-type') ?? ''
+    // Backend may fall back to plain JSON if streaming is unsupported.
+    if (!contentType.includes('ndjson')) {
+      const data = (await res.json()) as ApiBook[]
+      for (const b of data) {
+        bookByIdCache.set(b.id, b)
+        void setCachedBookMeta('guest', b)
+      }
+      onBatch(data, true)
+      trackApiRequest(path, 'GET', performance.now() - startTime, true, statusCode)
+      return data
+    }
+
+    if (!res.body) throw new Error('No response body')
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ''
+
+    const processLine = (raw: string) => {
+      const trimmed = raw.trim()
+      if (!trimmed) return
+      let msg: { type?: string; items?: ApiBook[]; message?: string } | null = null
+      try {
+        msg = JSON.parse(trimmed)
+      } catch {
+        return
+      }
+      if (!msg || typeof msg !== 'object') return
+      if (msg.type === 'books' && Array.isArray(msg.items)) {
+        for (const b of msg.items) {
+          bookByIdCache.set(b.id, b)
+          void setCachedBookMeta('guest', b)
+        }
+        accumulated.push(...msg.items)
+        onBatch(msg.items, isFirst)
+        isFirst = false
+      } else if (msg.type === 'error') {
+        throw new Error(msg.message || 'stream error')
+      }
+    }
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      buffer += decoder.decode(value, { stream: true })
+      const lines = buffer.split('\n')
+      buffer = lines.pop() ?? ''
+      for (const line of lines) processLine(line)
+    }
+    if (buffer.trim()) processLine(buffer)
+
+    trackApiRequest(path, 'GET', performance.now() - startTime, true, statusCode)
+    return accumulated
+  } catch (err) {
+    trackApiRequest(path, 'GET', performance.now() - startTime, false, statusCode)
+    throw err
+  }
+}
+
 export function fetchBook(id: string): Promise<ApiBook> {
   // Some backend deployments expose only GET /api/books (without /api/books/:id).
   // Resolve book from list to avoid noisy 404 in reader startup.

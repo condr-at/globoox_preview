@@ -1894,6 +1894,17 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
         navSource?: 'toc' | 'link' | 'slider' | 'next' | 'prev' | 'search' | 'restore_anchor' | 'other'
     }) => {
         if (index >= 1 && index <= chapters.length) {
+            // Same chapter: just jump within the chapter. Resetting pagination state
+            // would leave the reader stuck on a skeleton — setCurrentChapterIndex with
+            // an unchanged value bails out, so the chapter-reset effect sees no change
+            // and the pagination gate (blockStructureKey === prev) blocks recompute.
+            if (index === currentChapterIndex) {
+                if (pages.length === 0) return;
+                const targetIdx = options?.targetPage === 'end' ? pages.length - 1 : 0;
+                setCurrentPageIdx(normalizeForLayout(Math.max(0, targetIdx)));
+                return;
+            }
+
             // Save current anchor before switching chapters
             if (currentPageBlocksRef.current.length > 0) {
                 const currentBlock = currentPageBlocksRef.current[0];
@@ -1920,12 +1931,19 @@ export default function ReaderView({ bookId, title, author, availableLanguages, 
 
             setCurrentPageIdx(0);
             setPagesReady(false);
+            // Reset visiblePagesReady and paginatedBlocks together with pages — otherwise
+            // a render with pages=[] but visiblePagesReady=true (stale from previous chapter)
+            // can briefly render an empty page when the destination chapter is cache-hit
+            // (e.g. served by the first-open batch prefetch). The chapter-reset effect
+            // resets these too, but it runs AFTER the next render commit.
+            setVisiblePagesReady(false);
             setPages([]);
+            setPaginatedBlocks([]);
             // Persist entry anchor for the destination chapter as soon as its page is ready.
             pendingChapterEntryPersistRef.current = index;
             setCurrentChapterIndex(index);
         }
-    }, [chapters.length, saveAnchor, currentChapter]);
+    }, [chapters.length, saveAnchor, currentChapter, currentChapterIndex, pages.length, normalizeForLayout]);
 
     useEffect(() => {
         if (pendingChapterEntryPersistRef.current == null) return;

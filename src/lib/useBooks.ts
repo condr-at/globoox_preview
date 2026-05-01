@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { ApiBook, fetchBooks, createBook, updateBook, deleteBook as apiDeleteBook } from './api'
+import { ApiBook, fetchBooks, fetchBooksStreaming, createBook, updateBook, deleteBook as apiDeleteBook } from './api'
 import { clearCachedBookMeta, clearCachedBookMetaEntry, clearCachedBooksList, getCachedBooksList, setCachedBookMeta, setCachedBooksList } from './contentCache'
 
 // Stale-While-Revalidate cache — module-level so it survives component remounts (route navigation)
@@ -114,8 +114,43 @@ export function useBooks(options?: { scopeKey?: string; stabilizeOnMount?: boole
 
     setError(null)
     // Don't set loading=true here — we already have data to show
+
+    // First-paint fast path: no cache yet → stream so the head batch renders before
+    // the full list is even queried server-side. Skip for revalidations (we already
+    // have data to show, and the JSON path is simpler/cheaper there).
+    const isFirstPaint = !entry && !hasSuccessfulBooksFetch.current
+    let streamSucceeded = false
+    let streamedData: ApiBook[] | null = null
+    if (isFirstPaint) {
+      try {
+        const streamed: ApiBook[] = []
+        await fetchBooksStreaming(listStatus, (batch, isFirst) => {
+          if (activeCacheKeyRef.current !== cacheKey) return
+          streamed.push(...batch)
+          setBooks([...streamed])
+          if (isFirst) setLoading(false)
+        })
+        streamSucceeded = true
+        streamedData = streamed
+        // For guest scope we can commit immediately. Auth scope still does the
+        // session-race retry below — keep that behavior intact.
+        if (!isAuthenticatedScope) {
+          commitBooks(streamed)
+          hasSuccessfulBooksFetch.current = true
+          return
+        }
+      } catch (err: unknown) {
+        // Fall through to JSON fetch on stream failure.
+        console.warn('[useBooks] stream failed, falling back to JSON', err)
+      }
+    }
+
     try {
-      const data = await fetchBooks(listStatus)
+      // Auth + stream succeeded: skip the immediate JSON fetch; use streamed data
+      // as the "first" payload and proceed straight to the stabilization retry.
+      const data = streamSucceeded && streamedData
+        ? streamedData
+        : await fetchBooks(listStatus)
       const needsAuthStabilization = isAuthenticatedScope && !authRetryDone.current
       if (!needsAuthStabilization) {
         commitBooks(data)
